@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>FlutterFlow App</title>
+    <script src="flutter.js" defer></script>
+  </head>
+  <body>
+    <script>
+      window.flutterWebRenderer = "html"; // Usar renderizador HTML
+    </script>
+    <script>
+      _flutter.loader.loadEntrypoint({
+        serviceWorker: {
+          serviceWorkerVersion: "1.0.0",
+        },
+        onEntrypointLoaded: function (engineInitializer) {
+          engineInitializer.initializeEngine().then(function (appRunner) {
+            appRunner.runApp();
+          });
+        },
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,21 @@
+django
+djangorestframework
+python-decouple
+django-environ
+
+
+psycopg2
+gunicorn
+
+# Shell plus
+ipython
+django-extensions
+
+django-cors-headers
+
+# Filtros de vistas
+django-filter
+
+
+pandas
+openpyxl

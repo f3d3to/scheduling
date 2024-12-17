@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:latest
+    container_name: db
+    environment:
+      - POSTGRES_USER=${DB_USERNAME:-db}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-db}
+      - POSTGRES_DB=${DB_NAME:-db}
+      - POSTGRES_LOG_MIN_MESSAGES=${DB_LOG_INFO:-panic}
+    ports:
+      - "${DB_PORT}:5432"
+
+  backend:
+    container_name: backend
+    build:
+      context: ..
+      dockerfile: deployment/backend.Dockerfile
+      args:
+        options:
+          --reload
+    command:  python init.py
+    env_file:
+      - .env
+    volumes:
+      - ../backend:/app
+    ports:
+      - "${BACKEND_PORT}:8000"
+    environment:
+      - DEBUG=${DEBUG}
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
+    depends_on:
+      - db
+
+  frontend:
+    container_name: frontend
+    build:
+      context: ..
+      dockerfile: deployment/frontend.Dockerfile
+    volumes:
+      - ../frontend:/app
+    ports:
+      - "5173:5173"
+    environment:
+      - VUE_APP_API_URL=${VUE_APP_API_URL}
+      - NODE_ENV=${NODE_ENV}
+      - FRONT_PORT=${FRONT_PORT}
+      - VITE_BACKEND_URL=http://backend:8000
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+    depends_on:
+      - backend
+
+  # flutterflow-app:
+  #   container_name: flutterflow-app
+  #   build:
+  #     context: ..
+  #     dockerfile: deployment/mobile.Dockerfile
+  #   ports:
+  #     - "8002:8002"
+  #   environment:
+  #     - ENV=production
+  #     - API_URL=http://backend:8000
+  #   volumes:
+  #     - ../mobile:/app
+  #   depends_on:
+  #     - backend
+  #   command: ["dart", "pub", "global", "run", "dhttpd", "--path", "build/web", "--port", "8002"]
+volumes:
+  db_data:
