@@ -3,6 +3,7 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
 
 from rest_framework import generics
 from rest_framework.views import APIView
@@ -84,12 +85,6 @@ class DescargarPlanDeEstudioJSON(APIView):
         response = HttpResponse(json_data, content_type='application/json')
         response['Content-Disposition'] = f'attachment; filename="plan_de_estudio_{plan.id}.json"'
         return response
-
-
-from django.http import JsonResponse
-from rest_framework.views import APIView
-from .models import PlanDeEstudio, Materia
-
 class PlanDeEstudioGraphView(APIView):
     def get(self, request, pk):
         # Obtener el plan de estudio por su ID
