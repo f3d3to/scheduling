@@ -1,26 +1,29 @@
-# pomodoro/views.py
-from rest_framework import viewsets
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import Tarea, Sesion
 from .serializers import TareaSerializer, SesionSerializer
-from rest_framework.decorators import action
-from rest_framework.response import Response
+from .filters import TareaFilter, SesionFilter
 
-class TareaViewSet(viewsets.ModelViewSet):
-    queryset = Tarea.objects.prefetch_related('tareas_sesiones__sesion').all()
+# Lista y creación de tareas
+class TareaListCreateView(ListCreateAPIView):
+    queryset = Tarea.objects.all()
+    serializer_class = TareaSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = TareaFilter
+
+# Detalle, actualización y eliminación de una tarea
+class TareaDetailView(RetrieveUpdateDestroyAPIView):
+    queryset = Tarea.objects.all()
     serializer_class = TareaSerializer
 
-    @action(detail=True, methods=['post'])
-    def completar_sesion(self, request, pk=None):
-        tarea = self.get_object()
-        sesion_id = request.data.get('sesion_id')
-        tarea_sesion = tarea.tareas_sesiones.filter(sesion_id=sesion_id).first()
-        if tarea_sesion:
-            tarea_sesion.esta_completada = True
-            tarea_sesion.save()
-            tarea.verificar_completitud()
-            return Response({"estado": "sesión completada"})
-        return Response({"error": "sesión no encontrada"}, status=400)
+# Lista y creación de sesiones
+class SesionListCreateView(ListCreateAPIView):
+    queryset = Sesion.objects.all()
+    serializer_class = SesionSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = SesionFilter
 
-class SesionViewSet(viewsets.ModelViewSet):
+# Detalle, actualización y eliminación de una sesión
+class SesionDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Sesion.objects.all()
     serializer_class = SesionSerializer

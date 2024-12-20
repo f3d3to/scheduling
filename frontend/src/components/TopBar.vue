@@ -26,19 +26,33 @@
   </script>
 
   <style scoped>
-  .topbar {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 10px;
-    background-color: #f5f5f5;
-    border-bottom: 1px solid #ddd;
-  }
+.topbar {
+  height: 60px;
+  background: linear-gradient(90deg, #2c2c3e, #1e1e2f);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
 
-  input {
-    width: 300px;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
+.topbar input {
+  width: 300px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+  background-color: #1e1e2f;
+  color: #fff;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.topbar input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.topbar input:focus {
+  border-color: #535bf2;
+}
   </style>

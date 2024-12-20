@@ -76,6 +76,8 @@ export default {
         .attr("width", width)
         .attr("height", height)
         .style("background-color", "#1E1E1E")
+        // Detecta clics en el fondo del SVG para des-resaltar los nodos
+        .on("click", () => this.resetHighlight())
         .call(
           d3.zoom().on("zoom", (event) => {
             g.attr("transform", event.transform);
@@ -207,7 +209,10 @@ export default {
               if (!event.active) simulation.alphaTarget(0);
             })
         )
-        .on("click", (event, d) => this.highlightConnections(d));
+        .on("click", (event, d) => {
+          event.stopPropagation(); // Evita conflicto con clic en el fondo
+          this.highlightConnections(d);
+        });
 
       const labels = g
         .append("g")
@@ -254,6 +259,10 @@ export default {
 
       d3.selectAll(".links line")
         .attr("opacity", (d) => (connectedLinks.has(d) ? 1 : 0.1));
+    },
+    resetHighlight() {
+      d3.selectAll(".nodes circle").attr("opacity", 1);
+      d3.selectAll(".links line").attr("opacity", 1);
     },
   },
 };

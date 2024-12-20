@@ -1,11 +1,9 @@
-# pomodoro/urls.py
 from django.urls import path
-from .views import TareaViewSet, SesionViewSet
+from .views import TareaListCreateView, TareaDetailView, SesionListCreateView, SesionDetailView
 
 urlpatterns = [
-    path('tareas/', TareaViewSet.as_view({'get': 'list', 'post': 'create'})),
-    path('tareas/<int:pk>/', TareaViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'})),
-    path('tareas/<int:pk>/completar_sesion/', TareaViewSet.as_view({'post': 'completar_sesion'})),
-    path('sesiones/', SesionViewSet.as_view({'get': 'list', 'post': 'create'})),
-    path('sesiones/<int:pk>/', SesionViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'})),
+    path('tareas/', TareaListCreateView.as_view(), name='tarea-list-create'),
+    path('tareas/<int:pk>/', TareaDetailView.as_view(), name='tarea-detail'),
+    path('sesiones/', SesionListCreateView.as_view(), name='sesion-list-create'),
+    path('sesiones/<int:pk>/', SesionDetailView.as_view(), name='sesion-detail'),
 ]

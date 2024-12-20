@@ -5,37 +5,29 @@ from django.contrib.auth.models import User
 class Sesion(models.Model):
     """Representa un tipo de sesión de Pomodoro (e.g., Estudio, Descanso, etc.)."""
     nombre = models.CharField(max_length=255, help_text="Nombre de la sesión (Estudio, Repaso, Descanso, etc.)")
-    duracion_minutos = models.PositiveIntegerField(help_text="Duración de la sesión en minutos")
-    cuenta_para_completar = models.BooleanField(default=True, help_text="Indica si esta sesión cuenta para completar la tarea")
-    creada_en = models.DateTimeField(auto_now_add=True)
+    duracion_minutos = models.PositiveIntegerField(help_text="Duración de la sesión en minutos para ser completada")
+    es_obligatoria = models.BooleanField(default=True, help_text="Indica si esta sesión es obligatoria para completar la tarea")
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.nombre
 
 class Tarea(models.Model):
-    """Representa una tarea con un conjunto de sesiones asociadas."""
+    """Representa una tarea que requiere un número de sesiones para completarse."""
     usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tareas")
     nombre = models.CharField(max_length=255, help_text="Nombre de la tarea")
-    esta_completada = models.BooleanField(default=False, help_text="Indica si la tarea está completada")
-    actualizada_en = models.DateTimeField(auto_now=True)
+    cantidad_para_completar = models.PositiveIntegerField(help_text="Número total de sesiones necesarias para completar la tarea")
+    cantidad_completadas = models.PositiveIntegerField(default=0, help_text="Número de sesiones completadas actualmente")
+    esta_realizada= models.BooleanField(default=False, help_text="Indica si la tarea está completada")
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
 
     def verificar_completitud(self):
-        """Verifica si todas las sesiones que cuentan hacia la tarea están completadas."""
-        if all(
-            tarea_sesion.esta_completada
-            for tarea_sesion in self.tareas_sesiones.filter(sesion__cuenta_para_completar=True)
-        ):
-            self.esta_completada = True
-            self.save()
+        """Verifica si la tarea está completada según las sesiones necesarias."""
+        if self.cantidad_completadas >= self.cantidad_para_completar:
+            self.esta_realizada = True
+        else:
+            self.esta_realizada = False
+        self.save()
 
     def __str__(self):
         return f"{self.nombre} - {self.usuario.username}"
-
-class TareaSesion(models.Model):
-    """Relaciona tareas con sesiones y guarda el estado de cada sesión."""
-    tarea = models.ForeignKey(Tarea, on_delete=models.CASCADE, related_name="tareas_sesiones")
-    sesion = models.ForeignKey(Sesion, on_delete=models.CASCADE)
-    esta_completada = models.BooleanField(default=False, help_text="Indica si esta sesión ha sido completada")
-
-    def __str__(self):
-        return f"{self.sesion.nombre} para {self.tarea.nombre}"

@@ -1,28 +1,29 @@
 <template>
   <div>
-    <!-- Botón siempre visible para mostrar el sidebar -->
-    <button class="toggle-btn fixed-btn" @click="toggleSidebar">
-      {{ isVisible ? 'Ocultar' : 'Mostrar' }}
+    <!-- Botón fijo para mostrar/ocultar la sidebar -->
+    <button
+      class="fixed-btn"
+      :class="{ 'shifted': isVisible }"
+      @click="toggleSidebar"
+    >
+      <i :class="isVisible ? 'fas fa-angle-left' : 'fas fa-angle-right'"></i>
     </button>
 
     <!-- Sidebar -->
     <div :class="['sidebar', { 'is-hidden': !isVisible }]">
-      <nav v-if="isVisible">
+      <nav>
         <ul>
-          <li><a href="#home">Inicio</a></li>
-          <li><a href="#about">Acerca de</a></li>
-          <li><a href="#services">Servicios</a></li>
-          <li><a href="#contact">Contacto</a></li>
+          <li><RouterLink to="/"><i class="fas fa-home"></i> Inicio</RouterLink></li>
+          <li><RouterLink to="/timer"><i class="fas fa-clock"></i> Pomodoro Timer</RouterLink></li>
         </ul>
       </nav>
     </div>
   </div>
 </template>
 
-
 <script>
 export default {
-  name: "Sidebar",
+  name: "SideBar",
   data() {
     return {
       isVisible: true,
@@ -36,65 +37,82 @@ export default {
 };
 </script>
 
-
 <style scoped>
-  .sidebar {
+.sidebar {
   width: 250px;
   height: 100vh;
-  background-color: #333;
+  background: linear-gradient(180deg, #2c2c3e, #1e1e2f);
   color: #fff;
   position: fixed;
   left: 0;
   top: 0;
   display: flex;
   flex-direction: column;
-  padding: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease;
+  z-index: 1001; /* Asegura que esté encima del contenido */
 }
 
 .sidebar.is-hidden {
   transform: translateX(-100%);
 }
 
-.toggle-btn {
-  background-color: #444;
-  color: #fff;
-  border: none;
-  padding: 10px;
-  cursor: pointer;
-  text-align: center;
+.sidebar nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar nav li {
   margin-bottom: 20px;
 }
 
-.toggle-btn:hover {
-  background-color: #555;
+.sidebar nav a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.1rem;
+  padding: 10px 15px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Botón fijo visible en todo momento */
+.sidebar nav a:hover {
+  background-color: #535bf2;
+}
+
 .fixed-btn {
   position: fixed;
-  top: 10px;
-  left: 10px; /* Cambiar si necesitas ajustar la posición */
-  z-index: 1000; /* Asegura que esté sobre otros elementos */
-}
-
-nav ul {
-  list-style: none;
-  padding: 0;
-}
-
-nav li {
-  margin: 10px 0;
-}
-
-nav a {
-  text-decoration: none;
+  top: 15px;
+  left: 15px;
+  background-color: #2c2c3e;
   color: #fff;
-  font-size: 16px;
+  border: none;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  z-index: 1002; /* Asegura que esté encima de la sidebar */
+  transition: all 0.3s ease;
 }
 
-nav a:hover {
-  text-decoration: underline;
+/* Cambia la posición del botón cuando la sidebar está visible */
+.fixed-btn.shifted {
+  left: 270px; /* Alinea con el borde derecho de la sidebar */
 }
 
+.fixed-btn:hover {
+  background-color: #535bf2;
+}
+
+.fixed-btn i {
+  font-size: 1.2rem;
+}
 </style>

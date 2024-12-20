@@ -54,6 +54,8 @@ THIRD_PARTY = [
 APPS = [
     'core',
     'plan_de_estudio',
+    'planificadores',
+    'pomodoro',
 ]
 
 INSTALLED_APPS = DJANGO + THIRD_PARTY + APPS
