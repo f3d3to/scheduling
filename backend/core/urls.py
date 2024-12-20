@@ -10,4 +10,7 @@ app_name = "apps"
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('plan_de_estudio.urls')),
+    path('', include('planificadores.urls')),
+    path('', include('pomodoro.urls')),
+
 ]

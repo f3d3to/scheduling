@@ -14,7 +14,6 @@ class Sesion(models.Model):
 
 class Tarea(models.Model):
     """Representa una tarea que requiere un número de sesiones para completarse."""
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tareas")
     nombre = models.CharField(max_length=255, help_text="Nombre de la tarea")
     cantidad_para_completar = models.PositiveIntegerField(help_text="Número total de sesiones necesarias para completar la tarea")
     cantidad_completadas = models.PositiveIntegerField(default=0, help_text="Número de sesiones completadas actualmente")

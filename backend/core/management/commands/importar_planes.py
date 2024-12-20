@@ -14,7 +14,7 @@ class Command(BaseCommand):
 
         # Proceso de importación para cada archivo
         try:
-            importar_plan_de_estudios(ruta_info, nombre_plan="Relaciones Internacionales", año_creacion=2020, descripcion="Plan de estudio para Ingeniería Informática")
+            importar_plan_de_estudios(ruta_info, nombre_plan="Ingeniería Informática", año_creacion=2023, descripcion="Plan de estudio para Ingeniería Informática")
             self.stdout.write(self.style.SUCCESS(f'Se importó INFO correctamente'))
 
             importar_plan_de_estudios(ruta_ri, nombre_plan="Relaciones Internacionales", año_creacion=2020, descripcion="Plan de estudio para  Relaciones Internacionales")
