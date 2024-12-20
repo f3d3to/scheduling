@@ -1,11 +1,17 @@
 <template>
   <div class="pomodoro-timer">
-    <!-- Gestión de Sesiones -->
+    <!-- Título -->
+    <header class="header">
+      <h1>Pomodoro Timer</h1>
+    </header>
+
+    <!-- Crear Sesiones -->
     <div class="session-management">
-      <h2>Manage Sessions</h2>
-      <form @submit.prevent="createSession">
+      <h2>Create a New Session</h2>
+      <form @submit.prevent="createSession" class="session-form">
         <input
           v-model="newSession.nombre"
+          type="text"
           placeholder="Session Name"
           required
         />
@@ -22,11 +28,11 @@
           />
           Mandatory
         </label>
-        <button type="submit">Create Session</button>
+        <button type="submit">Add Session</button>
       </form>
     </div>
 
-    <!-- Selector de Sesiones -->
+    <!-- Seleccionar Sesiones -->
     <div class="session-selector">
       <h2>Choose a Session</h2>
       <select v-model="selectedSession" @change="onSessionChange">
@@ -47,24 +53,8 @@
       </button>
     </div>
 
+    <!-- Mensaje Motivacional -->
     <p class="motivational-message">{{ motivationalMessage }}</p>
-
-    <!-- Gestión de Tareas -->
-    <div class="tasks-section">
-      <h2>Tasks</h2>
-      <ul class="task-list">
-        <li v-for="task in tasks" :key="task.id">
-          <span>{{ task.nombre }}</span>
-          <span
-            v-if="task.esta_realizada"
-            class="completed"
-          >
-            (Completed)
-          </span>
-        </li>
-      </ul>
-      <button class="add-task" @click="addTask">+ Add Task</button>
-    </div>
   </div>
 </template>
 
@@ -75,9 +65,8 @@ export default {
       isRunning: false,
       timeRemaining: 0,
       timer: null,
-      sessions: [],
-      tasks: [],
-      selectedSession: null,
+      sessions: [], // Sesiones cargadas desde el backend
+      selectedSession: null, // Sesión seleccionada por el usuario
       motivationalMessage: "Time to focus!",
       newSession: {
         nombre: "",
@@ -97,21 +86,8 @@ export default {
     async fetchSessions() {
       try {
         const response = await fetch("http://localhost:8000/sesiones/");
-        if (!response.ok) {
-          throw new Error("Failed to fetch sessions");
-        }
+        if (!response.ok) throw new Error("Failed to fetch sessions");
         this.sessions = await response.json();
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    async fetchTasks() {
-      try {
-        const response = await fetch("http://localhost:8000/tareas/");
-        if (!response.ok) {
-          throw new Error("Failed to fetch tasks");
-        }
-        this.tasks = await response.json();
       } catch (error) {
         console.error(error);
       }
@@ -125,11 +101,10 @@ export default {
           },
           body: JSON.stringify(this.newSession),
         });
-        if (!response.ok) {
-          throw new Error("Failed to create session");
-        }
+        if (!response.ok) throw new Error("Failed to create session");
+
         const newSession = await response.json();
-        this.sessions = [...this.sessions, newSession]; // Actualización Reactiva
+        this.sessions = [...this.sessions, newSession]; // Actualiza sesiones reactivamente
         this.newSession = {
           nombre: "",
           duracion_minutos: 25,
@@ -137,31 +112,6 @@ export default {
         };
       } catch (error) {
         console.error(error);
-      }
-    },
-    async addTask() {
-      const taskName = prompt("Enter task name:");
-      if (taskName) {
-        try {
-          const response = await fetch("http://localhost:8000/tareas/", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              nombre: taskName,
-              cantidad_para_completar: 1,
-              usuario: 1, // Cambiar por el ID del usuario autenticado
-            }),
-          });
-          if (!response.ok) {
-            throw new Error("Failed to add task");
-          }
-          const newTask = await response.json();
-          this.tasks = [...this.tasks, newTask]; // Actualización Reactiva
-        } catch (error) {
-          console.error(error);
-        }
       }
     },
     onSessionChange() {
@@ -196,7 +146,6 @@ export default {
   },
   mounted() {
     this.fetchSessions();
-    this.fetchTasks();
   },
   beforeDestroy() {
     clearInterval(this.timer);
@@ -204,8 +153,8 @@ export default {
 };
 </script>
 
+
 <style scoped>
-/* Estilos mejorados */
 .pomodoro-timer {
   display: flex;
   flex-direction: column;
@@ -216,16 +165,26 @@ export default {
   padding: 20px;
 }
 
-.session-management form {
+.header h1 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.session-management {
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.session-management h2 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.session-management .session-form {
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-
-.session-management input,
-.session-management button {
-  padding: 10px;
-  font-size: 1rem;
 }
 
 .session-selector {
@@ -248,44 +207,5 @@ export default {
   margin-top: 20px;
   font-size: 1.2rem;
   text-align: center;
-}
-
-.tasks-section {
-  margin-top: 30px;
-  width: 100%;
-  max-width: 500px;
-  text-align: center;
-}
-
-.tasks-section h2 {
-  font-size: 1.5rem;
-  margin-bottom: 10px;
-}
-
-.task-list {
-  list-style: none;
-  padding: 0;
-  margin: 10px 0;
-}
-
-.task-list li {
-  background: #333;
-  margin: 5px 0;
-  padding: 10px;
-  border-radius: 5px;
-  display: flex;
-  justify-content: space-between;
-  color: white;
-}
-
-.add-task {
-  margin-top: 10px;
-  padding: 10px 20px;
-  font-size: 1rem;
-  cursor: pointer;
-  background: #444;
-  color: white;
-  border: 1px solid white;
-  border-radius: 5px;
 }
 </style>

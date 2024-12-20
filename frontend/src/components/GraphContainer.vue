@@ -1,29 +1,52 @@
 <template>
-  <div ref="chart"></div>
+  <div>
+    <select v-model="selectedPlan" @change="fetchSelectedPlan">
+      <option v-for="plan in plans" :key="plan.id" :value="plan.id">
+        {{ plan.nombre }}
+      </option>
+    </select>
+    <div ref="chart"></div>
+  </div>
 </template>
 
 <script>
 import * as d3 from "d3";
-import { fetchCycles } from "../services/apiService";
+import { fetchPlans, fetchCycles } from "../services/apiService";
 
 export default {
   name: "GraphContainer",
   data() {
     return {
+      plans: [],
+      selectedPlan: null,
       nodes: [],
       links: [],
     };
   },
   async mounted() {
     try {
-      const data = await fetchCycles();
-      this.processData(data.anios);
-      this.createChart();
+      const plansData = await fetchPlans();
+      this.plans = plansData.results;
+      if (this.plans.length > 0) {
+        this.selectedPlan = this.plans[0].id;
+        await this.fetchSelectedPlan();
+      }
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error fetching plans:", error);
     }
   },
   methods: {
+    async fetchSelectedPlan() {
+      if (!this.selectedPlan) return;
+
+      try {
+        const data = await fetchCycles(this.selectedPlan);
+        this.processData(data.anios);
+        this.createChart();
+      } catch (error) {
+        console.error("Error fetching plan cycles:", error);
+      }
+    },
     processData(anios) {
       const nodes = [];
       const links = [];
@@ -67,6 +90,8 @@ export default {
       this.links = links;
     },
     createChart() {
+      d3.select(this.$refs.chart).select("svg").remove();
+
       const width = window.innerWidth;
       const height = window.innerHeight;
 
@@ -76,7 +101,6 @@ export default {
         .attr("width", width)
         .attr("height", height)
         .style("background-color", "#1E1E1E")
-        // Detecta clics en el fondo del SVG para des-resaltar los nodos
         .on("click", () => this.resetHighlight())
         .call(
           d3.zoom().on("zoom", (event) => {
@@ -210,7 +234,7 @@ export default {
             })
         )
         .on("click", (event, d) => {
-          event.stopPropagation(); // Evita conflicto con clic en el fondo
+          event.stopPropagation();
           this.highlightConnections(d);
         });
 
