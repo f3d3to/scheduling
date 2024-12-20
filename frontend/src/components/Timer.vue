@@ -1,211 +1,578 @@
 <template>
-  <div class="pomodoro-timer">
-    <!-- Título -->
-    <header class="header">
-      <h1>Pomodoro Timer</h1>
-    </header>
+  <v-container>
+    <v-row justify="center">
+      <v-col cols="12" md="8">
+        <v-card>
+          <v-card-title class="text-center">Timer</v-card-title>
+          <v-card-title class="text-center" v-if="selectedSession">
+            <strong>{{ selectedSession.nombre }}</strong>
+          </v-card-title>
+          <v-card-text class="text-center display-1 font-weight-bold">
+            {{ formattedTime }}
+          </v-card-text>
 
-    <!-- Crear Sesiones -->
-    <div class="session-management">
-      <h2>Create a New Session</h2>
-      <form @submit.prevent="createSession" class="session-form">
-        <input
-          v-model="newSession.nombre"
-          type="text"
-          placeholder="Session Name"
-          required
-        />
-        <input
-          v-model.number="newSession.duracion_minutos"
-          type="number"
-          placeholder="Duration (minutes)"
-          required
-        />
-        <label>
-          <input
-            type="checkbox"
-            v-model="newSession.es_obligatoria"
-          />
-          Mandatory
-        </label>
-        <button type="submit">Add Session</button>
-      </form>
-    </div>
+          <v-card-text class="text-center" v-if="selectedTask">
+            <strong>{{ selectedTask.nombre }}</strong>
+          </v-card-text>
 
-    <!-- Seleccionar Sesiones -->
-    <div class="session-selector">
-      <h2>Choose a Session</h2>
-      <select v-model="selectedSession" @change="onSessionChange">
-        <option v-for="session in sessions" :key="session.id" :value="session">
-          {{ session.nombre }} ({{ session.duracion_minutos }} min)
-        </option>
-      </select>
-    </div>
+          <v-card-actions class="justify-center">
+            <v-btn color="primary" @click="startTimer" :disabled="timerRunning">
+              Iniciar
+            </v-btn>
+            <v-btn color="warning" @click="pauseTimer" :disabled="!timerRunning">
+              Pausa
+            </v-btn>
+            <v-btn color="error" @click="resetTimer">Reset</v-btn>
+          </v-card-actions>
 
-    <!-- Temporizador -->
-    <div class="timer-display">
-      <h1>{{ formattedTime }}</h1>
-      <button
-        @click="isRunning ? pauseTimer() : startTimer()"
-        :class="{ start: !isRunning, pause: isRunning }"
-      >
-        {{ isRunning ? "Pause" : "Start" }}
-      </button>
-    </div>
+          <v-card-actions class="justify-center">
+            <v-btn color="secondary" @click="manageSessionsDialog = true">
+              Sesiones
+            </v-btn>
+          </v-card-actions>
 
-    <!-- Mensaje Motivacional -->
-    <p class="motivational-message">{{ motivationalMessage }}</p>
-  </div>
+          <v-alert
+            v-if="showAlert"
+            type="success"
+            title="Tiempo Finalizado!"
+            text="Completaste una sesión."
+            closable
+            @click:close="showAlert = false"
+          ></v-alert>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <v-row justify="center" class="mt-4">
+      <v-col cols="12" md="8">
+        <v-card-title v-if="tasks.length > 0">Tareas</v-card-title>
+        <v-btn
+          color="primary"
+          @click="showAddTaskDialog"
+          class="mb-2"
+          v-if="tasks.length > 0"
+        >
+          <v-icon>mdi-plus</v-icon>
+        </v-btn>
+        <div v-show="tasks.length > 0">
+          <v-card
+            v-for="task in tasks"
+            :key="task.id"
+            class="mb-2"
+            @click="selectTask(task)"
+            :color="
+              selectedTask && selectedTask.id === task.id ? 'primary lighten-4' : ''
+            "
+          >
+            <v-card-title class="font-weight-bold">{{ task.nombre }}</v-card-title>
+            <v-card-subtitle>
+              {{ task.cantidad_completadas }} / {{ task.cantidad_para_completar }}
+            </v-card-subtitle>
+            <v-progress-linear
+              :model-value="Number(task.progress)"
+              color="blue lighten-1"
+              height="10"
+            ></v-progress-linear>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn icon @click.stop="showEditTaskDialog(task)">
+                <v-icon>mdi-cog</v-icon>
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </div>
+        <div v-show="tasks.length === 0">No hay tareas disponibles</div>
+      </v-col>
+    </v-row>
+
+    <v-dialog v-model="manageSessionsDialog" max-width="700px">
+      <v-card>
+        <v-card-title>Sesiones</v-card-title>
+        <v-card-text>
+          <v-list>
+            <v-list-item v-for="session in sessions" :key="session.id">
+              <v-list-item-title>{{ session.nombre }}</v-list-item-title>
+              <template v-slot:append>
+                <v-btn
+                  icon
+                  @click="
+                    selectSession(session);
+                    manageSessionsDialog = false;
+                  "
+                >
+                  <v-icon>mdi-check-circle</v-icon>
+                </v-btn>
+                <v-btn icon @click="showEditSessionDialog(session)">
+                  <v-icon>mdi-pencil</v-icon>
+                </v-btn>
+                <v-btn icon @click="confirmDeleteSession(session)">
+                  <v-icon>mdi-delete</v-icon>
+                </v-btn>
+              </template>
+            </v-list-item>
+          </v-list>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="primary" @click="showAddSessionDialog">
+            <v-icon>mdi-plus</v-icon>
+          </v-btn>
+          <v-spacer></v-spacer>
+          <v-btn color="error" text @click="manageSessionsDialog = false"> Cerrar </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="addSessionDialog" max-width="500px">
+      <v-card>
+        <v-card-title>Crear Sesión</v-card-title>
+        <v-card-text>
+          <v-text-field v-model="newSession.nombre" label="Nombre"></v-text-field>
+          <v-text-field
+            v-model.number="newSession.duracion_minutos"
+            label="Duración en minutos"
+            type="number"
+          ></v-text-field>
+          <v-checkbox v-model="newSession.obligatoria" label="Obligatoria"></v-checkbox>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="success" @click="addSession">Guardar</v-btn>
+          <v-btn color="error" text @click="addSessionDialog = false"> Cancelar </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="editSessionDialog" max-width="500px">
+      <v-card>
+        <v-card-title>Editar Sesión</v-card-title>
+        <v-card-text>
+          <v-text-field v-model="selectedSession.nombre" label="Nombre"></v-text-field>
+          <v-text-field
+            v-model.number="selectedSession.duracion_minutos"
+            label="Duración en minutos"
+            type="number"
+          ></v-text-field>
+          <v-checkbox
+            v-model="selectedSession.obligatoria"
+            label="Obligatoria"
+          ></v-checkbox>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="success" @click="updateSession">Guardar</v-btn>
+          <v-btn color="error" text @click="editSessionDialog = false"> Cancelar </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="deleteSessionConfirmDialog" max-width="300px">
+      <v-card>
+        <v-card-title>Confirmar Eliminación</v-card-title>
+        <v-card-text> ¿Estás seguro que deseas eliminar esta sesión? </v-card-text>
+        <v-card-actions>
+          <v-btn color="error" @click="deleteSession">Borrar</v-btn>
+          <v-btn color="grey" text @click="deleteSessionConfirmDialog = false">
+            Cancelar
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="addTaskDialog" max-width="500px">
+      <v-card>
+        <v-card-title>Añadir Tarea</v-card-title>
+        <v-card-text>
+          <v-text-field v-model="newTask.nombre" label="Nombre"></v-text-field>
+          <v-text-field
+            v-model.number="newTask.cantidad_para_completar"
+            label="Cantidad de sesiones a completar"
+            type="number"
+          ></v-text-field>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="success" @click="addTask">Guardar</v-btn>
+          <v-btn color="error" text @click="addTaskDialog = false">Cancelar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="editTaskDialog" max-width="500px">
+      <v-card>
+        <v-card-title>Editar Tarea</v-card-title>
+        <v-card-text>
+          <v-text-field v-model="selectedTask.nombre" label="Tarea"></v-text-field>
+          <v-text-field
+            v-model.number="selectedTask.cantidad_completadas"
+            label="Cantidad completadas"
+            type="number"
+          ></v-text-field>
+          <v-text-field
+            v-model.number="selectedTask.cantidad_para_completar"
+            label="Cantidad de sesiones que faltan"
+            type="number"
+          ></v-text-field>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="success" @click="updateTask">Guardar</v-btn>
+          <v-btn color="error" text @click="editTaskDialog = false">Cancelar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-container>
 </template>
+<script setup>
+import { ref, computed, onMounted } from "vue";
 
-<script>
-export default {
-  data() {
-    return {
-      isRunning: false,
-      timeRemaining: 0,
-      timer: null,
-      sessions: [], // Sesiones cargadas desde el backend
-      selectedSession: null, // Sesión seleccionada por el usuario
-      motivationalMessage: "Time to focus!",
-      newSession: {
-        nombre: "",
-        duracion_minutos: 25,
-        es_obligatoria: false,
+const timer = ref(60 * 60); // 60 minutes by default
+const timerRunning = ref(false);
+const interval = ref(null);
+const sessions = ref([]);
+const tasks = ref([]);
+const manageSessionsDialog = ref(false);
+const addSessionDialog = ref(false);
+const editSessionDialog = ref(false);
+const deleteSessionConfirmDialog = ref(false);
+const selectedSession = ref({});
+const sessionToDelete = ref(null);
+const newSession = ref({
+  nombre: "",
+  duracion_minutos: 60,
+  obligatoria: false,
+});
+const selectedTask = ref(null);
+const addTaskDialog = ref(false);
+const editTaskDialog = ref(false);
+const newTask = ref({
+  nombre: "",
+  cantidad_para_completar: 1,
+  cantidad_completadas: 0,
+});
+const showAlert = ref(false);
+
+onMounted(() => {
+  fetchSessions();
+  fetchTasks();
+});
+
+const formattedTime = computed(() => {
+  const minutes = Math.floor(timer.value / 60);
+  const seconds = timer.value % 60;
+  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+});
+
+function startTimer() {
+  if (!timerRunning.value) {
+    timerRunning.value = true;
+    interval.value = setInterval(() => {
+      if (timer.value > 0) {
+        timer.value--;
+      } else {
+        handleTimerEnd();
+      }
+    }, 1000);
+  }
+}
+
+function pauseTimer() {
+  timerRunning.value = false;
+  clearInterval(interval.value);
+}
+
+function resetTimer() {
+  timerRunning.value = false;
+  clearInterval(interval.value);
+  timer.value = selectedSession.value.duracion_minutos
+    ? selectedSession.value.duracion_minutos * 60
+    : 60 * 60;
+}
+
+async function handleTimerEnd() {
+  clearInterval(interval.value);
+  timerRunning.value = false;
+  showAlert.value = true;
+
+  if (selectedTask.value) {
+    selectedTask.value.cantidad_completadas++;
+    await updateTask();
+  }
+
+  resetTimer();
+}
+
+async function fetchSessions() {
+  try {
+    const response = await fetch("http://localhost:8000/sesiones/");
+    if (response.ok) {
+      const data = await response.json();
+      // Accede a la propiedad 'results' para obtener el array
+      if (Array.isArray(data.results)) {
+        sessions.value = data.results;
+      } else {
+        console.error("Error: La respuesta de /sesiones/ no es un array", data);
+        sessions.value = [];
+      }
+    } else {
+      console.error("Error al obtener las sesiones:", response.status);
+      sessions.value = [];
+    }
+  } catch (error) {
+    console.error("Error en fetchSessions:", error);
+    sessions.value = [];
+  }
+}
+
+async function fetchTasks() {
+  try {
+    const response = await fetch("http://localhost:8000/tareasTimer/");
+    if (response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data.results)) {
+        tasks.value = data.results;
+      } else {
+        console.error("Error: La respuesta de /tareasTimer/ no es un array", data);
+        tasks.value = [];
+      }
+    } else {
+      console.error("Error al obtener las tareas:", response.status);
+      tasks.value = [];
+    }
+  } catch (error) {
+    console.error("Error en fetchTasks:", error);
+    tasks.value = [];
+  }
+}
+
+function showAddSessionDialog() {
+  newSession.value = { nombre: "", duracion_minutos: 60, obligatoria: false };
+  addSessionDialog.value = true;
+}
+
+async function addSession() {
+  const response = await fetch("http://localhost:8000/sesiones/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(newSession.value),
+  });
+
+  if (response.ok) {
+    addSessionDialog.value = false;
+    fetchSessions();
+  } else {
+    console.error("Error adding session"); // Falta el '2' aquí. Deberías añadir más información del error.
+    // Podrías obtener el cuerpo de la respuesta para ver detalles del error:
+    try {
+      const errorData = await response.json();
+      console.error("Detalles del error:", errorData);
+    } catch (error) {
+      console.error(
+        "No se pudo obtener el cuerpo del error:",
+        response.status,
+        response.statusText
+      );
+    }
+  }
+}
+
+function showEditSessionDialog(session) {
+  selectedSession.value = { ...session };
+  editSessionDialog.value = true;
+}
+
+async function updateSession() {
+  const response = await fetch(
+    `http://localhost:8000/sesiones/${selectedSession.value.id}/`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
       },
-    };
-  },
-  computed: {
-    formattedTime() {
-      const minutes = Math.floor(this.timeRemaining / 60);
-      const seconds = this.timeRemaining % 60;
-      return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-    },
-  },
-  methods: {
-    async fetchSessions() {
-      try {
-        const response = await fetch("http://localhost:8000/sesiones/");
-        if (!response.ok) throw new Error("Failed to fetch sessions");
-        this.sessions = await response.json();
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    async createSession() {
-      try {
-        const response = await fetch("http://localhost:8000/sesiones/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(this.newSession),
-        });
-        if (!response.ok) throw new Error("Failed to create session");
+      body: JSON.stringify(selectedSession.value),
+    }
+  );
 
-        const newSession = await response.json();
-        this.sessions = [...this.sessions, newSession]; // Actualiza sesiones reactivamente
-        this.newSession = {
-          nombre: "",
-          duracion_minutos: 25,
-          es_obligatoria: false,
-        };
-      } catch (error) {
-        console.error(error);
-      }
+  if (response.ok) {
+    editSessionDialog.value = false;
+    fetchSessions();
+  } else {
+    console.error("Error updating session");
+  }
+}
+
+function confirmDeleteSession(session) {
+  sessionToDelete.value = session;
+  deleteSessionConfirmDialog.value = true;
+}
+
+async function deleteSession() {
+  const response = await fetch(
+    `http://localhost:8000/sesiones/${sessionToDelete.value.id}/`,
+    {
+      method: "DELETE",
+    }
+  );
+
+  if (response.ok) {
+    deleteSessionConfirmDialog.value = false;
+    fetchSessions();
+    if (selectedSession.value && selectedSession.value.id === sessionToDelete.value.id) {
+      selectedSession.value = {};
+      resetTimer();
+    }
+  } else {
+    console.error("Error deleting session");
+  }
+}
+
+function selectSession(session) {
+  selectedSession.value = session;
+  timer.value = session.duracion_minutos * 60;
+}
+
+function selectTask(task) {
+  selectedTask.value = task;
+}
+
+function showAddTaskDialog() {
+  newTask.value = { nombre: "", cantidad_para_completar: 1, cantidad_completadas: 0 };
+  addTaskDialog.value = true;
+}
+
+async function addTask() {
+  const response = await fetch("http://localhost:8000/tareasTimer/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
     },
-    onSessionChange() {
-      if (this.selectedSession) {
-        this.timeRemaining = this.selectedSession.duracion_minutos * 60;
-        this.motivationalMessage = `Session: ${this.selectedSession.nombre}`;
-      }
-    },
-    startTimer() {
-      if (!this.isRunning) {
-        this.isRunning = true;
-        this.timer = setInterval(() => {
-          if (this.timeRemaining > 0) {
-            this.timeRemaining--;
-          } else {
-            this.pauseTimer();
-            alert("Time's up!");
-          }
-        }, 1000);
-      }
-    },
-    pauseTimer() {
-      this.isRunning = false;
-      clearInterval(this.timer);
-    },
-    resetTimer() {
-      this.pauseTimer();
-      if (this.selectedSession) {
-        this.timeRemaining = this.selectedSession.duracion_minutos * 60;
-      }
-    },
-  },
-  mounted() {
-    this.fetchSessions();
-  },
-  beforeDestroy() {
-    clearInterval(this.timer);
-  },
-};
+    body: JSON.stringify(newTask.value),
+  });
+
+  if (response.ok) {
+    addTaskDialog.value = false;
+    fetchTasks();
+  } else {
+    console.error("Error adding task");
+  }
+}
+
+function showEditTaskDialog(task) {
+  selectedTask.value = { ...task };
+  editTaskDialog.value = true;
+}
+
+async function updateTask() {
+  const response = await fetch(
+    `http://localhost:8000/tareasTimer/${selectedTask.value.id}/`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(selectedTask.value),
+    }
+  );
+
+  if (response.ok) {
+    editTaskDialog.value = false;
+    fetchTasks();
+  } else {
+    console.error("Error updating task");
+  }
+}
 </script>
-
-
 <style scoped>
-.pomodoro-timer {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background-color: #242424;
-  color: white;
+/* Estilos generales para el contenedor principal */
+.v-container {
+  font-family: "Roboto", sans-serif; /* Fuente principal */
+}
+
+/* Estilos para la tarjeta del temporizador */
+.v-card {
   padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Sombra suave */
 }
 
-.header h1 {
-  font-size: 2rem;
-  margin-bottom: 20px;
-}
-
-.session-management {
-  margin-bottom: 20px;
-  width: 100%;
-  max-width: 400px;
-}
-
-.session-management h2 {
-  font-size: 1.5rem;
+/* Estilos para el título del temporizador */
+.v-card-title.text-center {
+  font-weight: 500;
+  font-size: 24px;
+  color: #2196f3; /* Azul primario */
   margin-bottom: 10px;
 }
 
-.session-management .session-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.session-selector {
+/* Estilos para el tiempo */
+.v-card-text.text-center.display-1 {
+  font-size: 48px;
   margin-bottom: 20px;
-  text-align: center;
 }
 
-.timer-display h1 {
-  font-size: 4rem;
-  margin: 20px 0;
+/* Estilos para los botones */
+.v-btn {
+  margin: 0 5px;
+  text-transform: none; /* Quita la transformación a mayúsculas por defecto */
 }
 
-.timer-display button {
-  padding: 10px 30px;
-  font-size: 1.5rem;
-  cursor: pointer;
+/* Estilos para la sección de tareas */
+.v-card-title {
+  font-size: 20px;
+  color: #2196f3; /* Azul primario */
 }
 
-.motivational-message {
-  margin-top: 20px;
-  font-size: 1.2rem;
-  text-align: center;
+/* Estilos para cada tarjeta de tarea */
+.v-card.mb-2 {
+  border: 1px solid #ccc; /* Borde ligero */
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.v-card.mb-2:hover {
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada al hacer hover */
+}
+
+/* Estilos para el título de la tarea */
+.v-card-title.font-weight-bold {
+  font-size: 18px;
+  color: #333;
+}
+
+/* Estilos para el subtítulo de la tarea */
+.v-card-subtitle {
+  font-size: 14px;
+  color: #666;
+}
+
+/* Estilos para los modales */
+.v-dialog {
+  border-radius: 10px;
+}
+
+.v-dialog .v-card-title {
+  font-size: 20px;
+  color: #2196f3;
+  padding-bottom: 0;
+}
+
+.v-dialog .v-card-text {
+  padding-top: 10px;
+}
+
+.v-dialog .v-card-actions {
+  padding-top: 0;
+}
+
+.v-dialog .v-text-field {
+  margin-bottom: 10px;
+}
+
+.v-dialog .v-btn {
+  margin-top: 10px;
+}
+.v-dialog .v-checkbox {
+  margin-top: 5px;
+}
+
+/* Estilos específicos para el botón "Manage Sessions" */
+.v-btn[data-v-54995dd9] {
+  /* Reemplaza data-v-54995dd9 con el identificador generado en tu componente */
+  margin-bottom: 10px;
 }
 </style>

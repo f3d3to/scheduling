@@ -1,10 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Timer from '../components/Timer.vue'; // Importa el componente Timer
-import GraphContainer from '../components/GraphContainer.vue'; // Otro ejemplo
+import Timer from '../components/Timer.vue';
+import GraphContainer from '../components/GraphContainer.vue';
+import Planificadores from '../components/Planificadores.vue';
 
 const routes = [
   { path: '/', name: 'Home', component: GraphContainer },
-  { path: '/timer', name: 'Timer', component: Timer }, // Ruta para el temporizador
+  { path: '/timer', name: 'Timer', component: Timer },
+  { path: '/planificadores', name: 'Planificadores', component: Planificadores },
 ];
 
 const router = createRouter({

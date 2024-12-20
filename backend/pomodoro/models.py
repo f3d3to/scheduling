@@ -12,7 +12,7 @@ class Sesion(models.Model):
     def __str__(self):
         return self.nombre
 
-class Tarea(models.Model):
+class TareaTimer(models.Model):
     """Representa una tarea que requiere un número de sesiones para completarse."""
     nombre = models.CharField(max_length=255, help_text="Nombre de la tarea")
     cantidad_para_completar = models.PositiveIntegerField(help_text="Número total de sesiones necesarias para completar la tarea")
@@ -29,4 +29,4 @@ class Tarea(models.Model):
         self.save()
 
     def __str__(self):
-        return f"{self.nombre} - {self.usuario.username}"
+        return f"{self.nombre}"

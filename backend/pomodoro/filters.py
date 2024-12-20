@@ -1,5 +1,5 @@
 from django_filters import rest_framework as filters
-from .models import Tarea, Sesion
+from .models import TareaTimer, Sesion
 
 class TareaFilter(filters.FilterSet):
     """
@@ -12,7 +12,7 @@ class TareaFilter(filters.FilterSet):
     esta_completa = filters.BooleanFilter(help_text="Filtra tareas según su estado de completitud.")
 
     class Meta:
-        model = Tarea
+        model = TareaTimer
         fields = ['nombre', 'usuario', 'cantidad_para_completar', 'cantidad_completadas', 'esta_completa']
 
 class SesionFilter(filters.FilterSet):

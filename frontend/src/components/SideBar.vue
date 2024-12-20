@@ -14,7 +14,8 @@
       <nav>
         <ul>
           <li><RouterLink to="/"><i class="fas fa-home"></i> Inicio</RouterLink></li>
-          <li><RouterLink to="/timer"><i class="fas fa-clock"></i> Pomodoro Timer</RouterLink></li>
+          <li><RouterLink to="/timer"><i class="fas fa-clock"></i> Timer</RouterLink></li>
+          <li><RouterLink to="/planificadores"><i class="fas fa-calendar-alt"></i> Planificadores</RouterLink></li>
         </ul>
       </nav>
     </div>

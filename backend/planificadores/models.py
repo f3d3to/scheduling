@@ -41,11 +41,11 @@ class EstructuraPlanificador(models.Model):
     """
     Modelo que representa las posibles combinaciones dinámicas para configurar un planificador.
     """
-    usuario = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        help_text="Usuario que creó esta configuración."
-    )
+    # usuario = models.ForeignKey(
+    #     settings.AUTH_USER_MODEL,
+    #     on_delete=models.CASCADE,
+    #     help_text="Usuario que creó esta configuración."
+    # )
     nombre = models.CharField(
         max_length=100,
         help_text="Nombre de la estructura (por ejemplo, Plan Semanal, Plan Mensual, Control de Estudio)."
@@ -61,7 +61,7 @@ class EstructuraPlanificador(models.Model):
     fecha_modificacion = models.DateTimeField(auto_now=True, help_text="Última modificación de la estructura.")
 
     def __str__(self):
-        return f"{self.nombre} ({self.usuario.username})"
+        return f"{self.nombre}"
 
 
 class TipoPlanificador(models.Model):
@@ -87,7 +87,7 @@ class Planificador(models.Model):
         blank=True,
         help_text="Estructura dinámica asociada al planificador."
     )
-    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, help_text="Usuario propietario del planificador.")
+    # usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, help_text="Usuario propietario del planificador.")
 
     def __str__(self):
         return self.nombre
