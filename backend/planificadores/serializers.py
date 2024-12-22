@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Planificador, EstructuraPlanificador, Actividad, Tarea, Estado
+from .models import (Planificador, EstructuraPlanificador, Actividad, Tarea, Estado,
+                     TipoPlanificador, Objetivo, RegistroProgreso)
 
 class EstadoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -27,3 +28,18 @@ class PlanificadorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Planificador
         fields = "__all__"
+
+class TipoPlanificadorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoPlanificador
+        fields = '__all__'  # Incluye todos los campos del modelo
+
+class ObjetivoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Objetivo
+        fields = '__all__'  # Incluye todos los campos del modelo
+
+class RegistroProgresoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RegistroProgreso
+        fields = '__all__'  # Incluye todos los campos del modelo

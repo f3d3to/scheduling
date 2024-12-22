@@ -1,5 +1,5 @@
 from django_filters import rest_framework as filters
-from .models import Planificador, Actividad, Tarea, EstructuraPlanificador
+from .models import Planificador, Actividad, Tarea, EstructuraPlanificador, Estado, TipoPlanificador, Objetivo, RegistroProgreso
 
 class PlanificadorFilter(filters.FilterSet):
     """
@@ -58,3 +58,35 @@ class EstructuraPlanificadorFilter(filters.FilterSet):
     class Meta:
         model = EstructuraPlanificador
         fields = ['nombre', 'descripcion', 'usuario']
+
+class EstadoFilter(filters.FilterSet):
+    nombre = filters.CharFilter(lookup_expr='icontains')  # Filtro por nombre parcial
+
+    class Meta:
+        model = Estado
+        fields = ['nombre', 'color', 'orden']  # Campos que se pueden filtrar
+
+class TipoPlanificadorFilter(filters.FilterSet):
+    nombre = filters.CharFilter(lookup_expr='icontains')  # Filtro por nombre parcial
+
+    class Meta:
+        model = TipoPlanificador
+        fields = ['nombre']  # Campos que se pueden filtrar
+
+class ObjetivoFilter(filters.FilterSet):
+    descripcion = filters.CharFilter(lookup_expr='icontains')  # Filtro por descripción parcial
+    fecha_objetivo = filters.DateFilter(lookup_expr='exact')  # Filtro por fecha exacta
+    completado = filters.BooleanFilter()  # Filtro por estado de completado
+
+    class Meta:
+        model = Objetivo
+        fields = ['descripcion', 'fecha_objetivo', 'completado']  # Campos que se pueden filtrar
+
+class RegistroProgresoFilter(filters.FilterSet):
+    actividad = filters.CharFilter(field_name='actividad__nombre', lookup_expr='icontains')  # Filtro por nombre de actividad
+    porcentaje = filters.RangeFilter()  # Filtro por rango de porcentaje
+    fecha_registro = filters.DateTimeFilter(lookup_expr='exact')  # Filtro por fecha exacta
+
+    class Meta:
+        model = RegistroProgreso
+        fields = ['actividad', 'porcentaje', 'fecha_registro']  # Campos que se pueden filtrar

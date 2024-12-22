@@ -42,7 +42,9 @@ print(f"{GREEN}Migraciones aplicadas exitosamente!{RESET}")
 # subprocess.call(["python", "manage.py", "collectstatic", "--noinput"])
 # print(f"{GREEN}Archivos estáticos recopilados exitosamente!{RESET}")
 
-subprocess.call(["python", "manage.py", "importar_planes"])
+subprocess.call(["python", "manage.py", "crear_planes"])
+subprocess.call(["python", "manage.py", "crear_planificadores"])
+subprocess.call(["python", "manage.py", "crear_sesiones_tareas"])
 
 # Verificar si DEBUG está en True para iniciar con Gunicorn
 subprocess.call(["gunicorn", "core.wsgi", "--bind", "0.0.0.0:8000", "--reload"])
