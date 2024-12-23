@@ -1,6 +1,5 @@
 # pomodoro/models.py
 from django.db import models
-from django.contrib.auth.models import User
 
 class Sesion(models.Model):
     """Representa un tipo de sesión de Pomodoro (e.g., Estudio, Descanso, etc.)."""
@@ -13,20 +12,16 @@ class Sesion(models.Model):
         return self.nombre
 
 class TareaTimer(models.Model):
-    """Representa una tarea que requiere un número de sesiones para completarse."""
-    nombre = models.CharField(max_length=255, help_text="Nombre de la tarea")
+    tarea = models.OneToOneField('planificadores.Tarea', on_delete=models.CASCADE, related_name='tarea_timer')
     cantidad_para_completar = models.PositiveIntegerField(help_text="Número total de sesiones necesarias para completar la tarea")
     cantidad_completadas = models.PositiveIntegerField(default=0, help_text="Número de sesiones completadas actualmente")
-    esta_realizada= models.BooleanField(default=False, help_text="Indica si la tarea está completada")
-    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    sesiones = models.ManyToManyField(Sesion, blank=True, help_text="Sesiones asociadas a esta tarea.")
 
     def verificar_completitud(self):
         """Verifica si la tarea está completada según las sesiones necesarias."""
-        if self.cantidad_completadas >= self.cantidad_para_completar:
-            self.esta_realizada = True
-        else:
-            self.esta_realizada = False
-        self.save()
+        self.tarea.esta_realizada = self.cantidad_completadas >= self.cantidad_para_completar
+        self.tarea.save()
 
     def __str__(self):
-        return f"{self.nombre}"
+        return f"{self.tarea.nombre} - {self.cantidad_completadas}/{self.cantidad_para_completar}"
+

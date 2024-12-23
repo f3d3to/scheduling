@@ -1,6 +1,9 @@
 
-from django.conf import settings
 from django.db import models
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.conf import settings
+
 
 class Estado(models.Model):
     """
@@ -36,62 +39,44 @@ class BaseConEstado(models.Model):
     def __str__(self):
         return f"{self.estado.nombre if self.estado else 'Sin Estado'}"
 
+class BaseEstructura(models.Model):
+    nombre = models.CharField(max_length=100)
+    configuracion = models.JSONField(default=dict)
 
-class EstructuraPlanificador(models.Model):
-    """
-    Modelo que representa las posibles combinaciones dinámicas para configurar un planificador.
-    """
-    # usuario = models.ForeignKey(
-    #     settings.AUTH_USER_MODEL,
-    #     on_delete=models.CASCADE,
-    #     help_text="Usuario que creó esta configuración."
-    # )
-    nombre = models.CharField(
-        max_length=100,
-        help_text="Nombre de la estructura (por ejemplo, Plan Semanal, Plan Mensual, Control de Estudio)."
-    )
-    descripcion = models.TextField(blank=True, null=True, help_text="Descripción opcional de la estructura.")
-    configuracion = models.JSONField(
-        help_text=(
-            "Configuración dinámica en formato JSON. "
-            "Por ejemplo, {'tipo': 'tabla', 'columnas': ['Lunes', 'Martes'], 'filas': ['8:00', '9:00']}."
-        )
-    )
-    fecha_creacion = models.DateTimeField(auto_now_add=True, help_text="Fecha de creación de la estructura.")
-    fecha_modificacion = models.DateTimeField(auto_now=True, help_text="Última modificación de la estructura.")
+    class Meta:
+        abstract = True
 
-    def __str__(self):
-        return f"{self.nombre}"
+class EstructuraPlanificador(BaseEstructura):
+    # Aquí puedes agregar atributos específicos de la estructura del planificador si es necesario
+    pass
 
-
-class TipoPlanificador(models.Model):
-    nombre = models.CharField(max_length=50, unique=True, help_text="Nombre del tipo de planificador.")
-    descripcion = models.TextField(blank=True, null=True)
-
+class EstructuraElemento(BaseEstructura):
+    fecha_edicion = models.DateTimeField(auto_now=True)
+    html_visualizacion = models.TextField()
 
 class Planificador(models.Model):
-    """
-    Modelo principal que representa un tipo de planificador, como un calendario o un organizador de tareas.
-    """
+    nombre = models.CharField(max_length=255)
+    tipo = models.CharField(max_length=50)
+    estructura = models.ForeignKey(EstructuraPlanificador, on_delete=models.SET_NULL, null=True)
+    # Otros campos como usuario, etc.
 
-    nombre = models.CharField(max_length=255, help_text="Nombre del planificador.")
-    descripcion = models.TextField(blank=True, null=True, help_text="Descripción del planificador.")
-    tipo = models.ForeignKey(TipoPlanificador, on_delete=models.SET_NULL, null=True, blank=True, help_text="Tipo de Planificador asociada al planificador.")
-    color = models.CharField(max_length=7, default="#FFFFFF", help_text="Color asociado al planificador.")  # Color asignado
-    fecha_creacion = models.DateTimeField(auto_now_add=True, help_text="Fecha de creación del planificador.")
-    fecha_modificacion = models.DateTimeField(auto_now=True, help_text="Fecha de última modificación del planificador.")
-    estructura = models.ForeignKey(
-        EstructuraPlanificador,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        help_text="Estructura dinámica asociada al planificador."
-    )
-    # usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, help_text="Usuario propietario del planificador.")
+class Celda(models.Model):
+    planificador = models.ForeignKey(Planificador, related_name="celdas", on_delete=models.CASCADE)
+    contenido = models.TextField(blank=True, null=True)
 
-    def __str__(self):
-        return self.nombre
+class Elemento(models.Model):
+    nombre = models.CharField(max_length=255)
+    celda = models.ForeignKey(Celda, related_name="elementos", on_delete=models.CASCADE)
+    estructura = models.ForeignKey(EstructuraElemento, on_delete=models.SET_NULL, null=True)
+    descripcion = models.TextField(blank=True, null=True)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
 
+class Mensaje(models.Model):
+    tipo = models.CharField(max_length=50)
+    icono = models.CharField(max_length=50, blank=True, null=True)
+    color = models.CharField(max_length=7, default="#FFFFFF")
 
 class Actividad(BaseConEstado):
     """
@@ -109,13 +94,14 @@ class Actividad(BaseConEstado):
     def __str__(self):
         return f"{self.nombre} ({self.estado})"
 
-
 class Tarea(BaseConEstado):
     actividad = models.ForeignKey(Actividad, related_name="tareas", on_delete=models.CASCADE, help_text="Actividad asociada.")
     nombre = models.CharField(max_length=255, help_text="Nombre de la tarea.")
     descripcion = models.TextField(blank=True, null=True, help_text="Descripción de la tarea.")
     fecha_limite = models.DateField(blank=True, null=True, help_text="Fecha límite para completar la tarea.")
     color = models.CharField(max_length=7, default="#FF0000", help_text="Color asociado a la tarea.")
+    esta_realizada= models.BooleanField(default=False, help_text="Indica si la tarea está completada")
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.nombre} ({self.estado.nombre if self.estado else 'Sin Estado'})"
@@ -136,3 +122,36 @@ class RegistroProgreso(models.Model):
 
     def __str__(self):
         return f"{self.actividad.nombre} - {self.porcentaje}% ({self.fecha_registro})"
+
+class Etiqueta(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    color = models.CharField(max_length=7, default="#FFFFFF", help_text="Color en formato hexadecimal")
+    descripcion = models.TextField(blank=True, null=True, help_text="Descripción opcional de la etiqueta")
+
+class Comentario(models.Model):
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    contenido = models.TextField()
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+class Recurrente(models.Model):
+    frecuencia = models.CharField(max_length=50)  # Diaria, Semanal, Mensual, etc.
+    proxima_fecha = models.DateField()
+
+class Evento(models.Model):
+    nombre = models.CharField(max_length=255)
+    descripcion = models.TextField(blank=True, null=True)
+    fecha_hora = models.DateTimeField()
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.nombre} - {self.fecha_hora.strftime('%Y-%m-%d %H:%M')}"
+
+class EventoAsociado(models.Model):
+    evento = models.ForeignKey(Evento, related_name="asociaciones", on_delete=models.CASCADE)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    def __str__(self):
+        return f"{self.evento.nombre} asociado con {self.content_object}"

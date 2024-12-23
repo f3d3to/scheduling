@@ -1,19 +1,16 @@
 from django_filters import rest_framework as filters
 from .models import TareaTimer, Sesion
 
-class TareaFilter(filters.FilterSet):
+class TareaTimerFilter(filters.FilterSet):
     """
     Filtro para el modelo Tarea.
     """
-    nombre = filters.CharFilter(lookup_expr='icontains', help_text="Filtra tareas por nombre (búsqueda parcial).")
-    usuario = filters.NumberFilter(field_name="usuario__id", help_text="Filtra tareas por usuario asociado.")
     cantidad_para_completar = filters.RangeFilter(help_text="Filtra tareas por rango de cantidad para completar.")
     cantidad_completadas = filters.RangeFilter(help_text="Filtra tareas por rango de cantidad completada.")
-    esta_completa = filters.BooleanFilter(help_text="Filtra tareas según su estado de completitud.")
 
     class Meta:
         model = TareaTimer
-        fields = ['nombre', 'usuario', 'cantidad_para_completar', 'cantidad_completadas', 'esta_completa']
+        fields = ['tarea', 'cantidad_para_completar', 'cantidad_completadas']
 
 class SesionFilter(filters.FilterSet):
     """

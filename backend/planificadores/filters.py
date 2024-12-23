@@ -1,92 +1,117 @@
-from django_filters import rest_framework as filters
-from .models import Planificador, Actividad, Tarea, EstructuraPlanificador, Estado, TipoPlanificador, Objetivo, RegistroProgreso
+import django_filters
+from .models import (
+    Estado, Planificador, Celda, Elemento, Mensaje, Actividad, Tarea,
+    RegistroProgreso, Objetivo, Etiqueta, Comentario, Recurrente, Evento, EventoAsociado
+)
 
-class PlanificadorFilter(filters.FilterSet):
-    """
-    Filtro para el modelo Planificador.
-    """
-    nombre = filters.CharFilter(lookup_expr='icontains', help_text="Filtra planificadores por nombre (búsqueda parcial).")
-    descripcion = filters.CharFilter(lookup_expr='icontains', help_text="Filtra planificadores por descripción (búsqueda parcial).")
-    estructura = filters.NumberFilter(field_name="estructura__id", help_text="Filtra planificadores por estructura asociada.")
-    fecha_creacion = filters.DateFromToRangeFilter(help_text="Filtra planificadores por rango de fechas de creación.")
-    usuario = filters.NumberFilter(field_name="usuario__id", help_text="Filtra planificadores por usuario.")
-
-    class Meta:
-        model = Planificador
-        fields = ['nombre', 'descripcion', 'estructura', 'fecha_creacion', 'usuario']
-
-
-class ActividadFilter(filters.FilterSet):
-    """
-    Filtro para el modelo Actividad.
-    """
-    nombre = filters.CharFilter(lookup_expr='icontains', help_text="Filtra actividades por nombre (búsqueda parcial).")
-    descripcion = filters.CharFilter(lookup_expr='icontains', help_text="Filtra actividades por descripción.")
-    estado = filters.NumberFilter(field_name="estado__id", help_text="Filtra actividades por estado asociado.")
-    planificador = filters.NumberFilter(field_name="planificador__id", help_text="Filtra actividades por planificador.")
-    fecha_inicio = filters.DateFromToRangeFilter(help_text="Filtra actividades por rango de fechas de inicio.")
-    fecha_fin = filters.DateFromToRangeFilter(help_text="Filtra actividades por rango de fechas de finalización.")
-
-    class Meta:
-        model = Actividad
-        fields = ['nombre', 'descripcion', 'estado', 'planificador', 'fecha_inicio', 'fecha_fin']
-
-
-class TareaFilter(filters.FilterSet):
-    """
-    Filtro para el modelo Tarea.
-    """
-    nombre = filters.CharFilter(lookup_expr='icontains', help_text="Filtra tareas por nombre (búsqueda parcial).")
-    descripcion = filters.CharFilter(lookup_expr='icontains', help_text="Filtra tareas por descripción.")
-    estado = filters.NumberFilter(field_name="estado__id", help_text="Filtra tareas por estado asociado.")
-    actividad = filters.NumberFilter(field_name="actividad__id", help_text="Filtra tareas por actividad asociada.")
-    fecha_limite = filters.DateFromToRangeFilter(help_text="Filtra tareas por rango de fechas límite.")
-
-    class Meta:
-        model = Tarea
-        fields = ['nombre', 'descripcion', 'estado', 'actividad', 'fecha_limite']
-
-
-class EstructuraPlanificadorFilter(filters.FilterSet):
-    """
-    Filtro para el modelo EstructuraPlanificador.
-    """
-    nombre = filters.CharFilter(lookup_expr='icontains', help_text="Filtra estructuras por nombre (búsqueda parcial).")
-    descripcion = filters.CharFilter(lookup_expr='icontains', help_text="Filtra estructuras por descripción.")
-    usuario = filters.NumberFilter(field_name="usuario__id", help_text="Filtra estructuras por usuario asociado.")
-
-    class Meta:
-        model = EstructuraPlanificador
-        fields = ['nombre', 'descripcion', 'usuario']
-
-class EstadoFilter(filters.FilterSet):
-    nombre = filters.CharFilter(lookup_expr='icontains')  # Filtro por nombre parcial
+class EstadoFilter(django_filters.FilterSet):
+    nombre = django_filters.CharFilter(lookup_expr='icontains')
+    color = django_filters.CharFilter(lookup_expr='iexact')
 
     class Meta:
         model = Estado
-        fields = ['nombre', 'color', 'orden']  # Campos que se pueden filtrar
+        fields = ['nombre', 'color']
 
-class TipoPlanificadorFilter(filters.FilterSet):
-    nombre = filters.CharFilter(lookup_expr='icontains')  # Filtro por nombre parcial
-
-    class Meta:
-        model = TipoPlanificador
-        fields = ['nombre']  # Campos que se pueden filtrar
-
-class ObjetivoFilter(filters.FilterSet):
-    descripcion = filters.CharFilter(lookup_expr='icontains')  # Filtro por descripción parcial
-    fecha_objetivo = filters.DateFilter(lookup_expr='exact')  # Filtro por fecha exacta
-    completado = filters.BooleanFilter()  # Filtro por estado de completado
+class PlanificadorFilter(django_filters.FilterSet):
+    nombre = django_filters.CharFilter(lookup_expr='icontains')
+    tipo = django_filters.CharFilter(lookup_expr='iexact')
 
     class Meta:
-        model = Objetivo
-        fields = ['descripcion', 'fecha_objetivo', 'completado']  # Campos que se pueden filtrar
+        model = Planificador
+        fields = ['nombre', 'tipo']
 
-class RegistroProgresoFilter(filters.FilterSet):
-    actividad = filters.CharFilter(field_name='actividad__nombre', lookup_expr='icontains')  # Filtro por nombre de actividad
-    porcentaje = filters.RangeFilter()  # Filtro por rango de porcentaje
-    fecha_registro = filters.DateTimeFilter(lookup_expr='exact')  # Filtro por fecha exacta
+class CeldaFilter(django_filters.FilterSet):
+    contenido = django_filters.CharFilter(lookup_expr='icontains')
+
+    class Meta:
+        model = Celda
+        fields = ['planificador', 'contenido']
+
+class ElementoFilter(django_filters.FilterSet):
+    nombre = django_filters.CharFilter(lookup_expr='icontains')
+    content_type = django_filters.CharFilter(field_name='content_type__model', lookup_expr='iexact')
+
+    class Meta:
+        model = Elemento
+        fields = ['nombre', 'celda', 'content_type']
+
+class ActividadFilter(django_filters.FilterSet):
+    nombre = django_filters.CharFilter(lookup_expr='icontains')
+    fecha_inicio = django_filters.DateFromToRangeFilter()
+
+    class Meta:
+        model = Actividad
+        fields = ['planificador', 'nombre', 'fecha_inicio', 'estado']
+
+class TareaFilter(django_filters.FilterSet):
+    nombre = django_filters.CharFilter(lookup_expr='icontains')
+    fecha_limite = django_filters.DateFromToRangeFilter()
+
+    class Meta:
+        model = Tarea
+        fields = ['actividad', 'nombre', 'fecha_limite', 'estado', 'esta_realizada']
+
+class EventoFilter(django_filters.FilterSet):
+    nombre = django_filters.CharFilter(lookup_expr='icontains')
+    fecha_hora = django_filters.DateFromToRangeFilter()
+
+    class Meta:
+        model = Evento
+        fields = ['nombre', 'fecha_hora', 'usuario']
+
+class EventoAsociadoFilter(django_filters.FilterSet):
+    content_type = django_filters.CharFilter(field_name='content_type__model', lookup_expr='iexact')
+
+    class Meta:
+        model = EventoAsociado
+        fields = ['evento', 'content_type', 'object_id']
+
+class RegistroProgresoFilter(django_filters.FilterSet):
+    porcentaje = django_filters.RangeFilter()
+    fecha_registro = django_filters.DateFromToRangeFilter()
 
     class Meta:
         model = RegistroProgreso
-        fields = ['actividad', 'porcentaje', 'fecha_registro']  # Campos que se pueden filtrar
+        fields = ['actividad', 'porcentaje', 'fecha_registro']
+
+class ObjetivoFilter(django_filters.FilterSet):
+    descripcion = django_filters.CharFilter(lookup_expr='icontains')
+    fecha_objetivo = django_filters.DateFromToRangeFilter()
+    completado = django_filters.BooleanFilter()
+
+    class Meta:
+        model = Objetivo
+        fields = ['planificador', 'descripcion', 'fecha_objetivo', 'completado']
+
+class EtiquetaFilter(django_filters.FilterSet):
+    nombre = django_filters.CharFilter(lookup_expr='icontains')
+
+    class Meta:
+        model = Etiqueta
+        fields = ['nombre', 'usuario']
+
+class ComentarioFilter(django_filters.FilterSet):
+    contenido = django_filters.CharFilter(lookup_expr='icontains')
+    fecha_creacion = django_filters.DateFromToRangeFilter()
+
+    class Meta:
+        model = Comentario
+        fields = [ 'usuario', 'contenido', 'fecha_creacion']
+
+class RecurrenteFilter(django_filters.FilterSet):
+    frecuencia = django_filters.CharFilter(lookup_expr='iexact')
+    proxima_fecha = django_filters.DateFromToRangeFilter()
+
+    class Meta:
+        model = Recurrente
+        fields = ['frecuencia', 'proxima_fecha']
+
+
+class MensajeFilter(django_filters.FilterSet):
+    tipo = django_filters.CharFilter(lookup_expr='icontains')
+    icono = django_filters.CharFilter(lookup_expr='icontains')
+    color = django_filters.CharFilter(lookup_expr='iexact')
+
+    class Meta:
+        model = Mensaje
+        fields = ['tipo', 'icono', 'color']

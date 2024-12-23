@@ -1,18 +1,21 @@
 from rest_framework import serializers
 from .models import TareaTimer, Sesion
 
+from rest_framework import serializers
+from .models import Sesion, TareaTimer
+
 class SesionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sesion
-        fields = "__all__"
+        fields = ['id', 'nombre', 'duracion_minutos', 'es_obligatoria', 'fecha_creacion']
 
-class TareaSerializer(serializers.ModelSerializer):
-    progress = serializers.SerializerMethodField(read_only=True)
+class TareaTimerSerializer(serializers.ModelSerializer):
+    progress = serializers.SerializerMethodField()
     class Meta:
         model = TareaTimer
         fields = [
             'id',
-            'nombre',
+            'tarea',
             'cantidad_completadas',
             'cantidad_para_completar',
             'progress',  # Agrega el campo progress

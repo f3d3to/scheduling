@@ -1,190 +1,179 @@
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
 from planificadores.models import (
-    Estado,
-    TipoPlanificador,
-    Planificador,
-    EstructuraPlanificador,
-    Actividad,
-    Tarea,
-    Objetivo,
-    RegistroProgreso,
+    Estado, Planificador, Celda, Elemento, Mensaje, Actividad, Tarea,
+    RegistroProgreso, Objetivo, Etiqueta, Comentario, Recurrente, Evento, EventoAsociado, EstructuraPlanificador, EstructuraElemento
 )
+from django.contrib.contenttypes.models import ContentType
+from users.models import Usuario  # Asegúrate de tener la ruta correcta al modelo Usuario
 
 class Command(BaseCommand):
-    help = 'Crea los datos iniciales para todos los modelos relacionados con Planificadores'
+    help = 'Crea instancias iniciales para todos los modelos en planificadores/models.py y las asocia con elementos y usuarios'
 
     def handle(self, *args, **options):
         try:
-            with transaction.atomic():
-                # Crear estados iniciales
-                estados_iniciales = [
-                    {"nombre": "Pendiente", "descripcion": "Elemento pendiente", "color": "#FFA500", "orden": 1},
-                    {"nombre": "En Progreso", "descripcion": "Elemento en progreso", "color": "#00FF00", "orden": 2},
-                    {"nombre": "Completado", "descripcion": "Elemento completado", "color": "#0000FF", "orden": 3},
-                ]
-                for estado_data in estados_iniciales:
-                    estado, created = Estado.objects.get_or_create(
-                        nombre=estado_data["nombre"],
-                        defaults={
-                            "descripcion": estado_data["descripcion"],
-                            "color": estado_data["color"],
-                            "orden": estado_data["orden"],
-                        },
-                    )
-                    if created:
-                        self.stdout.write(self.style.SUCCESS(f'Estado "{estado.nombre}" creado correctamente'))
-                    else:
-                        self.stdout.write(self.style.WARNING(f'Estado "{estado.nombre}" ya existe'))
+            # Crear Estados
+            estados = [
+                {"nombre": "Pendiente", "descripcion": "Estado inicial", "color": "#FFA500", "orden": 1},
+                {"nombre": "En Progreso", "descripcion": "Tarea en curso", "color": "#0000FF", "orden": 2},
+                {"nombre": "Completado", "descripcion": "Tarea finalizada", "color": "#008000", "orden": 3},
+            ]
+            for estado_data in estados:
+                estado, created = Estado.objects.get_or_create(
+                    nombre=estado_data["nombre"],
+                    defaults=estado_data
+                )
+                self.stdout.write(self.style.SUCCESS(f'{"Creado" if created else "Ya existe"}: Estado "{estado.nombre}"'))
 
-                # Crear tipos de planificador
-                tipos_iniciales = [
-                    {"nombre": "Calendario", "descripcion": "Planificador tipo calendario"},
-                    {"nombre": "Organizador de Tareas", "descripcion": "Planificador para tareas específicas"},
-                ]
-                for tipo_data in tipos_iniciales:
-                    tipo, created = TipoPlanificador.objects.get_or_create(
-                        nombre=tipo_data["nombre"],
-                        defaults={"descripcion": tipo_data["descripcion"]},
-                    )
-                    if created:
-                        self.stdout.write(self.style.SUCCESS(f'TipoPlanificador "{tipo.nombre}" creado correctamente'))
-                    else:
-                        self.stdout.write(self.style.WARNING(f'TipoPlanificador "{tipo.nombre}" ya existe'))
+            # Crear Estructuras de Planificador
+            estructuras_planificador = [
+                {"nombre": "Semanal", "configuracion": {"tipo": "tabla", "filas": 7, "columnas": 1}},
+                {"nombre": "Mensual", "configuracion": {"tipo": "tabla", "filas": 5, "columnas": 7}},
+            ]
+            for estructura_data in estructuras_planificador:
+                estructura, created = EstructuraPlanificador.objects.get_or_create(
+                    nombre=estructura_data["nombre"],
+                    defaults=estructura_data
+                )
+                self.stdout.write(self.style.SUCCESS(f'{"Creada" if created else "Ya existe"}: Estructura Planificador "{estructura.nombre}"'))
 
-                # Crear estructuras de planificador
-                estructuras_iniciales = [
-                    {"nombre": "Plan Semanal", "configuracion": {
-                        "vista": "semanal",
-                        "campos": ["Lo más importante", "h", "Citas | reuniones"],
-                        "dias": ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"],
-                        "notas": True
-                    }},
-                    {"nombre": "Plan Mensual", "configuracion": {
-                        "vista": "mensual",
-                        "dias_por_semana": ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"],
-                        "semanas": 5,
-                        "tareas": True
-                    }},
-                    {"nombre": "Control de Estudio", "configuracion": {
-                        "vista": "control de estudio",
-                        "temas": 25,
-                        "columnas": ["Fecha inicio", "Fecha examen"]
-                    }},
-                ]
-                for estructura_data in estructuras_iniciales:
-                    estructura, created = EstructuraPlanificador.objects.get_or_create(
-                        nombre=estructura_data["nombre"],
-                        defaults={
-                            "configuracion": estructura_data["configuracion"],
-                            "descripcion": f"Estructura para {estructura_data['nombre']}",
-                        },
-                    )
-                    if created:
-                        self.stdout.write(self.style.SUCCESS(f'EstructuraPlanificador "{estructura.nombre}" creada correctamente'))
-                    else:
-                        self.stdout.write(self.style.WARNING(f'EstructuraPlanificador "{estructura.nombre}" ya existe'))
+            # Crear Planificadores
+            planificadores = [
+                {"nombre": "Planificador Semanal", "tipo": "semanal", "estructura": EstructuraPlanificador.objects.get(nombre="Semanal")},
+                {"nombre": "Planificador Mensual", "tipo": "mensual", "estructura": EstructuraPlanificador.objects.get(nombre="Mensual")},
+            ]
+            for planificador_data in planificadores:
+                planificador, created = Planificador.objects.get_or_create(
+                    nombre=planificador_data["nombre"],
+                    defaults=planificador_data
+                )
+                self.stdout.write(self.style.SUCCESS(f'{"Creado" if created else "Ya existe"}: Planificador "{planificador.nombre}"'))
 
-                # Crear planificadores iniciales
-                planificadores_iniciales = [
-                    {"nombre": "Mi Plan Semanal", "tipo": "Calendario", "estructura": "Plan Semanal"},
-                    {"nombre": "Mi Plan Mensual", "tipo": "Calendario", "estructura": "Plan Mensual"},
-                    {"nombre": "Mi Control de Estudio", "tipo": "Organizador de Tareas", "estructura": "Control de Estudio"},
-                ]
-                for planificador_data in planificadores_iniciales:
-                    tipo = TipoPlanificador.objects.get(nombre=planificador_data["tipo"])
-                    estructura = EstructuraPlanificador.objects.get(nombre=planificador_data["estructura"])
-                    planificador, created = Planificador.objects.get_or_create(
-                        nombre=planificador_data["nombre"],
-                        defaults={
-                            "tipo": tipo,
-                            "estructura": estructura,
-                            "descripcion": f"Planificador para {planificador_data['nombre']}",
-                        },
+            # Crear Celdas
+            for planificador in Planificador.objects.all():
+                for i in range(1, planificador.estructura.configuracion['filas'] * planificador.estructura.configuracion['columnas'] + 1):
+                    celda, created = Celda.objects.get_or_create(
+                        planificador=planificador,
+                        contenido=f"Día {i}"
                     )
-                    if created:
-                        self.stdout.write(self.style.SUCCESS(f'Planificador "{planificador.nombre}" creado correctamente'))
-                    else:
-                        self.stdout.write(self.style.WARNING(f'Planificador "{planificador.nombre}" ya existe'))
+                    self.stdout.write(self.style.SUCCESS(f'{"Creada" if created else "Ya existe"}: Celda "{celda.contenido}" para Planificador "{planificador.nombre}"'))
 
-                # Crear actividades iniciales
-                planificador_semanal = Planificador.objects.get(nombre="Mi Plan Semanal")
-                actividades_iniciales = [
-                    {"nombre": "Revisión de Proyecto", "descripcion": "Revisar avances de la semana", "estado": "Pendiente"},
-                    {"nombre": "Clase de Inglés", "descripcion": "Repasar gramática", "estado": "En Progreso"},
-                ]
-                for actividad_data in actividades_iniciales:
-                    estado = Estado.objects.get(nombre=actividad_data["estado"])
-                    actividad, created = Actividad.objects.get_or_create(
-                        nombre=actividad_data["nombre"],
-                        defaults={
-                            "descripcion": actividad_data["descripcion"],
-                            "planificador": planificador_semanal,
-                            "estado": estado,
-                        },
-                    )
-                    if created:
-                        self.stdout.write(self.style.SUCCESS(f'Actividad "{actividad.nombre}" creada correctamente'))
-                    else:
-                        self.stdout.write(self.style.WARNING(f'Actividad "{actividad.nombre}" ya existe'))
+            # Crear Elementos y asociarlos con diferentes modelos (Actividad, Tarea, Objetivo, etc.)
+            for celda in Celda.objects.all():
+                # Crear Actividad y Elemento asociado
+                actividad = Actividad.objects.create(
+                    planificador=Planificador.objects.first(),
+                    nombre="Actividad de ejemplo",
+                    descripcion="Descripción de la actividad",
+                    fecha_inicio="2024-01-01",
+                    fecha_fin="2024-01-07",
+                    color="#FF5733"
+                )
+                elemento_actividad = Elemento.objects.create(
+                    nombre="Elemento para Actividad",
+                    celda=celda,
+                    descripcion="Elemento inicial asociado a actividad",
+                    content_type=ContentType.objects.get_for_model(Actividad),
+                    object_id=actividad.id
+                )
+                self.stdout.write(self.style.SUCCESS(f'Elemento asociado a Actividad: {elemento_actividad.nombre}'))
 
-                # Crear tareas para las actividades
-                actividad = Actividad.objects.get(nombre="Revisión de Proyecto")
-                tareas_iniciales = [
-                    {"nombre": "Preparar informe", "descripcion": "Informe semanal sobre el progreso", "fecha_limite": None},
-                    {"nombre": "Reunión con el equipo", "descripcion": "Coordinar tareas futuras", "fecha_limite": None},
-                ]
-                for tarea_data in tareas_iniciales:
-                    estado = Estado.objects.get(nombre="Pendiente")
-                    tarea, created = Tarea.objects.get_or_create(
-                        nombre=tarea_data["nombre"],
-                        defaults={
-                            "descripcion": tarea_data["descripcion"],
-                            "actividad": actividad,
-                            "estado": estado,
-                        },
-                    )
-                    if created:
-                        self.stdout.write(self.style.SUCCESS(f'Tarea "{tarea.nombre}" creada correctamente'))
-                    else:
-                        self.stdout.write(self.style.WARNING(f'Tarea "{tarea.nombre}" ya existe'))
+                # Crear Tarea y Elemento asociado
+                tarea = Tarea.objects.create(
+                    actividad=actividad,
+                    nombre="Tarea de ejemplo",
+                    descripcion="Descripción de la tarea",
+                    fecha_limite="2024-01-07",
+                    color="#FF0000",
+                    esta_realizada=False
+                )
+                elemento_tarea = Elemento.objects.create(
+                    nombre="Elemento para Tarea",
+                    celda=celda,
+                    descripcion="Elemento inicial asociado a tarea",
+                    content_type=ContentType.objects.get_for_model(Tarea),
+                    object_id=tarea.id
+                )
+                self.stdout.write(self.style.SUCCESS(f'Elemento asociado a Tarea: {elemento_tarea.nombre}'))
 
-                # Crear objetivos
-                objetivos_iniciales = [
-                    {"descripcion": "Terminar proyecto trimestral", "fecha_objetivo": "2024-12-31", "completado": False},
-                ]
-                for objetivo_data in objetivos_iniciales:
-                    planificador = Planificador.objects.get(nombre="Mi Control de Estudio")
-                    objetivo, created = Objetivo.objects.get_or_create(
-                        descripcion=objetivo_data["descripcion"],
-                        defaults={
-                            "fecha_objetivo": objetivo_data["fecha_objetivo"],
-                            "completado": objetivo_data["completado"],
-                            "planificador": planificador,
-                        },
-                    )
-                    if created:
-                        self.stdout.write(self.style.SUCCESS(f'Objetivo "{objetivo.descripcion}" creado correctamente'))
-                    else:
-                        self.stdout.write(self.style.WARNING(f'Objetivo "{objetivo.descripcion}" ya existe'))
+                # Crear Objetivo y Elemento asociado
+                objetivo = Objetivo.objects.create(
+                    planificador=planificador,
+                    descripcion="Objetivo de ejemplo",
+                    fecha_objetivo="2024-01-01",
+                    completado=False
+                )
+                elemento_objetivo = Elemento.objects.create(
+                    nombre="Elemento para Objetivo",
+                    celda=celda,
+                    descripcion="Elemento inicial asociado a objetivo",
+                    content_type=ContentType.objects.get_for_model(Objetivo),
+                    object_id=objetivo.id
+                )
+                self.stdout.write(self.style.SUCCESS(f'Elemento asociado a Objetivo: {elemento_objetivo.nombre}'))
 
-                # Crear registro de progreso
-                registros_iniciales = [
-                    {"actividad": "Revisión de Proyecto", "porcentaje": 50},
-                ]
-                for registro_data in registros_iniciales:
-                    actividad = Actividad.objects.get(nombre=registro_data["actividad"])
-                    registro, created = RegistroProgreso.objects.get_or_create(
-                        actividad=actividad,
-                        defaults={
-                            "porcentaje": registro_data["porcentaje"],
-                        },
-                    )
-                    if created:
-                        self.stdout.write(self.style.SUCCESS(f'RegistroProgreso para "{registro.actividad}" creado correctamente'))
-                    else:
-                        self.stdout.write(self.style.WARNING(f'RegistroProgreso para "{registro.actividad}" ya existe'))
+                # Crear Recurrente y Elemento asociado
+                recurrente = Recurrente.objects.create(
+                    frecuencia="Diaria",
+                    proxima_fecha="2024-01-02"
+                )
+                elemento_recurrente = Elemento.objects.create(
+                    nombre="Elemento para Recurrente",
+                    celda=celda,
+                    descripcion="Elemento inicial asociado a recurrente",
+                    content_type=ContentType.objects.get_for_model(Recurrente),
+                    object_id=recurrente.id
+                )
+                self.stdout.write(self.style.SUCCESS(f'Elemento asociado a Recurrente: {elemento_recurrente.nombre}'))
+            # Asociar usuarios existentes a Etiquetas y Eventos
+            usuario = Usuario.objects.first()  # Asumiendo que quieres usar el primer usuario disponible
+            etiquetas = [
+                {"nombre": "Trabajo", "usuario": usuario},
+                {"nombre": "Personal", "usuario": usuario}
+            ]
+            for etiqueta_data in etiquetas:
+                etiqueta, created = Etiqueta.objects.get_or_create(
+                    nombre=etiqueta_data["nombre"],
+                    defaults={"usuario": etiqueta_data["usuario"]}
+                )
+                self.stdout.write(self.style.SUCCESS(f'{"Creada" if created else "Ya existe"}: Etiqueta "{etiqueta.nombre}"'))
 
-            self.stdout.write(self.style.SUCCESS('Todos los modelos iniciales creados correctamente'))
+            eventos = [
+                {"nombre": "Reunión Inicial", "descripcion": "Reunión de ejemplo", "fecha_hora": "2024-01-01T10:00:00Z", "usuario": usuario}
+            ]
+            for evento_data in eventos:
+                evento, created = Evento.objects.get_or_create(
+                    nombre=evento_data["nombre"],
+                    defaults=evento_data
+                )
+                self.stdout.write(self.style.SUCCESS(f'{"Creado" if created else "Ya existe"}: Evento "{evento.nombre}"'))
+            mensajes = [
+                {"tipo": "Recordatorio", "icono": "🔔", "color": "#FFD700"},
+                {"tipo": "Alerta", "icono": "⚠️", "color": "#FF4500"},
+                {"tipo": "Información", "icono": "ℹ️", "color": "#1E90FF"}
+            ]
+            for mensaje_data in mensajes:
+                mensaje, created = Mensaje.objects.get_or_create(
+                    tipo=mensaje_data["tipo"],
+                    defaults={"icono": mensaje_data["icono"], "color": mensaje_data["color"]}
+                )
+                self.stdout.write(self.style.SUCCESS(f'{"Creado" if created else "Ya existe"}: Mensaje de tipo "{mensaje.tipo}"'))
+            # Crear Comentarios
+            usuario = Usuario.objects.first()  # Asumiendo que al menos un usuario existe
+            comentarios = [
+                {"usuario": usuario, "contenido": "Este es un comentario de prueba en el sistema."},
+                {"usuario": usuario, "contenido": "Segundo comentario, con más detalles sobre el proceso."},
+                {"usuario": usuario, "contenido": "Otro comentario más para completar los ejemplos."}
+            ]
+            for comentario_data in comentarios:
+                comentario, created = Comentario.objects.get_or_create(
+                    usuario=comentario_data["usuario"],
+                    contenido=comentario_data["contenido"]
+                )
+                if created:
+                    self.stdout.write(self.style.SUCCESS(f'Comentario creado: {comentario.contenido[:30]}...'))  # Muestra los primeros 30 caracteres del contenido
+                else:
+                    self.stdout.write(self.style.SUCCESS(f'Comentario ya existente: {comentario.contenido[:30]}...'))
+
+
         except Exception as e:
-            raise CommandError(f'Error al crear los datos iniciales: {e}')
+            raise CommandError(f'Error al crear instancias: {e}')

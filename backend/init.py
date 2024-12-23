@@ -41,7 +41,7 @@ print(f"{GREEN}Migraciones aplicadas exitosamente!{RESET}")
 # print(f"{BLUE}Recopilando archivos estáticos...{RESET}")
 # subprocess.call(["python", "manage.py", "collectstatic", "--noinput"])
 # print(f"{GREEN}Archivos estáticos recopilados exitosamente!{RESET}")
-
+subprocess.call(["python", "manage.py", "crear_usuarios"])
 subprocess.call(["python", "manage.py", "crear_planes"])
 subprocess.call(["python", "manage.py", "crear_planificadores"])
 subprocess.call(["python", "manage.py", "crear_sesiones_tareas"])

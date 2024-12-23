@@ -1,127 +1,180 @@
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import (
-    Planificador, Actividad, Tarea, EstructuraPlanificador,
-    Estado, TipoPlanificador, Objetivo, RegistroProgreso
+    Estado, Planificador, Celda, Elemento, Mensaje, Actividad, Tarea,
+    RegistroProgreso, Objetivo, Etiqueta, Comentario, Recurrente, Evento,
+    EventoAsociado, EstructuraPlanificador
 )
 from .serializers import (
-    PlanificadorSerializer,
-    ActividadSerializer,
-    TareaSerializer,
-    EstructuraPlanificadorSerializer,
+    EstadoSerializer, PlanificadorSerializer, CeldaSerializer, ElementoSerializer,
+    MensajeSerializer, ActividadSerializer, TareaSerializer, RegistroProgresoSerializer,
+    ObjetivoSerializer, EtiquetaSerializer, ComentarioSerializer, RecurrenteSerializer,
+    EventoSerializer, EventoAsociadoSerializer, EstructuraPlanificadorSerializer
 )
 from .filters import (
-    PlanificadorFilter,
-    ActividadFilter,
-    TareaFilter,
-    EstructuraPlanificadorFilter,
+    EstadoFilter, PlanificadorFilter, CeldaFilter, ElementoFilter, MensajeFilter,
+    ActividadFilter, TareaFilter, RegistroProgresoFilter, ObjetivoFilter, EtiquetaFilter,
+    ComentarioFilter, RecurrenteFilter, EventoFilter, EventoAsociadoFilter,
 )
 
-from .serializers import (
-    EstadoSerializer,
-    TipoPlanificadorSerializer,
-    ObjetivoSerializer,
-    RegistroProgresoSerializer,
-)
-from .filters import (
-    EstadoFilter,
-    TipoPlanificadorFilter,
-    ObjetivoFilter,
-    RegistroProgresoFilter,
-)
-
-# Lista y creación de planificadores
-class PlanificadorListCreateView(ListCreateAPIView):
-    queryset = Planificador.objects.all()
-    serializer_class = PlanificadorSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = PlanificadorFilter
-
-# Detalle, actualización y eliminación de un planificador
-class PlanificadorDetailView(RetrieveUpdateDestroyAPIView):
-    queryset = Planificador.objects.all()
-    serializer_class = PlanificadorSerializer
-
-# Lista y creación de estructuras de planificadores
-class EstructuraPlanificadorListCreateView(ListCreateAPIView):
-    queryset = EstructuraPlanificador.objects.all()
-    serializer_class = EstructuraPlanificadorSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = EstructuraPlanificadorFilter
-
-# Detalle, actualización y eliminación de una estructura
-class EstructuraPlanificadorDetailView(RetrieveUpdateDestroyAPIView):
-    queryset = EstructuraPlanificador.objects.all()
-    serializer_class = EstructuraPlanificadorSerializer
-
-# Lista y creación de actividades
-class ActividadListCreateView(ListCreateAPIView):
-    queryset = Actividad.objects.all()
-    serializer_class = ActividadSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = ActividadFilter
-
-# Detalle, actualización y eliminación de una actividad
-class ActividadDetailView(RetrieveUpdateDestroyAPIView):
-    queryset = Actividad.objects.all()
-    serializer_class = ActividadSerializer
-
-# Lista y creación de tareas
-class TareaListCreateView(ListCreateAPIView):
-    queryset = Tarea.objects.all()
-    serializer_class = TareaSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = TareaFilter
-
-# Detalle, actualización y eliminación de una tarea
-class TareaDetailView(RetrieveUpdateDestroyAPIView):
-    queryset = Tarea.objects.all()
-    serializer_class = TareaSerializer
-
-# Lista y creación de estados
+# Estado
 class EstadoListCreateView(ListCreateAPIView):
     queryset = Estado.objects.all()
     serializer_class = EstadoSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = EstadoFilter
 
-# Detalle, actualización y eliminación de un estado
-class EstadoDetailView(RetrieveUpdateDestroyAPIView):
+class EstadoRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     queryset = Estado.objects.all()
     serializer_class = EstadoSerializer
 
-# Lista y creación de tipos de planificador
-class TipoPlanificadorListCreateView(ListCreateAPIView):
-    queryset = TipoPlanificador.objects.all()
-    serializer_class = TipoPlanificadorSerializer
+# Planificador
+class PlanificadorListCreateView(ListCreateAPIView):
+    queryset = Planificador.objects.all()
+    serializer_class = PlanificadorSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_class = TipoPlanificadorFilter
+    filterset_class = PlanificadorFilter
 
-# Detalle, actualización y eliminación de un tipo de planificador
-class TipoPlanificadorDetailView(RetrieveUpdateDestroyAPIView):
-    queryset = TipoPlanificador.objects.all()
-    serializer_class = TipoPlanificadorSerializer
+class PlanificadorRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    queryset = Planificador.objects.all()
+    serializer_class = PlanificadorSerializer
 
-# Lista y creación de objetivos
-class ObjetivoListCreateView(ListCreateAPIView):
-    queryset = Objetivo.objects.all()
-    serializer_class = ObjetivoSerializer
+# Celda
+class CeldaListCreateView(ListCreateAPIView):
+    queryset = Celda.objects.all()
+    serializer_class = CeldaSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_class = ObjetivoFilter
+    filterset_class = CeldaFilter
 
-# Detalle, actualización y eliminación de un objetivo
-class ObjetivoDetailView(RetrieveUpdateDestroyAPIView):
-    queryset = Objetivo.objects.all()
-    serializer_class = ObjetivoSerializer
+class CeldaRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    queryset = Celda.objects.all()
+    serializer_class = CeldaSerializer
 
-# Lista y creación de registros de progreso
+# Elemento
+class ElementoListCreateView(ListCreateAPIView):
+    queryset = Elemento.objects.all()
+    serializer_class = ElementoSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ElementoFilter
+
+class ElementoRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    queryset = Elemento.objects.all()
+    serializer_class = ElementoSerializer
+
+# Mensaje
+class MensajeListCreateView(ListCreateAPIView):
+    queryset = Mensaje.objects.all()
+    serializer_class = MensajeSerializer
+
+class MensajeRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    queryset = Mensaje.objects.all()
+    serializer_class = MensajeSerializer
+
+# Actividad
+class ActividadListCreateView(ListCreateAPIView):
+    queryset = Actividad.objects.all()
+    serializer_class = ActividadSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ActividadFilter
+
+class ActividadRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    queryset = Actividad.objects.all()
+    serializer_class = ActividadSerializer
+
+# Tarea
+class TareaListCreateView(ListCreateAPIView):
+    queryset = Tarea.objects.all()
+    serializer_class = TareaSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = TareaFilter
+
+class TareaRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    queryset = Tarea.objects.all()
+    serializer_class = TareaSerializer
+
+# RegistroProgreso
 class RegistroProgresoListCreateView(ListCreateAPIView):
     queryset = RegistroProgreso.objects.all()
     serializer_class = RegistroProgresoSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = RegistroProgresoFilter
 
-# Detalle, actualización y eliminación de un registro de progreso
-class RegistroProgresoDetailView(RetrieveUpdateDestroyAPIView):
+class RegistroProgresoRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     queryset = RegistroProgreso.objects.all()
     serializer_class = RegistroProgresoSerializer
+
+# Objetivo
+class ObjetivoListCreateView(ListCreateAPIView):
+    queryset = Objetivo.objects.all()
+    serializer_class = ObjetivoSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ObjetivoFilter
+
+class ObjetivoRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    queryset = Objetivo.objects.all()
+    serializer_class = ObjetivoSerializer
+
+# Etiqueta
+class EtiquetaListCreateView(ListCreateAPIView):
+    queryset = Etiqueta.objects.all()
+    serializer_class = EtiquetaSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = EtiquetaFilter
+
+class EtiquetaRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    queryset = Etiqueta.objects.all()
+    serializer_class = EtiquetaSerializer
+
+# Comentario
+class ComentarioListCreateView(ListCreateAPIView):
+    queryset = Comentario.objects.all()
+    serializer_class = ComentarioSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ComentarioFilter
+
+class ComentarioRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    queryset = Comentario.objects.all()
+    serializer_class = ComentarioSerializer
+
+# Recurrente
+class RecurrenteListCreateView(ListCreateAPIView):
+    queryset = Recurrente.objects.all()
+    serializer_class = RecurrenteSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = RecurrenteFilter
+
+class RecurrenteRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    queryset = Recurrente.objects.all()
+    serializer_class = RecurrenteSerializer
+
+# Evento
+class EventoListCreateView(ListCreateAPIView):
+    queryset = Evento.objects.all()
+    serializer_class = EventoSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = EventoFilter
+
+class EventoRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    queryset = Evento.objects.all()
+    serializer_class = EventoSerializer
+
+# EventoAsociado
+class EventoAsociadoListCreateView(ListCreateAPIView):
+    queryset = EventoAsociado.objects.all()
+    serializer_class = EventoAsociadoSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = EventoAsociadoFilter
+
+class EventoAsociadoRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    queryset = EventoAsociado.objects.all()
+    serializer_class = EventoAsociadoSerializer
+
+# EstructuraPlanificador
+class EstructuraPlanificadorListCreateView(ListCreateAPIView):
+    queryset = EstructuraPlanificador.objects.all()
+    serializer_class = EstructuraPlanificadorSerializer
+    filter_backends = [DjangoFilterBackend]
+
+class EstructuraPlanificadorRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    queryset = EstructuraPlanificador.objects.all()
+    serializer_class = EstructuraPlanificadorSerializer

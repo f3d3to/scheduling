@@ -42,6 +42,7 @@ APPS = [
     'plan_de_estudio',
     'planificadores',
     'pomodoro',
+    'users',
 ]
 
 INSTALLED_APPS = DJANGO + THIRD_PARTY + APPS
@@ -85,6 +86,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
+AUTH_USER_MODEL = 'users.Usuario'
 
 DATABASES = {
     'default': {
@@ -135,6 +137,10 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': (
         'rest_framework.pagination.PageNumberPagination'),
     'PAGE_SIZE': (10),
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny'
+    ],
 }
 
 STATIC_URL = 'static/'

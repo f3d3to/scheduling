@@ -1,45 +1,88 @@
 from rest_framework import serializers
-from .models import (Planificador, EstructuraPlanificador, Actividad, Tarea, Estado,
-                     TipoPlanificador, Objetivo, RegistroProgreso)
+from .models import (
+    Estado, Planificador, Celda, Elemento, Mensaje, Actividad, Tarea,
+    RegistroProgreso, Objetivo, Etiqueta, Comentario, Recurrente,
+    Evento, EventoAsociado, EstructuraPlanificador
+)
 
 class EstadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Estado
-        fields = "__all__"
+        fields = ['id', 'nombre', 'descripcion', 'color', 'orden']
 
-class EstructuraPlanificadorSerializer(serializers.ModelSerializer):
+class PlanificadorSerializer(serializers.ModelSerializer):
     class Meta:
-        model = EstructuraPlanificador
-        fields = "__all__"
+        model = Planificador
+        fields = ['id', 'nombre', 'tipo', 'estructura']
+
+class CeldaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Celda
+        fields = ['id', 'planificador', 'contenido']
+
+class ElementoSerializer(serializers.ModelSerializer):
+    content_object = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Elemento
+        fields = ['id', 'nombre', 'celda', 'estructura', 'descripcion', 'content_type', 'object_id', 'content_object']
+
+    def get_content_object(self, obj):
+        # Devuelve una representación genérica del objeto relacionado
+        return str(obj.content_object)
+
+class MensajeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Mensaje
+        fields = ['id', 'tipo', 'icono', 'color']
 
 class ActividadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Actividad
-        fields = "__all__"
+        fields = ['id', 'planificador', 'nombre', 'descripcion', 'fecha_inicio', 'fecha_fin', 'color', 'estado']
 
 class TareaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tarea
-        fields = "__all__"
-
-class PlanificadorSerializer(serializers.ModelSerializer):
-    actividades = ActividadSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Planificador
-        fields = "__all__"
-
-class TipoPlanificadorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TipoPlanificador
-        fields = '__all__'  # Incluye todos los campos del modelo
-
-class ObjetivoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Objetivo
-        fields = '__all__'  # Incluye todos los campos del modelo
+        fields = ['id', 'actividad', 'nombre', 'descripcion', 'fecha_limite', 'color', 'estado', 'esta_realizada', 'fecha_actualizacion']
 
 class RegistroProgresoSerializer(serializers.ModelSerializer):
     class Meta:
         model = RegistroProgreso
-        fields = '__all__'  # Incluye todos los campos del modelo
+        fields = ['id', 'actividad', 'porcentaje', 'fecha_registro']
+
+class ObjetivoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Objetivo
+        fields = ['id', 'planificador', 'descripcion', 'fecha_objetivo', 'completado']
+
+class EtiquetaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Etiqueta
+        fields = ['id', 'nombre', 'usuario']
+
+class ComentarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comentario
+        fields = ['id', 'usuario', 'contenido', 'fecha_creacion']
+
+class RecurrenteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recurrente
+        fields = ['id', 'frecuencia', 'proxima_fecha']
+
+class EventoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Evento
+        fields = ['id', 'nombre', 'descripcion', 'fecha_hora', 'usuario']
+
+class EventoAsociadoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EventoAsociado
+        fields = ['id', 'evento', 'content_type', 'object_id', 'content_object']
+
+
+class EstructuraPlanificadorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model= EstructuraPlanificador
+        fields = '__all__'

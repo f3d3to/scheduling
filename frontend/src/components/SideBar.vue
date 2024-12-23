@@ -16,7 +16,22 @@
           <li><RouterLink to="/"><i class="fas fa-home"></i> Inicio</RouterLink></li>
           <li><RouterLink to="/planes"><i class="fa-solid fa-network-wired"></i>Planes de estudio</RouterLink></li>
           <li><RouterLink to="/timer"><i class="fas fa-clock"></i> Timer</RouterLink></li>
-          <li><RouterLink to="/planificadores"><i class="fas fa-calendar-alt"></i> Planificadores</RouterLink></li>
+          <li><RouterLink to="/planificadores"><i class="fa-solid fa-hexagon-nodes"></i> Planificadores</RouterLink></li>
+          <li><RouterLink to="/estados"><i class="fa-solid fa-hexagon-nodes"></i> Estados</RouterLink></li>
+          <li><RouterLink to="/estructurasPlanificador"><i class="fa-solid fa-hexagon-nodes"></i> Configuración de Planificadores</RouterLink></li>
+          <li><RouterLink to="/celdas"><i class="fas fa-calendar-alt"></i> Celdas</RouterLink></li>
+          <li><RouterLink to="/mensajes"><i class="fas fa-calendar-alt"></i> Mensajes</RouterLink></li>
+          <li><RouterLink to="/actividades"><i class="fas fa-calendar-alt"></i> Actividades</RouterLink></li>
+          <li><RouterLink to="/tareas"><i class="fas fa-calendar-alt"></i> Tareas</RouterLink></li>
+          <li><RouterLink to="/objetivos"><i class="fas fa-calendar-alt"></i> Objetivos</RouterLink></li>
+          <li><RouterLink to="/etiquetas"><i class="fas fa-calendar-alt"></i> Etiquetas</RouterLink></li>
+          <li><RouterLink to="/comentarios"><i class="fas fa-calendar-alt"></i> Comentarios</RouterLink></li>
+          <li><RouterLink to="/recurrentes"><i class="fas fa-calendar-alt"></i> Recurrentes</RouterLink></li>
+          <li><RouterLink to="/eventos"><i class="fas fa-calendar-alt"></i> Eventos</RouterLink></li>
+          <li><RouterLink to="/eventosAsociados"><i class="fas fa-calendar-alt"></i> Eventos Asociados</RouterLink></li>
+          <li><RouterLink to="/elementos"><i class="fas fa-calendar-alt"></i> Elementos</RouterLink></li>
+          <li><RouterLink to="/registrosProgreso"><i class="fas fa-calendar-alt"></i> Registros de Progreso</RouterLink></li>
+
         </ul>
       </nav>
     </div>

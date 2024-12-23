@@ -12,5 +12,6 @@ urlpatterns = [
     path('', include('plan_de_estudio.urls')),
     path('', include('planificadores.urls')),
     path('', include('pomodoro.urls')),
+    path('', include('users.urls')),
 
 ]
