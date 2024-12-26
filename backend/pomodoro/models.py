@@ -9,7 +9,9 @@ class Sesion(models.Model):
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.nombre
+        obligatoria_str = "Obligatoria" if self.es_obligatoria else "Opcional"
+        return f"{self.nombre} ({self.duracion_minutos} min, {obligatoria_str})"
+
 
 class TareaTimer(models.Model):
     tarea = models.OneToOneField('planificadores.Tarea', on_delete=models.CASCADE, related_name='tarea_timer')
@@ -23,5 +25,7 @@ class TareaTimer(models.Model):
         self.tarea.save()
 
     def __str__(self):
-        return f"{self.tarea.nombre} - {self.cantidad_completadas}/{self.cantidad_para_completar}"
+        progreso = f"{self.cantidad_completadas}/{self.cantidad_para_completar}"
+        estado = "Completada" if self.cantidad_completadas >= self.cantidad_para_completar else "En progreso"
+        return f"Tarea: {self.tarea.nombre} ({progreso} - {estado})"
 

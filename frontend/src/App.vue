@@ -1,6 +1,6 @@
 <template>
   <Sidebar />
-  <div class="content-wrapper">
+  <div class="content-wrapper overflow-y-auto" >
     <TopBar @filter-change="onFilterChange" />
     <div class="content">
       <router-view />

@@ -4,13 +4,11 @@ class PlanDeEstudio(models.Model):
     nombre = models.CharField(max_length=1000)
     año_creacion = models.IntegerField()
     descripcion = models.TextField(blank=True, null=True)
-    planificador = models.OneToOneField(
+    planificadores = models.ManyToManyField(
         'planificadores.Planificador',
-        null=True,
         blank=True,
-        on_delete=models.SET_NULL,
-        related_name="plan_de_estudio",
-        help_text="Planificador asociado al plan de estudio."
+        related_name="planes_de_estudio",
+        help_text="Planificadores asociados al plan de estudios."
     )
     def __str__(self):
         return f"{self.nombre} ({self.año_creacion})"

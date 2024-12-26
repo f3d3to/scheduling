@@ -1,130 +1,234 @@
 <template>
-  <v-container>
-    <!-- Vista Principal de Planificadores -->
-    <v-row justify="center">
-      <v-col cols="12" md="10">
-        <v-card>
-          <v-card-title class="headline">Gestión de Planificadores</v-card-title>
-          <v-card-text>
-            <v-row>
-              <v-col cols="12" sm="6" md="4" v-for="planificador in planificadores" :key="planificador.id">
-                <v-card outlined>
-                  <v-card-title>{{ planificador.nombre }}</v-card-title>
-                  <v-card-subtitle>{{ planificador.tipo }}</v-card-subtitle>
-                  <v-card-actions>
-                    <v-btn icon color="blue" @click="editPlanificador(planificador)">
-                      <v-icon>mdi-pencil</v-icon>
-                    </v-btn>
-                    <v-btn icon color="red" @click="deletePlanificador(planificador.id)">
-                      <v-icon>mdi-delete</v-icon>
-                    </v-btn>
-                  </v-card-actions>
-                </v-card>
-              </v-col>
-            </v-row>
-            <v-alert v-if="planificadores.length === 0" type="info" border="left" color="blue" dark>
-              No hay planificadores disponibles para mostrar.
-            </v-alert>
-          </v-card-text>
+  <v-container fluid>
+    <div class="text-h5 mb-4">Iniciar un nuevo planificador</div>
+    <v-row v-if="templates && templates.length">
+      <v-col cols="12" md="2" v-for="template in templates" :key="template.id">
+        <v-card class="template-card" @click="createNewFromTemplate(template)">
+          <v-img :src="template.configuracion?.imagen || 'https://via.placeholder.com/150'" height="150px" cover></v-img>
+          <v-card-title class="text-subtitle-2">{{ template.nombre }}</v-card-title>
+        </v-card>
+      </v-col>
+      <v-col cols="12" md="3">
+        <v-card class="template-card" @click="showCreateModal">
+          <v-img src="https://via.placeholder.com/150" height="150px" cover></v-img>
+          <v-card-title class="text-subtitle-2">
+            <v-icon large>mdi-plus-circle</v-icon>
+            <span>Agregar planificador</span>
+          </v-card-title>
+        </v-card>
+      </v-col>
+    </v-row>
+    <div v-else class="text-h6">No hay tipos de planificadores disponibles.</div>
+
+    <div class="text-h5 mt-8 mb-4">Planificadores recientes</div>
+    <v-row>
+      <v-col cols="12" md="3" v-for="planner in planners" :key="planner.id">
+        <v-card class="planner-card">
+          <v-card-title class="text-subtitle-1">{{ planner.nombre }}</v-card-title>
+          <v-card-subtitle>Última modificación: {{ planner.fecha_modificacion ? formatDate(planner.fecha_modificacion) : 'Desconocida' }}</v-card-subtitle>
           <v-card-actions>
-            <v-btn color="primary" @click="showAddDialog">Añadir Planificador</v-btn>
+            <v-btn variant="text" color="primary" @click="redirectToDetail(planner)">Abrir</v-btn>
+            <v-menu location="bottom">
+              <template v-slot:activator="{ props }">
+                <v-btn icon v-bind="props">
+                  <v-icon>mdi-dots-vertical</v-icon>
+                </v-btn>
+              </template>
+              <v-list>
+                <v-list-item @click="showEditModal(planner)">
+                  <v-list-item-title>Editar</v-list-item-title>
+                </v-list-item>
+                <v-list-item @click="deletePlanner(planner)">
+                  <v-list-item-title>Eliminar</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
           </v-card-actions>
         </v-card>
       </v-col>
     </v-row>
+    <div v-if="!planners || !planners.length" class="text-h6 mt-8">No hay planificadores disponibles. Crea uno nuevo para comenzar.</div>
 
-    <!-- Diálogo para añadir/editar planificador -->
-    <v-dialog v-model="dialog" max-width="500px">
+    <!-- Modal para crear/editar planificadores -->
+    <v-dialog v-model="modalVisible" max-width="500px">
       <v-card>
-        <v-card-title>{{ dialogMode === 'add' ? 'Añadir' : 'Editar' }} Planificador</v-card-title>
+        <v-card-title>
+          {{ isEditing ? 'Editar Planificador' : 'Crear Nuevo Planificador' }}
+        </v-card-title>
         <v-card-text>
-          <v-text-field v-model="form.nombre" label="Nombre del Planificador" outlined required></v-text-field>
-          <v-text-field v-model="form.tipo" label="Tipo de Planificador" outlined required></v-text-field>
+          <v-form ref="form">
+            <v-text-field label="Nombre" v-model="formData.nombre" required></v-text-field>
+            <v-select
+              label="Tipo"
+              :items="templateTypes"
+              v-model="formData.tipo"
+              required
+            ></v-select>
+          </v-form>
         </v-card-text>
         <v-card-actions>
-          <v-btn color="success" @click="savePlanificador">Guardar</v-btn>
-          <v-btn text color="error" @click="dialog = false">Cancelar</v-btn>
+          <v-btn color="primary" @click="savePlanner">Guardar</v-btn>
+          <v-btn text @click="closeModal">Cancelar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
   </v-container>
 </template>
 
-<script setup>
-import { ref, onMounted } from "vue";
+<script>
+export default {
+  name: 'PlannerDashboard',
+  data() {
+    return {
+      planners: [],
+      templates: [],
+      templateTypes: [],
+      modalVisible: false,
+      isEditing: false,
+      currentPlanner: null,
+      formData: {
+        nombre: '',
+        tipo: '',
+      },
+    };
+  },
+  mounted() {
+    this.fetchPlanners();
+    this.fetchTemplates();
+  },
+  methods: {
+    async fetchPlanners() {
+      try {
+        const response = await fetch('http://localhost:8000/planificadores/');
+        if (!response.ok) {
+          throw new Error('Error al cargar los planificadores');
+        }
+        const data = await response.json();
+        this.planners = data.results || [];
+      } catch (error) {
+        console.error('Error al obtener planificadores:', error);
+        this.planners = [];
+      }
+    },
+    async fetchTemplates() {
+      try {
+        const response = await fetch('http://localhost:8000/estructuras_planificador/');
+        if (!response.ok) {
+          throw new Error('Error al cargar los tipos de planificadores');
+        }
+        const data = await response.json();
+        this.templates = data.results || [];
+        this.templateTypes = this.templates.map(template => template.nombre);
+      } catch (error) {
+        console.error('Error al obtener tipos de planificadores:', error);
+        this.templates = [];
+        this.templateTypes = [];
+      }
+    },
+    formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('es-ES');
+    },
+    redirectToDetail(planner) {
+      this.$router.push({ name: 'PlanificadorDetalle', params: { id: planner.id } });
+    },
+    showCreateModal() {
+      this.isEditing = false;
+      this.formData = { nombre: '', tipo: '' };
+      this.modalVisible = true;
+    },
+    showEditModal(planner) {
+      this.isEditing = true;
+      this.currentPlanner = planner;
+      this.formData = { nombre: planner.nombre, tipo: planner.tipo };
+      this.modalVisible = true;
+    },
+    closeModal() {
+      this.modalVisible = false;
+      this.formData = { nombre: '', tipo: '' };
+      this.currentPlanner = null;
+    },
+    async savePlanner() {
+      try {
+        const url = this.isEditing
+          ? `http://localhost:8000/planificadores/${this.currentPlanner.id}/`
+          : 'http://localhost:8000/planificadores/';
+        const method = this.isEditing ? 'PATCH' : 'POST';
 
-const planificadores = ref([]);
-const dialog = ref(false);
-const dialogMode = ref("add");
-const form = ref({
-  id: null,
-  nombre: "",
-  tipo: "",
-});
+        const response = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(this.formData),
+        });
 
-// Funciones para interactuar con la API
-async function fetchPlanificadores() {
-  try {
-    const response = await fetch("http://localhost:8000/planificadores/");
-    if (response.ok) {
-      const data = await response.json();
-      planificadores.value = data.results || data; // Ajusta esto según la estructura de respuesta de tu API
-    } else {
-      console.error("Error al obtener planificadores:", response.status);
-      planificadores.value = [];
-    }
-  } catch (error) {
-    console.error("Error en fetchPlanificadores:", error);
-    planificadores.value = [];
-  }
-}
+        if (!response.ok) {
+          throw new Error(this.isEditing ? 'Error al editar el planificador' : 'Error al crear el planificador');
+        }
 
-function showAddDialog() {
-  dialogMode.value = "add";
-  form.value = { id: null, nombre: "", tipo: "" };
-  dialog.value = true;
-}
-
-function editPlanificador(planificador) {
-  dialogMode.value = "edit";
-  form.value = { ...planificador };
-  dialog.value = true;
-}
-
-async function savePlanificador() {
-  const method = dialogMode.value === "add" ? "POST" : "PUT";
-  const url = dialogMode.value === "add" ? "http://localhost:8000/planificadores/" : `http://localhost:8000/planificadores/${form.value.id}/`;
-  const response = await fetch(url, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(form.value),
-  });
-
-  if (response.ok) {
-    fetchPlanificadores();
-    dialog.value = false;
-  } else {
-    console.error("Error al guardar planificador:", response.status);
-  }
-}
-
-async function deletePlanificador(id) {
-  const response = await fetch(`http://localhost:8000/planificadores/${id}/`, { method: "DELETE" });
-
-  if (response.ok) {
-    fetchPlanificadores();
-  } else {
-    console.error("Error al eliminar planificador:", response.status);
-  }
-}
-
-onMounted(() => {
-  fetchPlanificadores();
-});
+        this.fetchPlanners();
+        this.closeModal();
+      } catch (error) {
+        console.error(this.isEditing ? 'Error al editar planificador:' : 'Error al crear planificador:', error);
+      }
+    },
+    async createNewFromTemplate(template) {
+      try {
+        const response = await fetch('http://localhost:8000/planificadores/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ nombre: `Planificador - ${template.nombre}`, tipo: template.nombre, estructura: template.id }),
+        });
+        if (!response.ok) {
+          throw new Error('Error al crear el planificador desde plantilla');
+        }
+        this.fetchPlanners();
+      } catch (error) {
+        console.error('Error al crear planificador desde plantilla:', error);
+      }
+    },
+    async deletePlanner(planner) {
+      try {
+        const response = await fetch(`http://localhost:8000/planificadores/${planner.id}/`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) {
+          throw new Error('Error al eliminar el planificador');
+        }
+        this.fetchPlanners();
+      } catch (error) {
+        console.error('Error al eliminar planificador:', error);
+      }
+    },
+  },
+};
 </script>
 
 <style scoped>
-.v-btn {
-  margin-left: 8px;
+.template-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid #ccc;
+  padding: 10px;
+}
+
+.template-card:hover {
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.planner-card {
+  transition: all 0.3s ease;
+}
+
+.planner-card:hover {
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
 }
 </style>

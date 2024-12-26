@@ -73,7 +73,7 @@ const form = ref({
 
 async function fetchRegistrosProgreso() {
   try {
-    const response = await fetch("http://localhost:8000/registros_progreso/");
+    const response = await fetch("http://localhost:8000/registros-progreso/");
     if (response.ok) {
       const data = await response.json();
       registrosProgreso.value = (Array.isArray(data) ? data : data.results || []).map((registro) => ({
@@ -124,8 +124,8 @@ async function saveRegistroProgreso() {
     const method = dialogMode.value === "add" ? "POST" : "PUT";
     const url =
       dialogMode.value === "add"
-        ? "http://localhost:8000/registros_progreso/"
-        : `http://localhost:8000/registros_progreso/${form.value.id}/`;
+        ? "http://localhost:8000/registros-progreso/"
+        : `http://localhost:8000/registros-progreso/${form.value.id}/`;
 
     const response = await fetch(url, {
       method,
@@ -146,7 +146,7 @@ async function saveRegistroProgreso() {
 
 async function deleteRegistroProgreso(registro) {
   try {
-    const response = await fetch(`http://localhost:8000/registros_progreso/${registro.id}/`, {
+    const response = await fetch(`http://localhost:8000/registros-progreso/${registro.id}/`, {
       method: "DELETE",
     });
 

@@ -17,9 +17,18 @@ import Eventos from "../components/Eventos.vue";
 import EventosAsociados from "../components/EventosAsociados.vue";
 import Elementos from "../components/Elementos.vue";
 import RegistroProgreso from "../components/RegistroProgreso.vue";
+import PlanificadorDetalle from "../components/PlanificadorDetalle.vue";
+
+
 
 const routes = [
   { path: '/', name: 'Home', component: HomePage },
+  {
+    path: '/planificador/:id',
+    name: 'PlanificadorDetalle',
+    component: PlanificadorDetalle,
+    props: true,
+  },
   { path: '/planes', name: 'Planeas', component: GraphContainer },
   { path: '/timer', name: 'Timer', component: Timer },
   { path: '/planificadores', name: 'Planificadores', component: Planificadores },

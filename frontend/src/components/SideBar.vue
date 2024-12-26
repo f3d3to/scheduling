@@ -10,7 +10,7 @@
     </button>
 
     <!-- Sidebar -->
-    <div :class="['sidebar', { 'is-hidden': !isVisible }]">
+    <div :class="['sidebar sidebar-scrollable', { 'is-hidden': !isVisible }]">
       <nav>
         <ul>
           <li><RouterLink to="/"><i class="fas fa-home"></i> Inicio</RouterLink></li>
@@ -55,6 +55,9 @@ export default {
 </script>
 
 <style scoped>
+.sidebar-scrollable {
+    overflow-y: scroll;
+}
 .sidebar {
   width: 250px;
   height: 100vh;

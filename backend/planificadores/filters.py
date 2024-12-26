@@ -1,7 +1,8 @@
 import django_filters
 from .models import (
     Estado, Planificador, Celda, Elemento, Mensaje, Actividad, Tarea,
-    RegistroProgreso, Objetivo, Etiqueta, Comentario, Recurrente, Evento, EventoAsociado
+    RegistroProgreso, Objetivo, Etiqueta, Comentario, Recurrente, Evento,
+    EventoAsociado
 )
 
 class EstadoFilter(django_filters.FilterSet):

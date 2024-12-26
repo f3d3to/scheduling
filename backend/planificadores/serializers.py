@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import (
     Estado, Planificador, Celda, Elemento, Mensaje, Actividad, Tarea,
     RegistroProgreso, Objetivo, Etiqueta, Comentario, Recurrente,
-    Evento, EventoAsociado, EstructuraPlanificador
+    Evento, EventoAsociado, EstructuraPlanificador,
 )
 
 class EstadoSerializer(serializers.ModelSerializer):
@@ -42,6 +42,7 @@ class ActividadSerializer(serializers.ModelSerializer):
         fields = ['id', 'planificador', 'nombre', 'descripcion', 'fecha_inicio', 'fecha_fin', 'color', 'estado']
 
 class TareaSerializer(serializers.ModelSerializer):
+    actividad = ActividadSerializer(read_only=True)
     class Meta:
         model = Tarea
         fields = ['id', 'actividad', 'nombre', 'descripcion', 'fecha_limite', 'color', 'estado', 'esta_realizada', 'fecha_actualizacion']

@@ -180,12 +180,18 @@
       <v-card>
         <v-card-title>Añadir Tarea</v-card-title>
         <v-card-text>
-          <v-text-field v-model="newTask.nombre" label="Nombre"></v-text-field>
-          <v-text-field
-            v-model.number="newTask.cantidad_para_completar"
-            label="Cantidad de sesiones a completar"
-            type="number"
-          ></v-text-field>
+          <v-text-field v-model="newTask.nombre" label="Nombre de la tarea"></v-text-field>
+          <v-textarea v-model="newTask.descripcion" label="Descripción de la tarea"></v-textarea>
+          <v-text-field v-model="newTask.fecha_limite" label="Fecha límite" type="date"></v-text-field>
+          <v-select
+            v-model="newTask.actividadId"
+            :items="actividades"
+            item-text="nombre"
+            item-value="id"
+            label="Actividad asociada"
+          ></v-select>
+          <v-text-field v-model="newTask.cantidad_para_completar" label="Cantidad de sesiones a completar" type="number"></v-text-field>
+          <v-color-picker v-model="newTask.color" label="Color de la tarea"></v-color-picker>
         </v-card-text>
         <v-card-actions>
           <v-btn color="success" @click="addTask">Guardar</v-btn>
@@ -198,17 +204,19 @@
       <v-card>
         <v-card-title>Editar Tarea</v-card-title>
         <v-card-text>
-          <v-text-field v-model="selectedTask.nombre" label="Tarea"></v-text-field>
-          <v-text-field
-            v-model.number="selectedTask.cantidad_completadas"
-            label="Cantidad completadas"
-            type="number"
-          ></v-text-field>
-          <v-text-field
-            v-model.number="selectedTask.cantidad_para_completar"
-            label="Cantidad de sesiones que faltan"
-            type="number"
-          ></v-text-field>
+          <v-text-field v-model="selectedTask.nombre" label="Nombre de la tarea"></v-text-field>
+          <v-textarea v-model="selectedTask.descripcion" label="Descripción de la tarea"></v-textarea>
+          <v-text-field v-model="selectedTask.fecha_limite" label="Fecha límite" type="date"></v-text-field>
+          <v-select
+            v-model="selectedTask.actividadId"
+            :items="actividades"
+            item-text="nombre"
+            item-value="id"
+            label="Actividad asociada"
+          ></v-select>
+          <v-text-field v-model="selectedTask.cantidad_completadas" label="Cantidad completadas" type="number"></v-text-field>
+          <v-text-field v-model="selectedTask.cantidad_para_completar" label="Cantidad de sesiones que faltan" type="number"></v-text-field>
+          <v-color-picker v-model="selectedTask.color" label="Color de la tarea"></v-color-picker>
         </v-card-text>
         <v-card-actions>
           <v-btn color="success" @click="updateTask">Guardar</v-btn>
@@ -216,6 +224,8 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+
   </v-container>
 </template>
 <script setup>
@@ -250,6 +260,7 @@ const showAlert = ref(false);
 onMounted(() => {
   fetchSessions();
   fetchTasks();
+  fetchActividades();
 });
 
 const formattedTime = computed(() => {
@@ -268,6 +279,22 @@ function startTimer() {
         handleTimerEnd();
       }
     }, 1000);
+  }
+}
+
+const actividades = ref([]);
+
+async function fetchActividades() {
+  try {
+    const response = await fetch("http://localhost:8000/actividades/");
+    if (response.ok) {
+      const data = await response.json();
+      actividades.value = data.results; // Asumiendo que la respuesta tiene un campo 'results'
+    } else {
+      console.error("Error al obtener actividades:", response.statusText);
+    }
+  } catch (error) {
+    console.error("Error en fetchActividades:", error);
   }
 }
 
@@ -324,14 +351,18 @@ async function fetchTasks() {
     const response = await fetch("http://localhost:8000/tareasTimer/");
     if (response.ok) {
       const data = await response.json();
-      if (Array.isArray(data.results)) {
-        tasks.value = data.results;
-      } else {
-        console.error("Error: La respuesta de /tareasTimer/ no es un array", data);
-        tasks.value = [];
-      }
+      tasks.value = data.results.map(task => ({
+        ...task,
+        id: task.id,
+        nombre: task.tarea.nombre, // Accediendo al nombre de la tarea
+        descripcion: task.tarea.descripcion, // Descripción de la tarea
+        actividad: task.tarea.actividad.nombre, // Nombre de la actividad asociada
+        cantidad_completadas: task.cantidad_completadas,
+        cantidad_para_completar: task.cantidad_para_completar,
+        progress: task.progress
+      }));
     } else {
-      console.error("Error al obtener las tareas:", response.status);
+      console.error("Error al obtener las tareas:", response.statusText);
       tasks.value = [];
     }
   } catch (error) {
@@ -339,7 +370,6 @@ async function fetchTasks() {
     tasks.value = [];
   }
 }
-
 function showAddSessionDialog() {
   newSession.value = { nombre: "", duracion_minutos: 60, obligatoria: false };
   addSessionDialog.value = true;

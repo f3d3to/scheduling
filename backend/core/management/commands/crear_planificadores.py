@@ -1,9 +1,16 @@
+# Python
+import random
+import decimal
+# Django
+from django.utils import timezone
 from django.core.management.base import BaseCommand, CommandError
+from django.contrib.contenttypes.models import ContentType
+
+# Proyecto
 from planificadores.models import (
     Estado, Planificador, Celda, Elemento, Mensaje, Actividad, Tarea,
     RegistroProgreso, Objetivo, Etiqueta, Comentario, Recurrente, Evento, EventoAsociado, EstructuraPlanificador, EstructuraElemento
 )
-from django.contrib.contenttypes.models import ContentType
 from users.models import Usuario  # Asegúrate de tener la ruta correcta al modelo Usuario
 
 class Command(BaseCommand):
@@ -94,6 +101,13 @@ class Command(BaseCommand):
                     object_id=tarea.id
                 )
                 self.stdout.write(self.style.SUCCESS(f'Elemento asociado a Tarea: {elemento_tarea.nombre}'))
+                # Crear RegistroProgreso
+                registro_progreso = RegistroProgreso.objects.create(
+                    actividad=actividad,
+                    porcentaje= float(decimal.Decimal(random.randrange(1, 100))/100),
+                    fecha_registro=timezone.now(),
+                )
+                self.stdout.write(self.style.SUCCESS(f'Registro de progreso asociado a la actividad: {registro_progreso.actividad}'))
 
                 # Crear Objetivo y Elemento asociado
                 objetivo = Objetivo.objects.create(
@@ -173,7 +187,5 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.SUCCESS(f'Comentario creado: {comentario.contenido[:30]}...'))  # Muestra los primeros 30 caracteres del contenido
                 else:
                     self.stdout.write(self.style.SUCCESS(f'Comentario ya existente: {comentario.contenido[:30]}...'))
-
-
         except Exception as e:
             raise CommandError(f'Error al crear instancias: {e}')

@@ -9,12 +9,13 @@ from .serializers import (
     EstadoSerializer, PlanificadorSerializer, CeldaSerializer, ElementoSerializer,
     MensajeSerializer, ActividadSerializer, TareaSerializer, RegistroProgresoSerializer,
     ObjetivoSerializer, EtiquetaSerializer, ComentarioSerializer, RecurrenteSerializer,
-    EventoSerializer, EventoAsociadoSerializer, EstructuraPlanificadorSerializer
+    EventoSerializer, EventoAsociadoSerializer, EstructuraPlanificadorSerializer,
 )
 from .filters import (
     EstadoFilter, PlanificadorFilter, CeldaFilter, ElementoFilter, MensajeFilter,
     ActividadFilter, TareaFilter, RegistroProgresoFilter, ObjetivoFilter, EtiquetaFilter,
     ComentarioFilter, RecurrenteFilter, EventoFilter, EventoAsociadoFilter,
+
 )
 
 # Estado
