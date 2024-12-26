@@ -85,6 +85,8 @@ class Celda(models.Model):
     """
     planificador = models.ForeignKey(Planificador, related_name="celdas", on_delete=models.CASCADE)
     contenido = models.TextField(blank=True, null=True)
+    fila = models.IntegerField(help_text="Número de la fila en la cuadrícula.")
+    columna = models.IntegerField(help_text="Número de la columna en la cuadrícula.")
 
     def __str__(self):
         contenido_preview = self.contenido[:20] + "..." if self.contenido else "Sin contenido"

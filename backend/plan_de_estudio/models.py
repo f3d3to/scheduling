@@ -4,12 +4,6 @@ class PlanDeEstudio(models.Model):
     nombre = models.CharField(max_length=1000)
     año_creacion = models.IntegerField()
     descripcion = models.TextField(blank=True, null=True)
-    planificadores = models.ManyToManyField(
-        'planificadores.Planificador',
-        blank=True,
-        related_name="planes_de_estudio",
-        help_text="Planificadores asociados al plan de estudios."
-    )
     def __str__(self):
         return f"{self.nombre} ({self.año_creacion})"
 

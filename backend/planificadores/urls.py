@@ -15,6 +15,7 @@ from .views import (
     RecurrenteListCreateView, RecurrenteRetrieveUpdateDestroyView,
     EventoListCreateView, EventoRetrieveUpdateDestroyView,
     EventoAsociadoListCreateView, EventoAsociadoRetrieveUpdateDestroyView,
+    PlanificadorDetailView,
 )
 
 app_name = "planificadores"
@@ -30,7 +31,7 @@ urlpatterns = [
 
     # Planificador
     path('planificadores/', PlanificadorListCreateView.as_view(), name='planificador-list-create'),
-    path('planificadores/<int:pk>/', PlanificadorRetrieveUpdateDestroyView.as_view(), name='planificador-detail'),
+    # path('planificadores/<int:pk>/', PlanificadorRetrieveUpdateDestroyView.as_view(), name='planificador-detail'),
 
     # Celda
     path('celdas/', CeldaListCreateView.as_view(), name='celda-list-create'),
@@ -79,4 +80,6 @@ urlpatterns = [
     # Evento Asociado
     path('eventos-asociados/', EventoAsociadoListCreateView.as_view(), name='evento-asociado-list-create'),
     path('eventos-asociados/<int:pk>/', EventoAsociadoRetrieveUpdateDestroyView.as_view(), name='evento-asociado-detail'),
+
+    path('planificadores/<int:pk>/', PlanificadorDetailView.as_view(), name='planificador-detail'),
 ]

@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import (
     Estado, Planificador, Celda, Elemento, Mensaje, Actividad, Tarea,
     RegistroProgreso, Objetivo, Etiqueta, Comentario, Recurrente,
-    Evento, EventoAsociado, EstructuraPlanificador,
+    Evento, EventoAsociado, EstructuraPlanificador, EstructuraElemento
 )
 
 class EstadoSerializer(serializers.ModelSerializer):
@@ -55,7 +55,7 @@ class RegistroProgresoSerializer(serializers.ModelSerializer):
 class ObjetivoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Objetivo
-        fields = ['id', 'planificador', 'descripcion', 'fecha_objetivo', 'completado']
+        fields = ['id', 'descripcion', 'fecha_objetivo', 'completado']
 
 class EtiquetaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -87,3 +87,36 @@ class EstructuraPlanificadorSerializer(serializers.ModelSerializer):
     class Meta:
         model= EstructuraPlanificador
         fields = '__all__'
+
+class EstructuraElementoDetalleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EstructuraElemento
+        fields = ['id', 'nombre', 'fecha_edicion', 'html_visualizacion']
+
+class ElementoDetalleSerializer(serializers.ModelSerializer):
+    estructura = EstructuraElementoDetalleSerializer(read_only=True)
+    content_object = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Elemento
+        fields = ['id', 'nombre', 'celda', 'estructura', 'descripcion', 'content_type', 'object_id', 'content_object']
+
+class CeldaDetalleSerializer(serializers.ModelSerializer):
+    elementos = ElementoSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Celda
+        fields = ['id', 'planificador', 'contenido', 'elementos']
+
+class EstructuraPlanificadorDetalleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EstructuraPlanificador
+        fields = '__all__'
+
+class PlanificadorDetalleSerializer(serializers.ModelSerializer):
+    celdas = CeldaDetalleSerializer(many=True, read_only=True)
+    estructura = EstructuraPlanificadorDetalleSerializer(read_only=True)
+
+    class Meta:
+        model = Planificador
+        fields = ['id', 'nombre', 'tipo', 'estructura', 'celdas']

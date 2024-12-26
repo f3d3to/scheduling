@@ -82,7 +82,7 @@ class ObjetivoFilter(django_filters.FilterSet):
 
     class Meta:
         model = Objetivo
-        fields = ['planificador', 'descripcion', 'fecha_objetivo', 'completado']
+        fields = ['descripcion', 'fecha_objetivo', 'completado']
 
 class EtiquetaFilter(django_filters.FilterSet):
     nombre = django_filters.CharFilter(lookup_expr='icontains')

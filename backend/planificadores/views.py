@@ -1,5 +1,9 @@
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
 from .models import (
     Estado, Planificador, Celda, Elemento, Mensaje, Actividad, Tarea,
     RegistroProgreso, Objetivo, Etiqueta, Comentario, Recurrente, Evento,
@@ -10,6 +14,7 @@ from .serializers import (
     MensajeSerializer, ActividadSerializer, TareaSerializer, RegistroProgresoSerializer,
     ObjetivoSerializer, EtiquetaSerializer, ComentarioSerializer, RecurrenteSerializer,
     EventoSerializer, EventoAsociadoSerializer, EstructuraPlanificadorSerializer,
+    PlanificadorDetalleSerializer
 )
 from .filters import (
     EstadoFilter, PlanificadorFilter, CeldaFilter, ElementoFilter, MensajeFilter,
@@ -179,3 +184,16 @@ class EstructuraPlanificadorListCreateView(ListCreateAPIView):
 class EstructuraPlanificadorRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     queryset = EstructuraPlanificador.objects.all()
     serializer_class = EstructuraPlanificadorSerializer
+
+class PlanificadorDetailView(APIView):
+    """
+    API View para obtener un planificador con todos sus detalles incluyendo celdas y elementos.
+    """
+
+    def get(self, request, pk, format=None):
+        """
+        Obtiene y devuelve el detalle de un planificador específico por su ID.
+        """
+        planificador = get_object_or_404(Planificador, pk=pk)
+        serializer = PlanificadorDetalleSerializer(planificador)
+        return Response(serializer.data)

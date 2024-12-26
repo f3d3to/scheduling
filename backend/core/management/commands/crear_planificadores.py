@@ -1,4 +1,3 @@
-# Python
 import random
 import decimal
 # Django
@@ -55,14 +54,20 @@ class Command(BaseCommand):
                 )
                 self.stdout.write(self.style.SUCCESS(f'{"Creado" if created else "Ya existe"}: Planificador "{planificador.nombre}"'))
 
-            # Crear Celdas
+            # Crear Celdas con posiciones (fila, columna)
             for planificador in Planificador.objects.all():
-                for i in range(1, planificador.estructura.configuracion['filas'] * planificador.estructura.configuracion['columnas'] + 1):
-                    celda, created = Celda.objects.get_or_create(
-                        planificador=planificador,
-                        contenido=f"Día {i}"
-                    )
-                    self.stdout.write(self.style.SUCCESS(f'{"Creada" if created else "Ya existe"}: Celda "{celda.contenido}" para Planificador "{planificador.nombre}"'))
+                configuracion = planificador.estructura.configuracion
+                filas = configuracion.get('filas', 6)
+                columnas = configuracion.get('columnas', 7)
+                for fila in range(filas):
+                    for columna in range(columnas):
+                        celda, created = Celda.objects.get_or_create(
+                            planificador=planificador,
+                            fila=fila,
+                            columna=columna,
+                            contenido=f"Día {fila * columnas + columna + 1}"
+                        )
+                        self.stdout.write(self.style.SUCCESS(f'{"Creada" if created else "Ya existe"}: Celda "{celda.contenido}" para Planificador "{planificador.nombre}"'))
 
             # Crear Elementos y asociarlos con diferentes modelos (Actividad, Tarea, Objetivo, etc.)
             for celda in Celda.objects.all():
@@ -101,6 +106,7 @@ class Command(BaseCommand):
                     object_id=tarea.id
                 )
                 self.stdout.write(self.style.SUCCESS(f'Elemento asociado a Tarea: {elemento_tarea.nombre}'))
+
                 # Crear RegistroProgreso
                 registro_progreso = RegistroProgreso.objects.create(
                     actividad=actividad,
@@ -111,7 +117,6 @@ class Command(BaseCommand):
 
                 # Crear Objetivo y Elemento asociado
                 objetivo = Objetivo.objects.create(
-                    planificador=planificador,
                     descripcion="Objetivo de ejemplo",
                     fecha_objetivo="2024-01-01",
                     completado=False
@@ -138,6 +143,7 @@ class Command(BaseCommand):
                     object_id=recurrente.id
                 )
                 self.stdout.write(self.style.SUCCESS(f'Elemento asociado a Recurrente: {elemento_recurrente.nombre}'))
+
             # Asociar usuarios existentes a Etiquetas y Eventos
             usuario = Usuario.objects.first()  # Asumiendo que quieres usar el primer usuario disponible
             etiquetas = [
@@ -160,6 +166,7 @@ class Command(BaseCommand):
                     defaults=evento_data
                 )
                 self.stdout.write(self.style.SUCCESS(f'{"Creado" if created else "Ya existe"}: Evento "{evento.nombre}"'))
+
             mensajes = [
                 {"tipo": "Recordatorio", "icono": "🔔", "color": "#FFD700"},
                 {"tipo": "Alerta", "icono": "⚠️", "color": "#FF4500"},
@@ -171,6 +178,7 @@ class Command(BaseCommand):
                     defaults={"icono": mensaje_data["icono"], "color": mensaje_data["color"]}
                 )
                 self.stdout.write(self.style.SUCCESS(f'{"Creado" if created else "Ya existe"}: Mensaje de tipo "{mensaje.tipo}"'))
+
             # Crear Comentarios
             usuario = Usuario.objects.first()  # Asumiendo que al menos un usuario existe
             comentarios = [

@@ -1,106 +1,143 @@
 <template>
-  <v-container fluid>
-    <div class="text-h5 mb-4">Detalle del Planificador</div>
-    <div v-if="planificador" class="mb-4">
-      <div><strong>Nombre:</strong> {{ planificador.nombre }}</div>
-      <div><strong>Tipo:</strong> {{ planificador.tipo }}</div>
-      <div><strong>Última modificación:</strong> {{ formatDate(planificador.fecha_modificacion) }}</div>
+  <div v-if="planificador" class="planificador">
+    <h1 class="titulo">{{ planificador.nombre }}</h1>
+    <p class="tipo">Tipo: {{ planificador.tipo }}</p>
+    {{ planificador.estructura }}
+    <!-- Representación dinámica de la grilla -->
+    <div class="planificador-grid" :style="gridStyle">
+      <div
+        v-for="celda in planificador.celdas"
+        :key="celda.id"
+        class="celda"
+      >
+        <h3 class="titulo-celda">{{ celda.contenido }}</h3>
+        <ul class="elementos">
+          <li v-for="elemento in celda.elementos" :key="elemento.id" class="elemento">
+            <strong>{{ elemento.nombre }}</strong>: {{ elemento.descripcion }}
+          </li>
+        </ul>
+      </div>
     </div>
-    <v-row v-if="estructura && estructura.configuracion">
-      <v-col cols="12">
-        <div class="structure-title">Estructura: {{ estructura.nombre }}</div>
-        <v-simple-table>
-          <template v-slot:default>
-            <thead>
-              <tr>
-                <th v-for="colIndex in estructura.configuracion.columnas" :key="'col-' + colIndex">
-                  Columna {{ colIndex }}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="rowIndex in Array(estructura.configuracion.filas).fill().map((_, i) => i + 1)" :key="'row-' + rowIndex">
-                <td v-for="colIndex in Array(estructura.configuracion.columnas).fill().map((_, i) => i + 1)" :key="'cell-' + rowIndex + '-' + colIndex">
-                  <div v-if="celdasMap[rowIndex] && celdasMap[rowIndex][colIndex]">
-                    <strong>Contenido:</strong> {{ celdasMap[rowIndex][colIndex].contenido }}
-                    <div v-for="elemento in celdasMap[rowIndex][colIndex].elementos" :key="'elemento-' + elemento.id">
-                      <strong>Elemento:</strong> {{ elemento.nombre }} - {{ elemento.descripcion }}
-                    </div>
-                  </div>
-                  <div v-else>
-                    Sin contenido
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </template>
-        </v-simple-table>
-      </v-col>
-    </v-row>
-    <div v-else>
-      <div>No hay estructura asociada al planificador.</div>
-    </div>
-    <v-btn color="primary" @click="$router.push({ name: 'Planificadores' })">
-      Volver a la lista
-    </v-btn>
-  </v-container>
+  </div>
+  <div v-else class="cargando">
+    <p>Cargando planificador...</p>
+  </div>
 </template>
+
 <script>
 export default {
-  name: 'PlanificadorDetalle',
+  props: {
+    id: {
+      type: Number,
+      required: true,
+    },
+  },
   data() {
     return {
       planificador: null,
-      estructura: null,
-      celdasMap: {}, // Mapeo de filas y columnas con sus celdas y elementos
     };
   },
-  async mounted() {
-    const id = this.$route.params.id;
-    await this.fetchPlanificador(id);
-    await this.fetchCeldas(id);
+  computed: {
+    gridStyle() {
+      if (!this.planificador) return {};
+      const filas = this.planificador.estructura?.configuracion?.filas || 1;
+      const columnas = this.planificador.estructura?.configuracion?.columnas || 1;
+      return {
+        display: "grid",
+        gridTemplateRows: `repeat(${filas}, 1fr)`,
+        gridTemplateColumns: `repeat(${columnas}, 1fr)`,
+        gap: "10px",
+      };
+    },
   },
   methods: {
-    async fetchPlanificador(id) {
+    async fetchPlanificador() {
+      if (!this.id) {
+        console.error("id no está definido");
+        return;
+      }
       try {
-        const response = await fetch(`http://localhost:8000/planificadores/${id}/`);
+        const response = await fetch(
+          `http://localhost:8000/planificadores/${this.id}/`
+        );
         if (!response.ok) {
-          throw new Error('Error al obtener los detalles del planificador');
+          throw new Error("Error al cargar el planificador");
         }
         this.planificador = await response.json();
-        this.estructura = this.planificador.estructura;
       } catch (error) {
-        console.error(error);
+        console.error("Error al cargar el planificador:", error);
       }
-    },
-    async fetchCeldas(planificadorId) {
-      try {
-        const response = await fetch(`http://localhost:8000/celdas/?planificador=${planificadorId}`);
-        if (!response.ok) {
-          throw new Error('Error al obtener las celdas del planificador');
-        }
-        const data = await response.json();
-
-        // Asegúrate de acceder al array dentro de `results`
-        const celdas = data.results;
-        this.mapCeldas(celdas);
-      } catch (error) {
-        console.error(error);
-      }
-    },
-
-    mapCeldas(celdas) {
-      const map = {};
-      celdas.forEach(celda => {
-        const { fila, columna } = celda; // Asegúrate de que `fila` y `columna` existen en tus datos
-        if (!map[fila]) {
-          map[fila] = {};
-        }
-        map[fila][columna] = celda;
-      });
-      this.celdasMap = map;
     },
   },
-
+  mounted() {
+    this.fetchPlanificador();
+  },
 };
 </script>
+
+<style scoped>
+.planificador {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.titulo {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 10px;
+  color: #007BFF;
+}
+
+.tipo {
+  text-align: center;
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+}
+
+.planificador-grid {
+  display: grid;
+  background: #f7f7f7;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.celda {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.titulo-celda {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.elementos {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.elemento {
+  font-size: 0.9rem;
+  border-bottom: 1px solid #ddd;
+  padding: 5px;
+}
+
+.elemento:last-child {
+  border-bottom: none;
+}
+
+.cargando {
+  text-align: center;
+  margin-top: 50px;
+  font-size: 1.2rem;
+  color: #777;
+}
+</style>

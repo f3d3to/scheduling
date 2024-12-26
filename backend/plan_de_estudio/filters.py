@@ -5,7 +5,7 @@ from .models import PlanDeEstudio, Materia
 class PlanDeEstudioFilter(filters.FilterSet):
     class Meta:
         model = PlanDeEstudio
-        fields = ['nombre', 'año_creacion', 'id', 'planificador']
+        fields = ['nombre', 'año_creacion', 'id']
 
 class MateriaFilter(filters.FilterSet):
     ciclo = filters.CharFilter(field_name='ciclo', lookup_expr='iexact')

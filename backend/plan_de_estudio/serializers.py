@@ -14,6 +14,7 @@ class PlanDeEstudioCiclosSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlanDeEstudio
         fields = ['id', 'nombre', 'año_creacion', 'descripcion','anios']
+
     def get_anios(self, obj):
         materias_por_anio = {}
         materias = obj.materias.all()

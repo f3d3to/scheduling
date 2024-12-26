@@ -388,8 +388,7 @@ async function addSession() {
     addSessionDialog.value = false;
     fetchSessions();
   } else {
-    console.error("Error adding session"); // Falta el '2' aquí. Deberías añadir más información del error.
-    // Podrías obtener el cuerpo de la respuesta para ver detalles del error:
+    console.error("Error adding session");
     try {
       const errorData = await response.json();
       console.error("Detalles del error:", errorData);
