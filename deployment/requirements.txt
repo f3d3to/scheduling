@@ -3,9 +3,10 @@ djangorestframework
 python-decouple
 django-environ
 
-
 psycopg2
 gunicorn
+
+factory-boy
 
 # Shell plus
 ipython
