@@ -1,156 +1,90 @@
 <template>
-  <v-container>
-    <v-row>
-      <v-col>
-        <h1>{{ planificador.nombre }}</h1>
-      </v-col>
-    </v-row>
-    <v-row class="fila-planificador">
-      <div v-if="celdasArray.length > 0" class="drag-area">
-        <draggable
-          v-model="celdasArray"
-          :group="'celdas'"
-          item-key="id"
-          @end="onDragEnd"
-        >
-          <template v-slot:item="{ element }">
-            <CeldaVisualizacion
-              :celda="element"
-              :ancho-columna="planificador.ancho_columna"
-              @celda-seleccionada="celdaSeleccionada = $event"
-              @actualizar-celda="actualizarCelda"
-            />
-          </template>
-          <template v-slot:header></template>
-          <template v-slot:footer></template>
-        </draggable>
+  <div class="dragArea list-group w-full">
+    <draggable
+      :list="list"
+      item-key="id"
+      @change="log"
+      @start="drag = true"
+      @end="drag = false"
+      class="flex flex-wrap"
+    >
+      <div
+        v-for="element in list"
+        :key="element.id"
+        class="list-group-item m-1 rounded-md text-center"
+        :style="{ width: anchoColumna + 'px' }"
+      >
+        <CeldaVisualizacion :celda="element" />
       </div>
-      <div v-else>
-        No hay elementos para mostrar.
-      </div>
-    </v-row>
-  </v-container>
+    </draggable>
+  </div>
 </template>
 
 <script>
+import { defineComponent } from "vue";
+import { VueDraggableNext as draggable } from "vue-draggable-next";
 import CeldaVisualizacion from "./CeldaVisualizacion.vue";
-import draggable from "vuedraggable";
-export default {
+
+export default defineComponent({
   components: {
-    CeldaVisualizacion,
     draggable,
+    CeldaVisualizacion,
   },
   data() {
     return {
-      planificador: {
-        nombre: "",
-        ancho_columna: 0,
-        configuracion: {
-          filas: 0,
-          columnas: 0,
-        },
-      },
-      celdasArray: [],
-      celdaSeleccionada: null,
+      list: [],
+      drag: false,
+      anchoColumna: 0,
     };
   },
-  computed: {},
-  async created() {
-    this.$slots; // Workaround para el warning de $scopedSlots
-    const planificadorId = this.$route.params.id || 1;
-    await this.cargarPlanificador(planificadorId);
+  async mounted() {
+    await this.fetchData();
   },
   methods: {
-    async cargarPlanificador(planificadorId) {
+    async fetchData() {
       try {
+        // Obtener el ID del planificador de la ruta o usar 'pk' por defecto
+        const planificadorId = this.$route.params.id || 'pk';
+
         const response = await fetch(
           `http://localhost:8000/estructuras-planificador/${planificadorId}/`
         );
         if (response.ok) {
           const data = await response.json();
-          this.planificador.nombre = data.nombre;
-          this.planificador.ancho_columna = data.ancho_columna;
-          this.planificador.configuracion = data.configuracion;
-
-          // Asegurarse de que celdasArray sea siempre un array
-          if (Array.isArray(data.tabla)) {
-            this.celdasArray = data.tabla.map((celda, index) => ({
-              ...celda,
+          this.anchoColumna = data.ancho_columna;
+          this.list = Object.entries(data.tabla).map(
+            ([coordenadas, celda]) => ({
               id: celda.id,
-              coordinates: celda.coordinates,
-            }));
-          } else if (typeof data.tabla === "object" && data.tabla !== null) {
-            this.celdasArray = Object.entries(data.tabla).map(
-              ([coordinates, celda], index) => ({
-                ...celda,
-                id: celda.id,
-                coordinates: coordinates,
-              })
-            );
-          } else {
-            this.celdasArray = [];
-            console.warn("La respuesta del servidor no contiene un array o un objeto válido para 'tabla'.");
-          }
-        } else {
-          console.error("Error al cargar el planificador:", response.status);
-        }
-      } catch (error) {
-        console.error("Error al cargar el planificador:", error);
-      }
-    },
-    async actualizarCelda(celdaActualizada) {
-      try {
-        const response = await fetch(
-          `http://localhost:8000/celdas/${celdaActualizada.id}/`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              contenido: celdaActualizada.contenido,
-            }),
-          }
-        );
-        if (response.ok) {
-          const index = this.celdasArray.findIndex(
-            (celda) => celda.id === celdaActualizada.id
+              contenido: celda.contenido,
+              coordenadas,
+            })
           );
-          if (index !== -1) {
-            this.celdasArray[index] = {
-              ...this.celdasArray[index],
-              contenido: celdaActualizada.contenido,
-            };
-          }
-          this.celdaSeleccionada = null;
+          console.log(this.list);
         } else {
-          console.error("Error al actualizar la celda:", response.status);
+          console.error("Error al cargar los datos:", response.statusText);
         }
       } catch (error) {
-        console.error("Error al actualizar la celda:", error);
+        console.error("Error al hacer fetch de los datos:", error);
       }
     },
-    onDragEnd(evt) {
-      console.log("Drag ended:", evt);
-      // Aquí deberías implementar la lógica para actualizar el orden en el backend
-      // después de que el usuario haya terminado de arrastrar y soltar los elementos.
-      // Esto podría implicar enviar una petición al servidor con el nuevo orden de celdasArray.
+    log(event) {
+      console.log("Dragged element:", event);
+      this.actualizarOrdenEnBackend();
+    },
+    async actualizarOrdenEnBackend() {
+      // Lógica para actualizar el orden en el backend
     },
   },
-};
+});
 </script>
 
-<style scoped>
-.fila-planificador {
-  margin-top: 20px; /* Reduce el espacio entre la barra superior y la tabla */
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+<style>
+.dragArea .list-group-item {
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
-.drag-area {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+.dragArea .list-group-item:hover {
+  background-color: lightcoral;
 }
 </style>
