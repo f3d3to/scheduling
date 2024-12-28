@@ -8,7 +8,9 @@
             <v-list v-if="estructurasPlanificador.length > 0">
               <v-list-item v-for="estructura in estructurasPlanificador" :key="estructura.id">
                 <v-list-item-title>{{ estructura.nombre }}</v-list-item-title>
-                <v-list-item-subtitle>{{ estructura.configuracion }}</v-list-item-subtitle>
+                <v-list-item-subtitle>
+                  Filas: {{ estructura.filas }}, Columnas: {{ estructura.columnas }}
+                </v-list-item-subtitle>
                 <v-btn icon @click="editEstructura(estructura)">
                   <v-icon>mdi-pencil</v-icon>
                 </v-btn>
@@ -29,12 +31,46 @@
     </v-row>
 
     <!-- Modal para añadir/editar estructura -->
-    <v-dialog v-model="dialog" max-width="500px">
+    <v-dialog v-model="dialog" max-width="600px">
       <v-card>
         <v-card-title>{{ dialogMode === 'add' ? 'Añadir' : 'Editar' }} Estructura de Planificador</v-card-title>
         <v-card-text>
-          <v-text-field v-model="form.nombre" label="Nombre" outlined required></v-text-field>
-          <v-textarea v-model="form.configuracion" label="Configuración (JSON)" outlined required></v-textarea>
+          <v-form>
+            <v-text-field v-model="form.nombre" label="Nombre" outlined required></v-text-field>
+            <v-text-field
+              v-model.number="form.filas"
+              label="Filas"
+              outlined
+              required
+              type="number"
+              min="1"
+            ></v-text-field>
+            <v-text-field
+              v-model.number="form.columnas"
+              label="Columnas"
+              outlined
+              required
+              type="number"
+              min="1"
+            ></v-text-field>
+            <v-text-field
+              v-model.number="form.ancho_columna"
+              label="Ancho de la Columna (px)"
+              outlined
+              required
+              type="number"
+              min="10"
+            ></v-text-field>
+            <v-textarea
+              v-model="form.tabla"
+              label="Estructura de la Tabla (JSON)"
+              outlined
+              required
+              rows="10"
+              :error="jsonError"
+              hint="Debe ser un JSON válido."
+            ></v-textarea>
+          </v-form>
         </v-card-text>
         <v-card-actions>
           <v-btn color="success" @click="saveEstructura">Guardar</v-btn>
@@ -54,49 +90,76 @@ const dialogMode = ref("add");
 const form = ref({
   id: null,
   nombre: "",
-  configuracion: "",
+  filas: 1,
+  columnas: 1,
+  ancho_columna: 100,
+  tabla: "{}",
 });
+const jsonError = ref(false);
 
 async function fetchEstructuras() {
   try {
-    const response = await fetch("http://localhost:8000/estructuras_planificador/");
+    const response = await fetch("http://localhost:8000/estructuras-planificador/");
     if (response.ok) {
       const data = await response.json();
-      estructurasPlanificador.value = (Array.isArray(data) ? data : data.results || []);
+      estructurasPlanificador.value = Array.isArray(data) ? data : data.results || [];
     } else {
       console.error("Error al obtener estructuras de planificador:", response.status);
-      estructurasPlanificador.value = [];
     }
   } catch (error) {
     console.error("Error en fetchEstructuras:", error);
-    estructurasPlanificador.value = [];
   }
 }
 
 function showAddDialog() {
   dialogMode.value = "add";
-  form.value = { id: null, nombre: "", configuracion: "" };
+  form.value = { id: null, nombre: "", filas: 1, columnas: 1, ancho_columna: 100, tabla: "{}" };
   dialog.value = true;
 }
 
 function editEstructura(estructura) {
   dialogMode.value = "edit";
-  form.value = { ...estructura };
+  form.value = {
+    id: estructura.id,
+    nombre: estructura.nombre,
+    filas: estructura.filas,
+    columnas: estructura.columnas,
+    ancho_columna: estructura.ancho_columna,
+    tabla: JSON.stringify(estructura.tabla, null, 2),
+  };
   dialog.value = true;
 }
 
 async function saveEstructura() {
   try {
+    jsonError.value = false;
+
+    // Validar JSON
+    let tabla;
+    try {
+      tabla = JSON.parse(form.value.tabla);
+    } catch (e) {
+      jsonError.value = true;
+      console.error("Error en el formato JSON de la tabla:", e);
+      return;
+    }
+
     const method = dialogMode.value === "add" ? "POST" : "PUT";
     const url =
       dialogMode.value === "add"
-        ? "http://localhost:8000/estructuras_planificador/"
-        : `http://localhost:8000/estructuras_planificador/${form.value.id}/`;
+        ? "http://localhost:8000/estructuras-planificador/"
+        : `http://localhost:8000/estructuras-planificador/${form.value.id}/`;
 
     const response = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form.value),
+      body: JSON.stringify({
+        nombre: form.value.nombre,
+        filas: form.value.filas,
+        columnas: form.value.columnas,
+        ancho_columna: form.value.ancho_columna,
+        tabla,
+      }),
     });
 
     if (response.ok) {
@@ -112,7 +175,7 @@ async function saveEstructura() {
 
 async function deleteEstructura(estructura) {
   try {
-    const response = await fetch(`http://localhost:8000/estructuras_planificador/${estructura.id}/`, {
+    const response = await fetch(`http://localhost:8000/estructuras-planificador/${estructura.id}/`, {
       method: "DELETE",
     });
 

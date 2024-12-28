@@ -119,7 +119,9 @@ class Command(BaseCommand):
                 objetivo = Objetivo.objects.create(
                     descripcion="Objetivo de ejemplo",
                     fecha_objetivo="2024-01-01",
-                    completado=False
+                    completado=False,
+                    content_type=ContentType.objects.get_for_model(Tarea),
+                    object_id=tarea.id
                 )
                 elemento_objetivo = Elemento.objects.create(
                     nombre="Elemento para Objetivo",

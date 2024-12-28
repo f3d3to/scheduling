@@ -1,58 +1,68 @@
 <template>
-  <v-container fluid>
-    <div class="text-h5 mb-4">Iniciar un nuevo planificador</div>
-    <v-row v-if="templates && templates.length">
-      <v-col cols="12" md="2" v-for="template in templates" :key="template.id">
-        <v-card class="template-card" @click="createNewFromTemplate(template)">
-          <v-img :src="template.configuracion?.imagen || 'https://via.placeholder.com/150'" height="150px" cover></v-img>
-          <v-card-title class="text-subtitle-2">{{ template.nombre }}</v-card-title>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-card class="template-card" @click="showCreateModal">
-          <v-img src="https://via.placeholder.com/150" height="150px" cover></v-img>
-          <v-card-title class="text-subtitle-2">
-            <v-icon large>mdi-plus-circle</v-icon>
-            <span>Agregar planificador</span>
-          </v-card-title>
-        </v-card>
+  <v-container>
+    <div class="text-h5 mb-4 text-center">Iniciar un nuevo planificador</div>
+    <v-row justify="center" class="mt-4">
+      <v-col cols="12" md="8">
+        <v-row v-if="templates && templates.length" justify="center">
+          <v-col cols="12" md="4" v-for="template in templates" :key="template.id">
+            <v-card class="template-card" @click="createNewFromTemplate(template)">
+              <v-img :src="template.configuracion?.imagen || 'https://via.placeholder.com/150'" height="150px" cover></v-img>
+              <v-card-title class="text-subtitle-2 text-center">{{ template.nombre }}</v-card-title>
+            </v-card>
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-card class="template-card" @click="showCreateModal">
+              <v-img src="https://via.placeholder.com/150" height="150px" cover></v-img>
+              <v-card-title class="text-subtitle-2 text-center">
+                <v-icon large>mdi-plus-circle</v-icon>
+                <span>Agregar planificador</span>
+              </v-card-title>
+            </v-card>
+          </v-col>
+        </v-row>
+        <div v-else class="text-h6 text-center mt-4">No hay tipos de planificadores disponibles.</div>
       </v-col>
     </v-row>
-    <div v-else class="text-h6">No hay tipos de planificadores disponibles.</div>
 
-    <div class="text-h5 mt-8 mb-4">Planificadores recientes</div>
-    <v-row>
-      <v-col cols="12" md="3" v-for="planner in planners" :key="planner.id">
-        <v-card class="planner-card">
-          <v-card-title class="text-subtitle-1">{{ planner.nombre }}</v-card-title>
-          <v-card-subtitle>Última modificación: {{ planner.fecha_modificacion ? formatDate(planner.fecha_modificacion) : 'Desconocida' }}</v-card-subtitle>
-          <v-card-actions>
-            <v-btn variant="text" color="primary" @click="redirectToDetail(planner)">Abrir</v-btn>
-            <v-menu location="bottom">
-              <template v-slot:activator="{ props }">
-                <v-btn icon v-bind="props">
-                  <v-icon>mdi-dots-vertical</v-icon>
-                </v-btn>
-              </template>
-              <v-list>
-                <v-list-item @click="showEditModal(planner)">
-                  <v-list-item-title>Editar</v-list-item-title>
-                </v-list-item>
-                <v-list-item @click="deletePlanner(planner)">
-                  <v-list-item-title>Eliminar</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
-          </v-card-actions>
-        </v-card>
+    <div class="text-h5 mt-8 mb-4 text-center">Planificadores recientes</div>
+    <v-row justify="center" class="mt-4">
+      <v-col cols="12" md="8">
+        <v-row justify="center">
+          <v-col cols="12" md="4" v-for="planner in planners" :key="planner.id">
+            <v-card class="planner-card">
+              <v-card-title class="text-subtitle-1 text-center">{{ planner.nombre }}</v-card-title>
+              <v-card-subtitle class="text-center">
+                Última modificación: {{ planner.fecha_modificacion ? formatDate(planner.fecha_modificacion) : 'Desconocida' }}
+              </v-card-subtitle>
+              <v-card-actions class="justify-center">
+                <v-btn variant="text" color="primary" @click="redirectToDetail(planner)">Abrir</v-btn>
+                <v-menu location="bottom">
+                  <template v-slot:activator="{ props }">
+                    <v-btn icon v-bind="props">
+                      <v-icon>mdi-dots-vertical</v-icon>
+                    </v-btn>
+                  </template>
+                  <v-list>
+                    <v-list-item @click="showEditModal(planner)">
+                      <v-list-item-title>Editar</v-list-item-title>
+                    </v-list-item>
+                    <v-list-item @click="deletePlanner(planner)">
+                      <v-list-item-title>Eliminar</v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
+              </v-card-actions>
+            </v-card>
+          </v-col>
+        </v-row>
+        <div v-if="!planners || !planners.length" class="text-h6 text-center mt-8">No hay planificadores disponibles. Crea uno nuevo para comenzar.</div>
       </v-col>
     </v-row>
-    <div v-if="!planners || !planners.length" class="text-h6 mt-8">No hay planificadores disponibles. Crea uno nuevo para comenzar.</div>
 
     <!-- Modal para crear/editar planificadores -->
     <v-dialog v-model="modalVisible" max-width="500px">
       <v-card>
-        <v-card-title>
+        <v-card-title class="text-center">
           {{ isEditing ? 'Editar Planificador' : 'Crear Nuevo Planificador' }}
         </v-card-title>
         <v-card-text>
@@ -66,7 +76,7 @@
             ></v-select>
           </v-form>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="justify-center">
           <v-btn color="primary" @click="savePlanner">Guardar</v-btn>
           <v-btn text @click="closeModal">Cancelar</v-btn>
         </v-card-actions>
@@ -74,6 +84,7 @@
     </v-dialog>
   </v-container>
 </template>
+
 
 <script>
 export default {
@@ -112,7 +123,7 @@ export default {
     },
     async fetchTemplates() {
       try {
-        const response = await fetch('http://localhost:8000/estructuras_planificador/');
+        const response = await fetch('http://localhost:8000/estructuras-planificador/');
         if (!response.ok) {
           throw new Error('Error al cargar los tipos de planificadores');
         }
@@ -192,7 +203,7 @@ export default {
     },
     async deletePlanner(planner) {
       try {
-        const response = await fetch(`http://localhost:8000/planificadores/${planner.id}/`, {
+        const response = await fetch(`http://localhost:8000/planificadores-eliminar/${planner.id}/`, {
           method: 'DELETE',
         });
         if (!response.ok) {

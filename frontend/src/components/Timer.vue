@@ -45,7 +45,7 @@
 
     <v-row justify="center" class="mt-4">
       <v-col cols="12" md="8">
-        <v-card-title v-if="tasks.length > 0">Tareas</v-card-title>
+        <v-card-title v-if="tasks.length > 0">Tareas
         <v-btn
           color="primary"
           @click="showAddTaskDialog"
@@ -54,6 +54,7 @@
         >
           <v-icon>mdi-plus</v-icon>
         </v-btn>
+      </v-card-title>
         <div v-show="tasks.length > 0">
           <v-card
             v-for="task in tasks"

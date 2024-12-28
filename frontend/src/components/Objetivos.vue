@@ -9,7 +9,6 @@
               <v-list-item v-for="objetivo in objetivos" :key="objetivo.id">
                 <v-list-item-title>{{ objetivo.descripcion }}</v-list-item-title>
                 <v-list-item-subtitle>
-                  Planificador: {{ objetivo.planificador_nombre }}<br />
                   Fecha objetivo: {{ objetivo.fecha_objetivo }}<br />
                   Completado: {{ objetivo.completado ? "Sí" : "No" }}
                 </v-list-item-subtitle>
@@ -37,15 +36,6 @@
       <v-card>
         <v-card-title>{{ dialogMode === 'add' ? 'Añadir' : 'Editar' }} Objetivo</v-card-title>
         <v-card-text>
-          <v-select
-            v-model="form.planificador"
-            :items="planificadores"
-            item-value="id"
-            item-text="nombre"
-            label="Planificador"
-            outlined
-            required
-          ></v-select>
           <v-textarea v-model="form.descripcion" label="Descripción" outlined required></v-textarea>
           <v-text-field v-model="form.fecha_objetivo" label="Fecha Objetivo" type="date" outlined required></v-text-field>
           <v-checkbox v-model="form.completado" label="Completado"></v-checkbox>
@@ -68,7 +58,6 @@ const dialog = ref(false);
 const dialogMode = ref("add");
 const form = ref({
   id: null,
-  planificador: null,
   descripcion: "",
   fecha_objetivo: "",
   completado: false,
@@ -81,7 +70,6 @@ async function fetchObjetivos() {
       const data = await response.json();
       objetivos.value = (Array.isArray(data) ? data : data.results || []).map((objetivo) => ({
         ...objetivo,
-        planificador_nombre: objetivo.planificador.nombre,
       }));
     } else {
       console.error("Error al obtener objetivos:", response.status);
@@ -93,31 +81,16 @@ async function fetchObjetivos() {
   }
 }
 
-async function fetchPlanificadores() {
-  try {
-    const response = await fetch("http://localhost:8000/planificadores/");
-    if (response.ok) {
-      const data = await response.json();
-      planificadores.value = Array.isArray(data) ? data : data.results || [];
-    } else {
-      console.error("Error al obtener planificadores:", response.status);
-      planificadores.value = [];
-    }
-  } catch (error) {
-    console.error("Error en fetchPlanificadores:", error);
-    planificadores.value = [];
-  }
-}
 
 function showAddDialog() {
   dialogMode.value = "add";
-  form.value = { id: null, planificador: null, descripcion: "", fecha_objetivo: "", completado: false };
+  form.value = { id: null, descripcion: "", fecha_objetivo: "", completado: false };
   dialog.value = true;
 }
 
 function editObjetivo(objetivo) {
   dialogMode.value = "edit";
-  form.value = { ...objetivo, planificador: objetivo.planificador.id };
+  form.value = { ...objetivo};
   dialog.value = true;
 }
 
@@ -164,7 +137,6 @@ async function deleteObjetivo(objetivo) {
 
 onMounted(() => {
   fetchObjetivos();
-  fetchPlanificadores();
 });
 </script>
 

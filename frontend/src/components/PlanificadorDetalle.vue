@@ -1,143 +1,156 @@
 <template>
-  <div v-if="planificador" class="planificador">
-    <h1 class="titulo">{{ planificador.nombre }}</h1>
-    <p class="tipo">Tipo: {{ planificador.tipo }}</p>
-    {{ planificador.estructura }}
-    <!-- Representación dinámica de la grilla -->
-    <div class="planificador-grid" :style="gridStyle">
-      <div
-        v-for="celda in planificador.celdas"
-        :key="celda.id"
-        class="celda"
-      >
-        <h3 class="titulo-celda">{{ celda.contenido }}</h3>
-        <ul class="elementos">
-          <li v-for="elemento in celda.elementos" :key="elemento.id" class="elemento">
-            <strong>{{ elemento.nombre }}</strong>: {{ elemento.descripcion }}
-          </li>
-        </ul>
+  <v-container>
+    <v-row>
+      <v-col>
+        <h1>{{ planificador.nombre }}</h1>
+      </v-col>
+    </v-row>
+    <v-row class="fila-planificador">
+      <div v-if="celdasArray.length > 0" class="drag-area">
+        <draggable
+          v-model="celdasArray"
+          :group="'celdas'"
+          item-key="id"
+          @end="onDragEnd"
+        >
+          <template v-slot:item="{ element }">
+            <CeldaVisualizacion
+              :celda="element"
+              :ancho-columna="planificador.ancho_columna"
+              @celda-seleccionada="celdaSeleccionada = $event"
+              @actualizar-celda="actualizarCelda"
+            />
+          </template>
+          <template v-slot:header></template>
+          <template v-slot:footer></template>
+        </draggable>
       </div>
-    </div>
-  </div>
-  <div v-else class="cargando">
-    <p>Cargando planificador...</p>
-  </div>
+      <div v-else>
+        No hay elementos para mostrar.
+      </div>
+    </v-row>
+  </v-container>
 </template>
 
 <script>
+import CeldaVisualizacion from "./CeldaVisualizacion.vue";
+import draggable from "vuedraggable";
 export default {
-  props: {
-    id: {
-      type: Number,
-      required: true,
-    },
+  components: {
+    CeldaVisualizacion,
+    draggable,
   },
   data() {
     return {
-      planificador: null,
+      planificador: {
+        nombre: "",
+        ancho_columna: 0,
+        configuracion: {
+          filas: 0,
+          columnas: 0,
+        },
+      },
+      celdasArray: [],
+      celdaSeleccionada: null,
     };
   },
-  computed: {
-    gridStyle() {
-      if (!this.planificador) return {};
-      const filas = this.planificador.estructura?.configuracion?.filas || 1;
-      const columnas = this.planificador.estructura?.configuracion?.columnas || 1;
-      return {
-        display: "grid",
-        gridTemplateRows: `repeat(${filas}, 1fr)`,
-        gridTemplateColumns: `repeat(${columnas}, 1fr)`,
-        gap: "10px",
-      };
-    },
+  computed: {},
+  async created() {
+    this.$slots; // Workaround para el warning de $scopedSlots
+    const planificadorId = this.$route.params.id || 1;
+    await this.cargarPlanificador(planificadorId);
   },
   methods: {
-    async fetchPlanificador() {
-      if (!this.id) {
-        console.error("id no está definido");
-        return;
-      }
+    async cargarPlanificador(planificadorId) {
       try {
         const response = await fetch(
-          `http://localhost:8000/planificadores/${this.id}/`
+          `http://localhost:8000/estructuras-planificador/${planificadorId}/`
         );
-        if (!response.ok) {
-          throw new Error("Error al cargar el planificador");
+        if (response.ok) {
+          const data = await response.json();
+          this.planificador.nombre = data.nombre;
+          this.planificador.ancho_columna = data.ancho_columna;
+          this.planificador.configuracion = data.configuracion;
+
+          // Asegurarse de que celdasArray sea siempre un array
+          if (Array.isArray(data.tabla)) {
+            this.celdasArray = data.tabla.map((celda, index) => ({
+              ...celda,
+              id: celda.id,
+              coordinates: celda.coordinates,
+            }));
+          } else if (typeof data.tabla === "object" && data.tabla !== null) {
+            this.celdasArray = Object.entries(data.tabla).map(
+              ([coordinates, celda], index) => ({
+                ...celda,
+                id: celda.id,
+                coordinates: coordinates,
+              })
+            );
+          } else {
+            this.celdasArray = [];
+            console.warn("La respuesta del servidor no contiene un array o un objeto válido para 'tabla'.");
+          }
+        } else {
+          console.error("Error al cargar el planificador:", response.status);
         }
-        this.planificador = await response.json();
       } catch (error) {
         console.error("Error al cargar el planificador:", error);
       }
     },
-  },
-  mounted() {
-    this.fetchPlanificador();
+    async actualizarCelda(celdaActualizada) {
+      try {
+        const response = await fetch(
+          `http://localhost:8000/celdas/${celdaActualizada.id}/`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contenido: celdaActualizada.contenido,
+            }),
+          }
+        );
+        if (response.ok) {
+          const index = this.celdasArray.findIndex(
+            (celda) => celda.id === celdaActualizada.id
+          );
+          if (index !== -1) {
+            this.celdasArray[index] = {
+              ...this.celdasArray[index],
+              contenido: celdaActualizada.contenido,
+            };
+          }
+          this.celdaSeleccionada = null;
+        } else {
+          console.error("Error al actualizar la celda:", response.status);
+        }
+      } catch (error) {
+        console.error("Error al actualizar la celda:", error);
+      }
+    },
+    onDragEnd(evt) {
+      console.log("Drag ended:", evt);
+      // Aquí deberías implementar la lógica para actualizar el orden en el backend
+      // después de que el usuario haya terminado de arrastrar y soltar los elementos.
+      // Esto podría implicar enviar una petición al servidor con el nuevo orden de celdasArray.
+    },
   },
 };
 </script>
 
 <style scoped>
-.planificador {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  font-family: Arial, sans-serif;
-}
-
-.titulo {
-  text-align: center;
-  font-size: 2rem;
-  margin-bottom: 10px;
-  color: #007BFF;
-}
-
-.tipo {
-  text-align: center;
-  font-size: 1.2rem;
-  margin-bottom: 20px;
-}
-
-.planificador-grid {
-  display: grid;
-  background: #f7f7f7;
-  padding: 10px;
-  border-radius: 8px;
-}
-
-.celda {
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  padding: 15px;
+.fila-planificador {
+  margin-top: 20px; /* Reduce el espacio entre la barra superior y la tabla */
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.titulo-celda {
-  font-size: 1.1rem;
-  font-weight: bold;
-  margin-bottom: 10px;
-}
-
-.elementos {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.elemento {
-  font-size: 0.9rem;
-  border-bottom: 1px solid #ddd;
-  padding: 5px;
-}
-
-.elemento:last-child {
-  border-bottom: none;
-}
-
-.cargando {
-  text-align: center;
-  margin-top: 50px;
-  font-size: 1.2rem;
-  color: #777;
+.drag-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 </style>

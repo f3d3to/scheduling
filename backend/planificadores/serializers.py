@@ -1,3 +1,5 @@
+import json
+
 from rest_framework import serializers
 from .models import (
     Estado, Planificador, Celda, Elemento, Mensaje, Actividad, Tarea,
@@ -18,7 +20,7 @@ class PlanificadorSerializer(serializers.ModelSerializer):
 class CeldaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Celda
-        fields = ['id', 'planificador', 'contenido']
+        fields = '__all__'
 
 class ElementoSerializer(serializers.ModelSerializer):
     content_object = serializers.SerializerMethodField()
@@ -82,11 +84,27 @@ class EventoAsociadoSerializer(serializers.ModelSerializer):
         model = EventoAsociado
         fields = ['id', 'evento', 'content_type', 'object_id', 'content_object']
 
+class JSONSerializerField(serializers.Field):
+    """ Serializer for JSONField -- required to make field writable"""
+    def to_internal_value(self, data):
+        return data
+    def to_representation(self, value):
+        return value
 
 class EstructuraPlanificadorSerializer(serializers.ModelSerializer):
+    tabla = serializers.SerializerMethodField()
+
     class Meta:
         model= EstructuraPlanificador
         fields = '__all__'
+
+    def get_tabla(self, obj):
+        """
+        Asegura que el campo `tabla` sea un objeto JSON y no una cadena con caracteres de escape.
+        """
+        if isinstance(obj.tabla, str):  # Si por alguna razón es un string, conviértelo a JSON
+            return json.loads(obj.tabla)
+        return obj.tabla
 
 class EstructuraElementoDetalleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -115,7 +133,7 @@ class EstructuraPlanificadorDetalleSerializer(serializers.ModelSerializer):
 
 class PlanificadorDetalleSerializer(serializers.ModelSerializer):
     celdas = CeldaDetalleSerializer(many=True, read_only=True)
-    estructura = EstructuraPlanificadorDetalleSerializer(read_only=True)
+    estructura = EstructuraPlanificadorSerializer(read_only=True)
 
     class Meta:
         model = Planificador

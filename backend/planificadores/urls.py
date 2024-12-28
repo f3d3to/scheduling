@@ -22,8 +22,8 @@ app_name = "planificadores"
 
 urlpatterns = [
     # Estructura Planificador
-    path('estructuras_planificador/', EstructuraPlanificadorListCreateView.as_view(), name='estructura-planificador-list-create'),
-    path('estructuras_planificador/<int:pk>/', EstructuraPlanificadorRetrieveUpdateDestroyView.as_view(), name='estructura-planificador-detail'),
+    path('estructuras-planificador/', EstructuraPlanificadorListCreateView.as_view(), name='estructura-planificador-list-create'),
+    path('estructuras-planificador/<int:pk>/', EstructuraPlanificadorRetrieveUpdateDestroyView.as_view(), name='estructura-planificador-detail'),
 
     # Estado
     path('estados/', EstadoListCreateView.as_view(), name='estado-list-create'),
@@ -31,7 +31,7 @@ urlpatterns = [
 
     # Planificador
     path('planificadores/', PlanificadorListCreateView.as_view(), name='planificador-list-create'),
-    # path('planificadores/<int:pk>/', PlanificadorRetrieveUpdateDestroyView.as_view(), name='planificador-detail'),
+    path('planificadores-eliminar/<int:pk>/', PlanificadorRetrieveUpdateDestroyView.as_view(), name='planificador-detail'),
 
     # Celda
     path('celdas/', CeldaListCreateView.as_view(), name='celda-list-create'),

@@ -11,11 +11,6 @@ En el deployment, se incluyen los archivos necesarios para configurar y desplega
 │   ├── core
 │   │   ├── asgi.py
 │   │   ├── __init__.py
-│   │   ├── __pycache__
-│   │   │   ├── __init__.cpython-310.pyc
-│   │   │   ├── settings.cpython-310.pyc
-│   │   │   ├── urls.cpython-310.pyc
-│   │   │   └── wsgi.cpython-310.pyc
 │   │   ├── settings.py
 │   │   ├── urls.py
 │   │   └── wsgi.py
@@ -31,26 +26,12 @@ En el deployment, se incluyen los archivos necesarios para configurar y desplega
 │   │   ├── migrations
 │   │   │   ├── 0001_initial.py
 │   │   │   ├── __init__.py
-│   │   │   └── __pycache__
-│   │   │       ├── 0001_initial.cpython-310.pyc
-│   │   │       └── __init__.cpython-310.pyc
 │   │   ├── models.py
-│   │   ├── __pycache__
-│   │   │   ├── admin.cpython-310.pyc
-│   │   │   ├── apps.cpython-310.pyc
-│   │   │   ├── filters.cpython-310.pyc
-│   │   │   ├── __init__.cpython-310.pyc
-│   │   │   ├── models.cpython-310.pyc
-│   │   │   ├── serializers.cpython-310.pyc
-│   │   │   ├── urls.cpython-310.pyc
-│   │   │   └── views.cpython-310.pyc
 │   │   ├── serializers.py
 │   │   ├── tests.py
 │   │   ├── tools.py
 │   │   ├── urls.py
 │   │   └── views.py
-│   └── __pycache__
-│       └── dbwait.cpython-310.pyc
 ├── delete_pycache.sh
 ├── deployment
 │   ├── backend.Dockerfile
@@ -213,3 +194,54 @@ Asesoramiento Vocacional y Profesional:
 Recompensas por Participación: Un sistema de puntos canjeables por beneficios académicos (como extensiones de biblioteca, asesorías gratuitas o acceso a material premium) para incentivar el uso de la plataforma.
 
 Optimización de Horarios: Algoritmos que sugieran la mejor combinación de materias y horarios según las preferencias del estudiante, como evitar días completos o maximizar mañanas libres.
+
+
+# TO - DO
+
+## GENERAL
+- [ ]
+
+## FRONTEND
+- [ ]
+
+## BACKEND
+- [ ] AUTENTICACION
+- [ ] SEGURIZACIÓN DE ENDPOINTS
+
+
+## TIMER
+- [ ] Poder des-seleccionar una tarea.
+- [ ] Las sesiones deben decir cuando duran, en el dialog.
+- [ ] Agregar más estilos.
+- [ ] Al completar una Actividad es necesario una notificación.
+- [ ] Al completar una Sesión cambiar de color a verde.
+- [ ] Al completar una Tarea, una notificación.
+
+## PLANES DE ESTUDIO
+- [ ] FILTROS EN LA INTERFAZ SELECCIONABLES: PERIODO DE CARRERA, MATERIAS HECHAS, COLOR ESPECIFICO PARA LAS DISPONIBLES
+- [ ] CUANDO SELECCIONO UNA MATERIA SE ABRE UN "DETALLE", ES UN DASHBOARD DE LA MATERIA, QUE TIENE MUCHAS OPCIONES CÓMO POR EJEMPLO
+- [ ] El selector de planes debe estar en un dialog "arrastrable" junto con los filtros y se pueda.
+- [ ] LAS MATERIAS OPTATIVAS DEBEN INICIAR "OCULTAS", DENTRO DEL DIALOGO SE PUEDEN
+- [ ] DEBE HABER UNA FORMA DE EDITAR/ELIMINAR Y CREAR (CONECTAR,ETC) MATERIAS Y PLANES DE ESTUDIO.
+- [ ] LOS PLANES DE ESTUDIO PUEDEN SER EXPORTABLES (HABRÍA QUE VER EN QUE FORMATO)
+- [ ] AGREGAR CALIFICACIONES
+
+## CARRERA
+- [ ] DASHBOARD CON PROMEDIO, ETC
+
+## PLANIFICADORES
+- [ ] PREVISUALIZAR CON [Html Canvas](https://html2canvas.hertzen.com/)
+- [ ] Edición de planificadores
+- [ ] Creación de plantillas (calendario, Por tareas, etc)
+- [ ] Exportar planificadores a PDF
+- [ ]
+- [ ]
+
+## AGREGAR SISTEMA DE NOTAS
+- [ ]
+
+
+## MOBILE
+- [ ] CONECTAR CON BACKEND
+- [ ] AGREGAR FUNCIONALIDADES
+- [ ]
