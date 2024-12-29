@@ -41,9 +41,10 @@ export default {
 
 .content {
   flex: 1;
-  display: flex; /* Flexbox para el contenido renderizado */
-  justify-content: center; /* Centra el contenido */
-  align-items: center; /* Centra verticalmente */
+  display: block; /* Cambiar a block para evitar interferencias */
+  justify-content: flex-start; /* Alinear al inicio */
+  align-items: flex-start;
+  padding: 20px; /* Opcional: agrega espacio alrededor del contenido */
 }
 
 .content > router-view {

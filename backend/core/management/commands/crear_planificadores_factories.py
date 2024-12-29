@@ -34,7 +34,12 @@ class Command(BaseCommand):
 
             estructuras = []
             for nombre, configuracion in estructuras_nombres:
-                estructura = EstructuraPlanificadorFactory(nombre=nombre, configuracion=configuracion)
+                estructura = EstructuraPlanificadorFactory(
+                    nombre=nombre,
+                    configuracion=configuracion,
+                    filas=configuracion.get("filas"),
+                    columnas=configuracion.get("columnas"),
+                    )
                 estructuras.append(estructura)
                 self.stdout.write(self.style.SUCCESS(f'Estructura Planificador creada: {estructura.nombre}'))
 

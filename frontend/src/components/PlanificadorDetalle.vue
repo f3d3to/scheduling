@@ -1,40 +1,49 @@
 <template>
-  <div class="dragArea list-group w-full">
-    <draggable
-      :list="list"
-      item-key="id"
-      @change="log"
-      @start="drag = true"
-      @end="drag = false"
-      class="flex flex-wrap"
+  <GridLayout
+    v-if="layoutGenerado"
+    :layout="layout"
+    :col-num="columnas"
+    :is-draggable="true"
+    :is-resizable="false"
+    :responsive="false"
+    :margin="[0, 0]"
+    :auto-size="true"
+  >
+    <GridItem
+      v-for="item in layout"
+      :key="item.i"
+      :x="item.x"
+      :y="item.y"
+      :w="item.w"
+      :h="item.h"
+      :i="item.i"
     >
-      <div
-        v-for="element in list"
-        :key="element.id"
-        class="list-group-item m-1 rounded-md text-center"
-        :style="{ width: anchoColumna + 'px' }"
-      >
-        <CeldaVisualizacion :celda="element" />
-      </div>
-    </draggable>
-  </div>
+      <CeldaVisualizacion :celda="getCeldaById(item.i)" />
+    </GridItem>
+  </GridLayout>
 </template>
 
 <script>
-import { defineComponent } from "vue";
-import { VueDraggableNext as draggable } from "vue-draggable-next";
+import { defineComponent, watch } from "vue";
+import { GridLayout, GridItem } from "vue3-grid-layout-next";
 import CeldaVisualizacion from "./CeldaVisualizacion.vue";
 
 export default defineComponent({
   components: {
-    draggable,
+    GridLayout,
+    GridItem,
     CeldaVisualizacion,
   },
   data() {
     return {
-      list: [],
-      drag: false,
-      anchoColumna: 0,
+      layout: [],
+      celdas: [],
+      columnas: 7, // Valor inicial
+      layoutGenerado: false, // Controla la renderización de GridLayout
+      draggable: true,
+      resizable: true,
+      index: 0,
+      eventLog: [],
     };
   },
   async mounted() {
@@ -43,23 +52,19 @@ export default defineComponent({
   methods: {
     async fetchData() {
       try {
-        // Obtener el ID del planificador de la ruta o usar 'pk' por defecto
-        const planificadorId = this.$route.params.id || 'pk';
-
+        const planificadorId = this.$route.params.id || "pk";
         const response = await fetch(
           `http://localhost:8000/estructuras-planificador/${planificadorId}/`
         );
         if (response.ok) {
           const data = await response.json();
-          this.anchoColumna = data.ancho_columna;
-          this.list = Object.entries(data.tabla).map(
-            ([coordenadas, celda]) => ({
-              id: celda.id,
-              contenido: celda.contenido,
-              coordenadas,
-            })
-          );
-          console.log(this.list);
+          this.columnas = data.columnas;
+          this.celdas = Object.entries(data.tabla).map(([coordenadas, celda]) => ({
+            ...celda,
+            coordenadas,
+          }));
+          this.layout = this.generateLayout(this.celdas);
+          this.layoutGenerado = true; // Indicar que el layout está listo
         } else {
           console.error("Error al cargar los datos:", response.statusText);
         }
@@ -67,24 +72,52 @@ export default defineComponent({
         console.error("Error al hacer fetch de los datos:", error);
       }
     },
-    log(event) {
-      console.log("Dragged element:", event);
-      this.actualizarOrdenEnBackend();
+    generateLayout(celdas) {
+      return celdas.map((celda) => {
+        const [fila, columna] = celda.coordenadas.split(",").map(Number);
+        return {
+          i: String(celda.id),
+          x: columna - 1,
+          y: fila - 1,
+          w: 1,
+          h: 1,
+        };
+      });
     },
-    async actualizarOrdenEnBackend() {
-      // Lógica para actualizar el orden en el backend
+    getCeldaById(id) {
+      return this.celdas.find((celda) => celda.id === parseInt(id));
     },
   },
 });
 </script>
 
-<style>
-.dragArea .list-group-item {
-  cursor: pointer;
-  transition: background-color 0.3s ease;
+
+<style scoped>
+.vue-grid-layout {
+  background-color: #f5f5f5; /* Un gris claro de fondo */
+  border-radius: 10px; /* Bordes redondeados */
+  padding: 10px; /* Espacio interno */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  width: 100%;
+}
+.grid-item {
+  width: 100%;
+  overflow: hidden; /* Asegura que el contenido respete los bordes redondeados */
+}
+.grid::before {
+    content: '';
+    background-size: calc(calc(100% - 5px) / 12) 40px;
+    background-image: linear-gradient(
+            to right,
+            lightgrey 1px,
+            transparent 1px
+    ),
+    linear-gradient(to bottom, lightgrey 1px, transparent 1px);
+    height: calc(100% - 5px);
+    width: calc(100% - 5px);
+    position: absolute;
+    background-repeat: repeat;
+    margin:5px;
 }
 
-.dragArea .list-group-item:hover {
-  background-color: lightcoral;
-}
 </style>
