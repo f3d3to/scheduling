@@ -215,7 +215,7 @@ class Etiqueta(models.Model):
     Representa una etiqueta que los usuarios pueden asignar a diferentes entidades.
     """
     nombre = models.CharField(max_length=100, unique=True)
-    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
     color = models.CharField(max_length=7, default="#FFFFFF", help_text="Color en formato hexadecimal")
     descripcion = models.TextField(blank=True, null=True, help_text="Descripción opcional de la etiqueta")
 

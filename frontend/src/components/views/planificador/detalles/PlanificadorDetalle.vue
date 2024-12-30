@@ -70,7 +70,7 @@ export default defineComponent({
     generateLayout(celdas) {
       return celdas.map((celda) => {
         const [fila, columna] = celda.coordenadas.split(",").map(Number);
-        return { i: String(celda.id), x: columna - 1, y: fila - 1, w: 1, h: 1.8 };
+        return { i: String(celda.id), x: columna - 1, y: fila - 1, w: 1, h: 2 };
       });
     },
     getCeldaById(id) {

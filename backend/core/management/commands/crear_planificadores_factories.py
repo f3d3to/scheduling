@@ -110,6 +110,14 @@ class Command(BaseCommand):
                     content_type=ContentType.objects.get_for_model(tarea),
                     object_id=tarea.id
                 )
+                for planificador in planificadores:
+                    for celda in planificador.celdas.all():
+                        elemento_tarea = ElementoFactory.objects.create(
+                            nombre=tarea.nombre,
+                            celda=celda,
+                            content_type=ContentType.objects.get_for_model(tarea),
+                            object_id=tarea.id
+                        )
                 self.stdout.write(self.style.SUCCESS(f'Objetivo creado: {objetivo.descripcion} para {tarea.nombre}'))
 
             # Crear Etiquetas

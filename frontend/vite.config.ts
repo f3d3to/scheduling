@@ -17,6 +17,7 @@ export default defineConfig({
       '@views': fileURLToPath(new URL('./src/components/views', import.meta.url)),
       '@cruds': fileURLToPath(new URL('./src/components/views/cruds', import.meta.url)),
       '@dashboards': fileURLToPath(new URL('./src/components/views/dashboards', import.meta.url)),
+      '@forms': fileURLToPath(new URL('./src/components/forms', import.meta.url)),
       '@planes': fileURLToPath(new URL('./src/components/views/planes', import.meta.url)),
       '@planificador': fileURLToPath(new URL('./src/components/views/planificador', import.meta.url)),
       '@planificadorDetalle': fileURLToPath(new URL('./src/components/views/planificador/detalles', import.meta.url)),

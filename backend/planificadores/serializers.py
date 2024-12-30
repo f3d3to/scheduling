@@ -1,5 +1,6 @@
 import json
 from django.db import transaction
+from django.contrib.contenttypes.models import ContentType
 
 from rest_framework import serializers
 from .models import (
@@ -46,6 +47,7 @@ class ActividadSerializer(serializers.ModelSerializer):
 
 class TareaSerializer(serializers.ModelSerializer):
     actividad = ActividadSerializer(read_only=True)
+    estado =  EstadoSerializer(read_only=True)
     class Meta:
         model = Tarea
         fields = ['id', 'actividad', 'nombre', 'descripcion', 'fecha_limite', 'color', 'estado', 'esta_realizada', 'fecha_actualizacion']
@@ -63,7 +65,7 @@ class ObjetivoSerializer(serializers.ModelSerializer):
 class EtiquetaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Etiqueta
-        fields = ['id', 'nombre', 'usuario']
+        fields = ['id', 'nombre', 'usuario', 'color']
 
 class ComentarioSerializer(serializers.ModelSerializer):
     class Meta:
@@ -172,3 +174,102 @@ class PlanificadorDetalleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Planificador
         fields = ['id', 'nombre', 'tipo', 'estructura', 'celdas']
+
+class FormularioCrearElementoSerializer(serializers.Serializer):
+    # Datos para Elemento
+    elemento_nombre = serializers.CharField(max_length=255)
+    celda_id = serializers.IntegerField()
+    estructura_id = serializers.IntegerField(required=False)
+    descripcion = serializers.CharField(required=False, allow_blank=True)
+
+    # Datos para el modelo asociado
+    modelo_asociado = serializers.CharField()  # 'actividad', 'tarea', 'objetivo', etc.
+    modelo_asociado_id = serializers.IntegerField(required=False) # Para asociar a uno existente
+    # Campos para crear una nueva instancia del modelo asociado
+    actividad_data = serializers.DictField(required=False)
+    tarea_data = serializers.DictField(required=False)
+    objetivo_data = serializers.DictField(required=False)
+    comentario_data = serializers.DictField(required=False)
+    etiqueta_data = serializers.DictField(required=False)
+    evento_data = serializers.DictField(required=False)
+    registro_progreso_data = serializers.DictField(required=False)
+    recurrente_data = serializers.DictField(required=False)
+
+    def validate(self, data):
+        """
+        Validar que se proporcionen los datos correctos para crear o asociar un modelo.
+        """
+        modelo_asociado = data.get('modelo_asociado')
+        modelo_asociado_id = data.get('modelo_asociado_id')
+
+        if modelo_asociado_id:
+            if not modelo_asociado:
+                raise serializers.ValidationError("Debe especificar el 'modelo_asociado' cuando se proporciona 'modelo_asociado_id'.")
+        elif modelo_asociado:
+            if not data.get(f"{modelo_asociado}_data"):
+                raise serializers.ValidationError(f"Se requieren datos para crear un nuevo '{modelo_asociado}'.")
+
+        return data
+
+    @transaction.atomic
+    def create(self, validated_data):
+        celda_id = validated_data.pop('celda_id')
+        estructura_id = validated_data.pop('estructura_id', None)
+        elemento_nombre = validated_data.pop('elemento_nombre')
+        descripcion = validated_data.pop('descripcion', None)
+        modelo_asociado = validated_data.pop('modelo_asociado')
+        modelo_asociado_id = validated_data.pop('modelo_asociado_id', None)
+
+        # Obtener la celda
+        celda = Celda.objects.get(pk=celda_id)
+
+        # Crear o asociar el modelo relacionado
+        if modelo_asociado_id:
+            # Asociar a un modelo existente
+            content_type = ContentType.objects.get(app_label='planificadores', model=modelo_asociado)
+            try:
+                content_object = content_type.get_object_for_this_type(pk=modelo_asociado_id)
+            except content_type.model_class().DoesNotExist:
+                raise serializers.ValidationError(f"No existe {modelo_asociado} con ID {modelo_asociado_id}")
+            object_id = modelo_asociado_id
+        else:
+            # Crear un nuevo modelo
+            data = validated_data.pop(f"{modelo_asociado}_data")
+            serializer_class = {
+                'actividad': ActividadSerializer,
+                'tarea': TareaSerializer,
+                'objetivo': ObjetivoSerializer,
+                'comentario': ComentarioSerializer,
+                'etiqueta': EtiquetaSerializer,
+                'evento': EventoSerializer,
+                'registro_progreso': RegistroProgresoSerializer,
+                'recurrente': RecurrenteSerializer,
+            }.get(modelo_asociado)
+
+            if not serializer_class:
+                raise serializers.ValidationError(f"Modelo desconocido: {modelo_asociado}")
+
+            serializer = serializer_class(data=data)
+            serializer.is_valid(raise_exception=True)
+            content_object = serializer.save()
+            content_type = ContentType.objects.get_for_model(content_object)
+            object_id = content_object.id
+
+        # Crear el elemento
+        elemento = Elemento.objects.create(
+            nombre=elemento_nombre,
+            celda=celda,
+            estructura_id=estructura_id,
+            descripcion=descripcion,
+            content_type=content_type,
+            object_id=object_id
+        )
+
+        return elemento
+
+
+class FormularioInfoSerializer(serializers.Serializer):
+    modelos_asociables = serializers.ListField(child=serializers.CharField())
+    estructura_modelos = serializers.JSONField()
+    urls_modelos = serializers.JSONField()
+    estructuras = serializers.JSONField()

@@ -16,6 +16,9 @@ from .views import (
     EventoListCreateView, EventoRetrieveUpdateDestroyView,
     EventoAsociadoListCreateView, EventoAsociadoRetrieveUpdateDestroyView,
     PlanificadorDetailView,
+    ModeloEstructuraListView,
+    SchemaListView,
+    FormularioCrearElementoView, FormularioInfoView
 )
 
 app_name = "planificadores"
@@ -82,4 +85,15 @@ urlpatterns = [
     path('eventos-asociados/<int:pk>/', EventoAsociadoRetrieveUpdateDestroyView.as_view(), name='evento-asociado-detail'),
 
     path('planificadores/<int:pk>/', PlanificadorDetailView.as_view(), name='planificador-detail'),
+
+    # Estructuras de los modelos
+    path('estructura-modelos/', ModeloEstructuraListView.as_view(), name='estructura-modelos-list'),
+
+    path('listado-urls/', SchemaListView.as_view(), name='listado-urls'),
+
+    path('formulario-crear-elemento/', FormularioCrearElementoView.as_view(), name='formulario-crear-elemento'),
+
+    path('formulario-info-elemento/', FormularioInfoView.as_view(), name='formulario-info-elemento'),
+
+
 ]
