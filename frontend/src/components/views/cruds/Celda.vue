@@ -51,9 +51,9 @@
         </v-card>
       </v-dialog>
     </v-container>
-  </template>
+</template>
 
-  <script setup>
+<script setup>
   import { ref, onMounted } from "vue";
 
   const celdas = ref([]);

@@ -1,6 +1,7 @@
 
+# Python
+import json
 # Django
-from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
@@ -65,58 +66,6 @@ class EstructuraPlanificador(BaseEstructura):
     ancho_columna = models.PositiveIntegerField(default=100, help_text="Ancho de las columnas en píxeles.")
     tabla = models.JSONField(default=dict, help_text="Representación de la tabla como diccionario.")
 
-    def agregar_celda(self, fila, columna, contenido="", id=None):
-        """
-        Agrega o edita una celda en una posición específica.
-        """
-        clave = (fila, columna)
-        if fila > self.filas or columna > self.columnas:
-            raise ValueError("La posición está fuera de los límites definidos por la estructura.")
-        with transaction.atomic():
-            self.tabla[clave] = {"id": id or "", "contenido": contenido}
-            self.save()
-
-    def mover_celda(self, fila_origen, columna_origen, fila_destino, columna_destino):
-        """
-        Mueve una celda de una posición a otra.
-        """
-        clave_origen = (fila_origen, columna_origen)
-        clave_destino = (fila_destino, columna_destino)
-
-        if fila_destino > self.filas or columna_destino > self.columnas:
-            raise ValueError("La posición de destino está fuera de los límites definidos por la estructura.")
-
-        if clave_origen not in self.tabla:
-            raise ValueError("La posición de origen no tiene contenido para mover.")
-
-        with transaction.atomic():
-            self.tabla[clave_destino] = self.tabla[clave_origen]
-            self.tabla[clave_origen] = {"id": "", "contenido": ""}
-            self.save()
-
-    def eliminar_celda(self, fila, columna):
-        """
-        Elimina una celda en una posición específica, dejándola vacía.
-        """
-        clave = (fila, columna)
-        if fila > self.filas or columna > self.columnas:
-            raise ValueError("La posición está fuera de los límites definidos por la estructura.")
-
-        with transaction.atomic():
-            self.tabla[clave] = {"id": "", "contenido": ""}
-            self.save()
-
-    def inicializar_tabla(self, filas, columnas):
-        """
-        Genera un diccionario que representa la estructura de la cuadrícula con las filas y columnas dadas.
-        Cada celda inicializa con id y contenido vacíos.
-        """
-        return {
-            (fila, columna): {"id": "", "contenido": ""}
-            for fila in range(1, filas + 1)
-            for columna in range(1, columnas + 1)
-        }
-
     def __str__(self):
         return f"EstructuraPlanificador: {self.nombre} ({self.filas}x{self.columnas})"
 
@@ -162,6 +111,14 @@ class Celda(models.Model):
     def __str__(self):
         contenido_preview = self.contenido[:20] + "..." if self.contenido else "Sin contenido"
         return f"Celda del planificador '{self.planificador.nombre}': {contenido_preview}"
+
+    def mover(self, nueva_fila, nueva_columna):
+        """
+        Mueve la celda a una nueva posición en la cuadrícula.
+        """
+        self.fila = nueva_fila
+        self.columna = nueva_columna
+        self.save()
 
 class Elemento(models.Model):
     """

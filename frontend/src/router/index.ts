@@ -1,25 +1,25 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import HomePage from "../components/HomePage.vue";
-import GraphContainer from '../components/GraphContainer.vue';
-import Timer from '../components/Timer.vue';
-import Planificadores from '../components/Planificadores.vue';
-import Estados from "../components/Estados.vue";
-import EstructuraPlanificador from "../components/EstructuraPlanificador.vue";
-import Celda from "../components/Celda.vue";
-import Mensajes from "../components/Mensajes.vue";
-import Actividades from "../components/Actividades.vue";
-import Tareas from "../components/Tareas.vue";
-import Objetivos from "../components/Objetivos.vue";
-import Etiquetas from "../components/Etiquetas.vue";
-import Comentarios from "../components/Comentarios.vue";
-import Recurrentes from "../components/Recurrentes.vue";
-import Eventos from "../components/Eventos.vue";
-import EventosAsociados from "../components/EventosAsociados.vue";
-import Elementos from "../components/Elementos.vue";
-import RegistroProgreso from "../components/RegistroProgreso.vue";
-import PlanificadorDetalle from "../components/PlanificadorDetalle.vue";
 
-
+// Importaciones usando rutas relativas
+import HomePage from '../components/common/HomePage.vue';
+import GraphContainer from '../components/views/planes/GraphContainer.vue';
+import Timer from '../components/views/timer/Timer.vue';
+import Planificadores from '../components/views/dashboards/Planificadores.vue';
+import Estados from '../components/views/cruds/Estados.vue';
+import EstructuraPlanificador from '../components/views/cruds/EstructuraPlanificador.vue';
+import Celda from '../components/views/cruds/Celda.vue';
+import Mensajes from '../components/views/cruds/Mensajes.vue';
+import Actividades from '../components/views/cruds/Actividades.vue';
+import Tareas from '../components/views/cruds/Tareas.vue';
+import Objetivos from '../components/views/cruds/Objetivos.vue';
+import Etiquetas from '../components/views/cruds/Etiquetas.vue';
+import Comentarios from '../components/views/cruds/Comentarios.vue';
+import Recurrentes from '../components/views/cruds/Recurrentes.vue';
+import Eventos from '../components/views/cruds/Eventos.vue';
+import EventosAsociados from '../components/views/cruds/EventosAsociados.vue';
+import Elementos from '../components/views/cruds/Elementos.vue';
+import RegistroProgreso from '../components/views/cruds/RegistroProgreso.vue';
+import PlanificadorDetalle from '../components/views/planificador/detalles/PlanificadorDetalle.vue';
 
 const routes = [
   { path: '/', name: 'Home', component: HomePage },

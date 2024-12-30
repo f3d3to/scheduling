@@ -11,7 +11,7 @@
 
 <script>
 import * as d3 from "d3";
-import { fetchPlans, fetchCycles } from "../services/apiService";
+import { fetchPlans, fetchCycles } from "@services/apiService";
 
 export default {
   name: "GraphContainer",

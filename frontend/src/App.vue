@@ -9,8 +9,8 @@
 </template>
 
 <script>
-import TopBar from "./components/TopBar.vue";
-import Sidebar from "./components/SideBar.vue";
+import TopBar from "@common/TopBar.vue";
+import Sidebar from "@common/SideBar.vue";
 
 export default {
   name: "App",
@@ -69,5 +69,37 @@ export default {
   color: #fff;
 }
 
+
+/* Estilo general para los botones */
+.btn {
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+/* Botón de Editar */
+.btn-editar {
+  background-color: #007bff; /* Azul */
+  color: white;
+}
+.btn-editar:hover {
+  background-color: #0056b3; /* Azul más oscuro al pasar el mouse */
+}
+.container .vue-grid-item.vue-grid-placeholder {
+    background: green !important;
+}
+
+/* Botón de Guardar */
+.btn-guardar {
+  background-color: #28a745; /* Verde */
+  color: white;
+}
+.btn-guardar:hover {
+  background-color: #218838; /* Verde más oscuro al pasar el mouse */
+}
 
 </style>

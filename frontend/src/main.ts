@@ -1,11 +1,16 @@
-import { createApp } from 'vue'
 import { createVuetify } from 'vuetify'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
+import VueSweetalert2 from 'vue-sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
+
+import { createApp } from 'vue'
 import router from './router';
 import App from './App.vue'
 import '@mdi/font/css/materialdesignicons.css'
 import 'vuetify/styles'
-import * as components from 'vuetify/components'
-import * as directives from 'vuetify/directives'
+
+
 
 const vuetify = createVuetify({
   components,
@@ -14,6 +19,7 @@ const vuetify = createVuetify({
 })
 
 const app = createApp(App)
+app.use(VueSweetalert2);
 app.use(vuetify)
 
 app.use(router);
