@@ -10,11 +10,7 @@
     <!-- Contenedor de Elementos -->
     <div v-if="elementos.length" class="celda-elementos">
       <div v-for="elemento in elementos" :key="elemento.id" class="elemento-contenedor">
-        <ElementoVisualizacion
-          :elemento="elemento"
-          @elemento-actualizado="actualizarElementoEnLista"
-          @elemento-eliminado="eliminarElementoDeLista"
-        />
+        {{ elemento.nombre }}
       </div>
     </div>
     <div v-else class="celda-sin-elementos">

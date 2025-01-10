@@ -1,22 +1,17 @@
 <template>
 <div class="evento-visualizacion" v-if="evento">
     <h3>{{ evento.nombre }}</h3>
-    <p v-if="evento.descripcion" class="descripcion">{{ evento.descripcion }}</p>
-    <p>
-    <strong>Fecha y Hora de Inicio:</strong>
-    {{ formatFecha(evento.fecha_inicio) }} - {{ formatHora(evento.fecha_inicio) }}
+    <p v-if="evento.descripcion" class="descripcion">
+    {{ evento.descripcion }}
     </p>
     <p>
-    <strong>Fecha y Hora de Fin:</strong>
-    {{ formatFecha(evento.fecha_fin) }} - {{ formatHora(evento.fecha_fin) }}
+    <strong>Fecha y Hora:</strong>
+    {{ formatFecha(evento.fecha_hora) }} - {{ formatHora(evento.fecha_hora) }}
     </p>
-    <p v-if="evento.ubicacion">
-    <strong>Ubicación:</strong> {{ evento.ubicacion }}
+    <p v-if="evento.usuario">
+    <strong>Usuario:</strong> {{ evento.usuario }}
     </p>
-    <p v-if="evento.organizador">
-    <strong>Organizador:</strong> {{ evento.organizador }}
-    </p>
-    </div>
+</div>
 <div v-else>
     <p>Cargando datos del evento...</p>
 </div>
@@ -49,10 +44,8 @@ methods: {
         this.evento = {
             nombre: data.nombre || "Sin nombre",
             descripcion: data.descripcion || "Sin descripción",
-            fecha_inicio: data.fecha_inicio,
-            fecha_fin: data.fecha_fin,
-            ubicacion: data.ubicacion || null,
-            organizador: data.organizador || null,
+            fecha_hora: data.fecha_hora,
+            usuario: data.usuario || null,
             // ... añade aquí el resto de los campos de tu modelo de datos
         };
         } else {

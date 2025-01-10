@@ -17,5 +17,4 @@ ADD ../backend /app
 
 EXPOSE 8000
 
-
 ENV DJANGO_SETTINGS_MODULE=core.settings

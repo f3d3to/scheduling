@@ -20,9 +20,9 @@
     {{ formatFecha(recurrencia.fecha_fin) }}
     </p>
 </div>
-<div v-else>
+<!-- <div v-else>
     <p>No hay recurrencia configurada.</p>
-</div>
+</div> -->
 </template>
 
 <script>

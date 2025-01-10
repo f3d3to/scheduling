@@ -45,10 +45,9 @@ methods: {
         this.objetivo = {
             nombre: data.nombre || "Sin nombre",
             descripcion: data.descripcion || "Sin descripción",
-            estado: data.estado || "Pendiente", // Podrías tener un mapeo de estados a colores
+            estado: data.estado || "Pendiente",
             fecha_limite: data.fecha_limite,
             progreso: data.progreso || 0,
-            // ... añade aquí el resto de los campos de tu modelo de datos
         };
         } else {
         console.error("Error al cargar el objetivo:", response.statusText);

@@ -14,7 +14,7 @@
         {{ tarea.descripcion }}
       </p>
       <p>Fecha límite: {{ formattedFechaLimite }}</p>
-      <div class="color-indicator" :style="{ backgroundColor: tarea.color }"></div>
+      <!-- <div class="color-indicator" :style="{ backgroundColor: tarea.color }"></div> -->
       <p>Estado: {{ tarea.estado ? tarea.estado.nombre : 'Sin Estado' }}</p>
     </div>
   </div>

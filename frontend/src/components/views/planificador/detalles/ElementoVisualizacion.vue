@@ -12,7 +12,7 @@
     <v-dialog v-model="dialog" max-width="800px">
       <v-card>
         <v-card-title>
-          <span class="headline">Editar {{ getComponent(elemento.content_type) }}</span>
+          <span class="headline"> {{ elemento.nombre }}</span>
         </v-card-title>
 
         <v-card-text>
@@ -38,6 +38,11 @@
 import TareaVisualizacion from "@planificadorDetalle/TareaVisualizacion.vue";
 import ActividadVisualizacion from "@planificadorDetalle/ActividadVisualizacion.vue";
 import EtiquetaVisualizacion from "@planificadorDetalle/EtiquetaVisualizacion.vue";
+import ComentarioVisualizacion from "@planificadorDetalle/EtiquetaVisualizacion.vue";
+import EventoVisualizacion from "@planificadorDetalle/EventoVisualizacion.vue";
+import ObjetivoVisualizacion from "@planificadorDetalle/ObjetivoVisualizacion.vue";
+import RecurrenteVisualizacion from "@planificadorDetalle/RecurrenteVisualizacion.vue";
+import EventoAsociadoVisualizacion from "@planificadorDetalle/EventoAsociadoVisualizacion.vue";
 
 export default {
   props: {
@@ -50,6 +55,11 @@ export default {
     TareaVisualizacion,
     ActividadVisualizacion,
     EtiquetaVisualizacion,
+    ComentarioVisualizacion,
+    EventoVisualizacion,
+    ObjetivoVisualizacion,
+    RecurrenteVisualizacion,
+    EventoAsociadoVisualizacion,
   },
   data() {
     return {
@@ -60,10 +70,15 @@ export default {
   methods: {
     getComponent(contentType) {
       const mapping = {
-        8: "ActividadVisualizacion",
-        23: "TareaVisualizacion",
-        15: "EtiquetaVisualizacion",
-      };
+        8: ActividadVisualizacion, // 'actividad'
+        23: TareaVisualizacion, // 'tarea'
+        15: EtiquetaVisualizacion, // 'etiqueta'
+        10: ComentarioVisualizacion, // 'comentario'
+        16: EventoVisualizacion, // 'evento'
+        19: ObjetivoVisualizacion, // 'objetivo'
+        21: RecurrenteVisualizacion, // 'recurrente'
+        17: EventoAsociadoVisualizacion, // 'eventoasociado'
+};
       return mapping[contentType] || "div";
     },
     openDialog() {

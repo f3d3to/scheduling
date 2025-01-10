@@ -104,27 +104,36 @@ class Command(BaseCommand):
                 registro = RegistroProgresoFactory(actividad=actividad, porcentaje=random.uniform(10, 100))
                 self.stdout.write(self.style.SUCCESS(f'Registro de Progreso creado: {registro.porcentaje}% para {actividad.nombre}'))
 
-            # Crear Objetivos asociados a Tareas
+            # Crear Objetivos y asociarlos a Tareas o Actividades
+            objetivos = []
             for tarea in tareas:
-                objetivo = ObjetivoFactory(
-                    content_type=ContentType.objects.get_for_model(tarea),
-                    object_id=tarea.id
-                )
-                for planificador in planificadores:
-                    for celda in planificador.celdas.all():
-                        elemento_tarea = ElementoFactory.objects.create(
-                            nombre=tarea.nombre,
-                            celda=celda,
-                            content_type=ContentType.objects.get_for_model(tarea),
-                            object_id=tarea.id
-                        )
-                self.stdout.write(self.style.SUCCESS(f'Objetivo creado: {objetivo.descripcion} para {tarea.nombre}'))
+              objetivo = ObjetivoFactory(
+                  descripcion=f"Objetivo para {tarea.nombre}",
+                  content_type=ContentType.objects.get_for_model(tarea),
+                  object_id=tarea.id
+              )
+              objetivos.append(objetivo)
+              self.stdout.write(self.style.SUCCESS(f'Objetivo creado: {objetivo.id} para {tarea.nombre}'))
+
+            for actividad in actividades:
+              objetivo = ObjetivoFactory(
+                  descripcion=f"Objetivo para {actividad.nombre}",
+                  content_type=ContentType.objects.get_for_model(actividad),
+                  object_id=actividad.id
+              )
+              objetivos.append(objetivo)
+              self.stdout.write(self.style.SUCCESS(f'Objetivo creado: {objetivo.id} para {actividad.nombre}'))
+
 
             # Crear Etiquetas
             etiquetas_nombres = ["Trabajo", "Personal", "Estudio"]
+            etiquetas = []
             for nombre in etiquetas_nombres:
                 etiqueta = EtiquetaFactory(nombre=nombre)
-                self.stdout.write(self.style.SUCCESS(f'Etiqueta creada: {etiqueta.nombre}'))
+                etiquetas.append(etiqueta)
+                self.stdout.write(
+                    self.style.SUCCESS(f"Etiqueta creada: {etiqueta.nombre}")
+                )
 
             # Crear Mensajes
             mensajes_data = [
@@ -136,22 +145,33 @@ class Command(BaseCommand):
                 mensaje = MensajeFactory(tipo=mensaje_data["tipo"], icono=mensaje_data["icono"], color=mensaje_data["color"])
                 self.stdout.write(self.style.SUCCESS(f'Mensaje creado: {mensaje.tipo}'))
 
-            # Crear Comentarios
+            comentarios = []
             for i in range(3):
                 comentario = ComentarioFactory(contenido=f"Este es el comentario {i+1}")
-                self.stdout.write(self.style.SUCCESS(f'Comentario creado: {comentario.contenido[:30]}'))
-
+                comentarios.append(comentario)
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"Comentario creado: {comentario.contenido[:30]}"
+                    )
+                )
             # Crear Recurrentes
             frecuencias = ["Diaria", "Semanal"]
+            recurrentes = []
             for frecuencia in frecuencias:
                 recurrente = RecurrenteFactory(frecuencia=frecuencia)
-                self.stdout.write(self.style.SUCCESS(f'Recurrente creado: {recurrente.frecuencia}'))
-
+                recurrentes.append(recurrente)
+                self.stdout.write(
+                    self.style.SUCCESS(f"Recurrente creado: {recurrente.frecuencia}")
+                )
             # Crear Eventos
             eventos_nombres = ["Reunión Inicial", "Presentación", "Cierre"]
+            eventos = []
             for nombre in eventos_nombres:
                 evento = EventoFactory(nombre=nombre)
-                self.stdout.write(self.style.SUCCESS(f'Evento creado: {evento.nombre}'))
+                eventos.append(evento)
+                self.stdout.write(
+                    self.style.SUCCESS(f"Evento creado: {evento.nombre}")
+                )
 
             # Crear Asociaciones de Eventos
             for actividad in actividades:
@@ -162,6 +182,77 @@ class Command(BaseCommand):
                     object_id=actividad.id
                 )
                 self.stdout.write(self.style.SUCCESS(f'Asociación creada para Evento: {asociacion.evento.nombre}'))
+
+            # Asociar Elementos a Celdas
+            for planificador in planificadores:
+                for celda in planificador.celdas.all():
+                    # Asociar una actividad
+                    actividad = random.choice(actividades)
+                    ElementoFactory(
+                        celda=celda,
+                        nombre=f"Actividad en {celda.contenido}",
+                        content_type=ContentType.objects.get_for_model(actividad),
+                        object_id=actividad.id,
+                    )
+
+                    # Asociar una tarea
+                    tarea = random.choice(tareas)
+                    ElementoFactory(
+                        celda=celda,
+                        nombre=f"Tarea en {celda.contenido}",
+                        content_type=ContentType.objects.get_for_model(tarea),
+                        object_id=tarea.id,
+                    )
+
+                    # Asociar un objetivo
+                    objetivo = random.choice(objetivos)
+                    elemento_objetivo = ElementoFactory(
+                        celda=celda,
+                        nombre=f"Objetivo en {celda.contenido}",
+                        content_type=ContentType.objects.get_for_model(objetivo),
+                        object_id=objetivo.id,
+                    )
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            f"Elemento creado: {elemento_objetivo.nombre}"
+                        )
+                    )
+
+                    # Asociar un comentario
+                    comentario = random.choice(comentarios)
+                    ElementoFactory(
+                        celda=celda,
+                        nombre=f"Comentario en {celda.contenido}",
+                        content_type=ContentType.objects.get_for_model(comentario),
+                        object_id=comentario.id,
+                    )
+
+                    # Asociar una etiqueta
+                    etiqueta = random.choice(etiquetas)
+                    ElementoFactory(
+                        celda=celda,
+                        nombre=f"Etiqueta en {celda.contenido}",
+                        content_type=ContentType.objects.get_for_model(etiqueta),
+                        object_id=etiqueta.id,
+                    )
+
+                    # Asociar un evento
+                    evento = random.choice(eventos)
+                    ElementoFactory(
+                        celda=celda,
+                        nombre=f"Evento en {celda.contenido}",
+                        content_type=ContentType.objects.get_for_model(evento),
+                        object_id=evento.id,
+                    )
+
+                    # Asociar un recurrente
+                    recurrente = random.choice(recurrentes)
+                    ElementoFactory(
+                        celda=celda,
+                        nombre=f"Recurrente en {celda.contenido}",
+                        content_type=ContentType.objects.get_for_model(recurrente),
+                        object_id=recurrente.id,
+                    )
 
         except Exception as e:
             traceback.print_exc()

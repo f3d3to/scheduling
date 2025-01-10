@@ -2,20 +2,15 @@
 <div class="evento-asociado-visualizacion" v-if="evento">
     <h4>Evento Asociado:</h4>
     <h5>{{ evento.nombre }}</h5>
-    <p v-if="evento.descripcion" class="descripcion">{{ evento.descripcion }}</p>
-    <p>
-    <strong>Fecha y Hora de Inicio:</strong>
-    {{ formatFecha(evento.fecha_inicio) }} - {{ formatHora(evento.fecha_inicio) }}
+    <p v-if="evento.descripcion" class="descripcion">
+    {{ evento.descripcion }}
     </p>
     <p>
-    <strong>Fecha y Hora de Fin:</strong>
-    {{ formatFecha(evento.fecha_fin) }} - {{ formatHora(evento.fecha_fin) }}
+    <strong>Fecha y Hora:</strong>
+    {{ formatFecha(evento.fecha_hora) }} - {{ formatHora(evento.fecha_hora) }}
     </p>
-    <p v-if="evento.ubicacion">
-    <strong>Ubicación:</strong> {{ evento.ubicacion }}
-    </p>
-    <p v-if="evento.organizador">
-    <strong>Organizador:</strong> {{ evento.organizador }}
+    <p v-if="evento.usuario">
+    <strong>Usuario:</strong> {{ evento.usuario }}
     </p>
 </div>
 <div v-else>

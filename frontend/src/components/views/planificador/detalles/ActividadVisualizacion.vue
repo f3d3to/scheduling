@@ -2,13 +2,13 @@
   <div class="actividad-visualizacion" v-if="actividad" :style="{ borderColor: actividad.color }">
     <h3 :style="{ color: actividad.color }">{{ actividad.nombre }}</h3>
     <p v-if="actividad.descripcion" class="descripcion">{{ actividad.descripcion }}</p>
-    <p>
+    <p v-if="actividad.fecha_inicio">
       <strong>Inicio:</strong> {{ formatFecha(actividad.fecha_inicio) }}
     </p>
-    <p>
+    <p v-if="actividad.fecha_fin">
       <strong>Fin:</strong> {{ formatFecha(actividad.fecha_fin) }}
     </p>
-    <p>
+    <p v-if="actividad.estado">
       <strong>Estado:</strong> <span :style="{ color: actividad.estadoColor }">{{ actividad.estado }}</span>
     </p>
   </div>
