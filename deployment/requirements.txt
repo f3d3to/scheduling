@@ -20,3 +20,5 @@ django-filter
 
 pandas
 openpyxl
+
+pygraphviz

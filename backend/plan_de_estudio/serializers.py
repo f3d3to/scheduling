@@ -1,12 +1,12 @@
 from rest_framework import serializers
-from .models import PlanDeEstudio, Materia
+from .models import PlanDeEstudio, Materia, MateriaEstudiante, Evaluacion, TipoEvaluacion
 
 class MateriaSerializer(serializers.ModelSerializer):
     correlativas = serializers.StringRelatedField(many=True)
 
     class Meta:
         model = Materia
-        fields = '__all__'  # Incluir todos los campos de Materia
+        fields = '__all__'
 
 class PlanDeEstudioCiclosSerializer(serializers.ModelSerializer):
     anios = serializers.SerializerMethodField()
@@ -25,10 +25,24 @@ class PlanDeEstudioCiclosSerializer(serializers.ModelSerializer):
                 materias_por_anio[anio] = []
             materias_por_anio[anio].append(MateriaSerializer(materia).data)
 
-        # Opcionalmente, ordenar por anio
         return {anio: materias_por_anio[anio] for anio in sorted(materias_por_anio.keys())}
 
 
+class MateriaEstudianteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MateriaEstudiante
+        fields = "__all__"
+
+class EvaluacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Evaluacion
+        fields = "__all__"
+
+
+class TipoEvaluacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoEvaluacion
+        fields = "__all__"
 
 class PlanDeEstudioSerializer(serializers.ModelSerializer):
     materias = MateriaSerializer(many=True, read_only=True)

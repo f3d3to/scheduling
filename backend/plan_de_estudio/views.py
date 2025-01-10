@@ -10,8 +10,9 @@ from rest_framework.views import APIView
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
-from .models import PlanDeEstudio, Materia
-from .serializers import PlanDeEstudioSerializer, MateriaSerializer, PlanDeEstudioCiclosSerializer
+from .models import PlanDeEstudio, Materia, MateriaEstudiante, Evaluacion
+from .serializers import PlanDeEstudioSerializer, MateriaSerializer, PlanDeEstudioCiclosSerializer, MateriaEstudianteSerializer, \
+    EvaluacionSerializer
 from .filters import PlanDeEstudioFilter, MateriaFilter
 
 
@@ -54,6 +55,66 @@ class PlanDeEstudioCiclosView(generics.RetrieveAPIView):
     queryset = PlanDeEstudio.objects.prefetch_related('materias')
     serializer_class = PlanDeEstudioCiclosSerializer
 
+class MateriasEstudiantesListCreateView(generics.ListCreateAPIView):
+    serializer_class = MateriaEstudianteSerializer
+
+    def get_queryset(self):
+        """
+        Lista solo las materias asociadas al estudiante autenticado.
+        """
+        estudiante = self.request.user
+        return MateriaEstudiante.objects.filter(estudiante=estudiante)
+
+    def perform_create(self, serializer):
+        """
+        Asocia automáticamente la nueva relación con el estudiante autenticado.
+        """
+        estudiante = self.request.user
+        serializer.save(estudiante=estudiante)
+
+
+class MateriasEstudiantesRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = MateriaEstudianteSerializer
+
+    def get_queryset(self):
+        """
+        Asegura que solo se acceda a las relaciones del estudiante autenticado.
+        """
+        estudiante = self.request.user
+        return MateriaEstudiante.objects.filter(estudiante=estudiante)
+
+
+class EvaluacionesListCreateView(generics.ListCreateAPIView):
+    serializer_class = EvaluacionSerializer
+
+    def get_queryset(self):
+        """
+        Lista todas las evaluaciones de las materias del estudiante autenticado.
+        """
+        estudiante = self.request.user
+        return Evaluacion.objects.filter(materia_estudiante__estudiante=estudiante)
+
+    def perform_create(self, serializer):
+        """
+        Asocia la evaluación a una relación `MateriaEstudiante` válida del estudiante autenticado.
+        """
+        estudiante = self.request.user
+        materia_estudiante = MateriaEstudiante.objects.get(
+            id=self.request.data['materia_estudiante'],
+            estudiante=estudiante
+        )
+        serializer.save(materia_estudiante=materia_estudiante)
+
+class EvaluacionesRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = EvaluacionSerializer
+
+    def get_queryset(self):
+        """
+        Asegura que el estudiante solo pueda acceder a evaluaciones de sus materias.
+        """
+        estudiante = self.request.user
+        return Evaluacion.objects.filter(materia_estudiante__estudiante=estudiante)
+
 class DescargarPlanDeEstudioJSON(APIView):
     """
     Vista para descargar un PlanDeEstudio en formato JSON.
@@ -85,45 +146,3 @@ class DescargarPlanDeEstudioJSON(APIView):
         response = HttpResponse(json_data, content_type='application/json')
         response['Content-Disposition'] = f'attachment; filename="plan_de_estudio_{plan.id}.json"'
         return response
-class PlanDeEstudioGraphView(APIView):
-    def get(self, request, pk):
-        # Obtener el plan de estudio por su ID
-        try:
-            plan = PlanDeEstudio.objects.prefetch_related('materias', 'materias__correlativas').get(pk=pk)
-        except PlanDeEstudio.DoesNotExist:
-            return JsonResponse({"error": "Plan de estudio no encontrado."}, status=404)
-
-        # Organizar materias por año
-        materias_por_anio = {}
-        for materia in plan.materias.all():
-            anio = materia.anio if materia.anio else "Sin Año"
-            if anio not in materias_por_anio:
-                materias_por_anio[anio] = []
-            materias_por_anio[anio].append({
-                "id": materia.codigo,
-                "name": materia.nombre,
-                "group": materia.ciclo or "Sin Ciclo"
-            })
-
-        # Crear enlaces basados en las correlativas
-        links = []
-        for materia in plan.materias.all():
-            for correlativa in materia.correlativas.all():
-                links.append({
-                    "source": correlativa.codigo,
-                    "target": materia.codigo,
-                    "type": "correlativa"
-                })
-
-        # Crear estructura final
-        data = {
-            "plan": {
-                "id": plan.id,
-                "name": plan.nombre,
-                "year": plan.año_creacion
-            },
-            "years": materias_por_anio,
-            "links": links
-        }
-
-        return JsonResponse(data)
