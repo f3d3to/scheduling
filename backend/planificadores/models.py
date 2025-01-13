@@ -7,14 +7,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 from django.db import models, transaction
 
-estructura_tabla = {
-    (1, 1): {"id": "", "contenido": ""},
-    (1, 2): {"id": "", "contenido": ""},
-    (2, 1): {"id": "", "contenido": ""},
-    (2, 2): {"id": "", "contenido": ""},
-}
-
-
 class Estado(models.Model):
     """
     Modelo que representa un estado genérico que puede ser utilizado en cualquier entidad.
@@ -85,6 +77,7 @@ class Planificador(models.Model):
     tipo = models.CharField(max_length=50)
     estructura = models.ForeignKey(EstructuraPlanificador, on_delete=models.SET_NULL, null=True)
 
+    # Esto está raro. ¿La relación es  X -1vs1-> Planificador?
     content_type = models.ForeignKey(
         ContentType,
         on_delete=models.SET_NULL,

@@ -1,4 +1,5 @@
 import importlib
+import json
 # Third Party
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
@@ -406,3 +407,31 @@ class FormularioInfoView(APIView):
         })
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class CeldaContenidoUpdate(APIView):
+    """
+    Actualiza tanto la instancia de Celda como el JSONField en EstructuraPlanificador.
+    """
+
+    def patch(self, request, planificador_id, celda_id):
+        planificador = get_object_or_404(Planificador, pk=planificador_id)
+        estructura_planificador = planificador.estructura
+
+        if not estructura_planificador:
+            return Response({"error": "No se encontró la estructura del planificador"}, status=404)
+
+        celda = get_object_or_404(Celda, pk=celda_id, planificador=planificador)
+        contenido_nuevo = request.data.get('contenido')
+        celda.contenido = contenido_nuevo
+        celda.save()
+
+        # Asegúrate de que estás trabajando con un diccionario
+        tabla = json.loads(estructura_planificador.tabla) if isinstance(estructura_planificador.tabla, str) else estructura_planificador.tabla
+        clave = f"{celda.fila},{celda.columna}"
+
+        if clave in tabla:
+            tabla[clave]['contenido'] = contenido_nuevo
+            estructura_planificador.tabla = json.dumps(tabla)  # Vuelve a serializar el diccionario a string JSON para almacenarlo
+            estructura_planificador.save()
+
+        return Response({"msg": "Contenido actualizado con éxito"}, status=200)

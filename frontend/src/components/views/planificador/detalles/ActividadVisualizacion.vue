@@ -1,16 +1,18 @@
 <template>
-  <div class="actividad-visualizacion" v-if="actividad" :style="{ borderColor: actividad.color }">
-    <h3 :style="{ color: actividad.color }">{{ actividad.nombre }}</h3>
-    <p v-if="actividad.descripcion" class="descripcion">{{ actividad.descripcion }}</p>
-    <p v-if="actividad.fecha_inicio">
-      <strong>Inicio:</strong> {{ formatFecha(actividad.fecha_inicio) }}
-    </p>
-    <p v-if="actividad.fecha_fin">
-      <strong>Fin:</strong> {{ formatFecha(actividad.fecha_fin) }}
-    </p>
-    <p v-if="actividad.estado">
-      <strong>Estado:</strong> <span :style="{ color: actividad.estadoColor }">{{ actividad.estado }}</span>
-    </p>
+  <div class="actividad-visualizacion" v-if="actividad" :style="{ backgroundColor: actividad.color, color: '#fff', borderColor: actividad.color }">
+    <div class="contenido-card">
+      <h3>{{ actividad.nombre }}</h3>
+      <p v-if="actividad.descripcion" class="descripcion">{{ actividad.descripcion }}</p>
+      <p v-if="actividad.fecha_inicio">
+        <strong>Inicio:</strong> {{ formatFecha(actividad.fecha_inicio) }}
+      </p>
+      <p v-if="actividad.fecha_fin">
+        <strong>Fin:</strong> {{ formatFecha(actividad.fecha_fin) }}
+      </p>
+      <p v-if="actividad.estado">
+        <strong>Estado:</strong> <span>{{ actividad.estado }}</span>
+      </p>
+    </div>
   </div>
   <div v-else>
     <p>Cargando datos de la actividad...</p>
@@ -74,10 +76,22 @@ export default {
   margin: 1px 0;
   background-color: #f9f9f9;
   transition: box-shadow 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
 }
 
 .actividad-visualizacion:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.contenido-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 h3 {

@@ -18,7 +18,8 @@ from .views import (
     PlanificadorDetailView,
     ModeloEstructuraListView,
     SchemaListView,
-    FormularioCrearElementoView, FormularioInfoView
+    FormularioCrearElementoView, FormularioInfoView,
+    CeldaContenidoUpdate
 )
 
 app_name = "planificadores"
@@ -95,5 +96,6 @@ urlpatterns = [
 
     path('formulario-info-elemento/', FormularioInfoView.as_view(), name='formulario-info-elemento'),
 
+    path('planificadores/<int:planificador_id>/celdas/<int:celda_id>/', CeldaContenidoUpdate.as_view(), name='update_celda_content'),
 
 ]

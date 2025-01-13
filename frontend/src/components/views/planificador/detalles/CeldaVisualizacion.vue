@@ -1,51 +1,116 @@
 <template>
   <v-card class="celda-visualizacion">
-    <v-list-item-title>
-      <v-icon @click="openDialog">mdi-plus</v-icon> <!-- Ícono para agregar elementos -->
-      {{ celda.contenido }}
-      {{ celda.id }}
-
-    </v-list-item-title>
-
-    <!-- Contenedor de Elementos -->
-    <div v-if="elementos.length" class="celda-elementos">
-      <div v-for="elemento in elementos" :key="elemento.id" class="elemento-contenedor">
-        {{ elemento.nombre }}
+    <div class="celda-encabezado">
+      <template v-if="!editing">
+        <h3 class="celda-titulo" @click="enableEditing">{{ celda.contenido }}</h3>
+      </template>
+      <div v-else class="celda-edicion">
+        <v-text-field
+          v-model="editableContenido"
+          dense
+          solo
+          flat
+          class="campo-edicion"
+        ></v-text-field>
+        <v-icon class="icono-guardar" @click="saveChanges">mdi-check</v-icon>
+        <v-icon class="icono-cancelar" @click="cancelEditing">mdi-close</v-icon>
       </div>
     </div>
+
+    <div v-if="elementos.length" class="celda-elementos">
+      <div v-for="elemento in elementos" :key="elemento.id" class="elemento-contenedor" :style="{ backgroundColor: elemento.color, borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', padding: '10px', marginBottom: '10px' }">
+        <ElementoVisualizacion :elemento="elemento" />
+      </div>
+    </div>
+
     <div v-else class="celda-sin-elementos">
       No hay elementos relacionados con esta celda.
     </div>
 
-    <!-- Diálogo para Crear Nuevo Elemento -->
-    <v-dialog v-model="dialog" max-width="600px">
-      <CrearElemento :celdaId="celda.id" @elemento-creado="handleElementoCreado" @cancelar="closeDialog" />
-    </v-dialog>
   </v-card>
 </template>
 
 <script>
 import ElementoVisualizacion from "@planificadorDetalle/ElementoVisualizacion.vue";
-import CrearElemento from "@planificadorDetalle/CrearElemento.vue";
+import Swal from 'sweetalert2/dist/sweetalert2';
 
 export default {
+  components: {
+    ElementoVisualizacion,
+  },
   props: {
     celda: {
       type: Object,
       required: true,
     },
   },
-  components: {
-    ElementoVisualizacion,
-    CrearElemento,
-  },
   data() {
     return {
       elementos: [],
       dialog: false,
+      editing: false,
+      editableContenido: "",
     };
   },
+  computed: {
+    planificadorId() {
+      return this.$route.params.id;
+    },
+  },
   methods: {
+    enableEditing() {
+      this.editableContenido = this.celda.contenido;
+      this.editing = true;
+    },
+    cancelEditing() {
+      this.editableContenido = this.celda.contenido;
+      this.editing = false;
+    },
+    async saveChanges() {
+      this.celda.contenido = this.editableContenido;
+      this.editing = false;
+
+      const requestBody = {
+        contenido: this.editableContenido,
+      };
+
+      try {
+        const response = await fetch(`http://localhost:8000/planificadores/${this.planificadorId}/celdas/${this.celda.id}/`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          const errorResponse = await response.json();
+          Swal.fire({
+            icon: 'error',
+            title: 'Error al guardar',
+            text: errorResponse.detail || 'No se pudo guardar el cambio.',
+            showConfirmButton: true,
+          });
+          return;
+        }
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Guardado exitoso',
+          text: 'El contenido de la celda fue actualizado correctamente.',
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      } catch {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error crítico',
+          text: 'Ocurrió un problema al conectar con el servidor.',
+          showConfirmButton: true,
+        });
+      }
+    },
+
     async fetchElementos() {
       try {
         const response = await fetch(`http://localhost:8000/elementos/?celda=${this.celda.id}`);
@@ -53,20 +118,21 @@ export default {
           const data = await response.json();
           this.elementos = data.results || [];
         } else {
-          console.error("Error al cargar los elementos:", response.statusText);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error al cargar',
+            text: 'No se pudieron cargar los elementos relacionados.',
+            showConfirmButton: true,
+          });
         }
-      } catch (error) {
-        console.error("Error al hacer fetch de los elementos:", error);
+      } catch {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error crítico',
+          text: 'Ocurrió un problema al conectar con el servidor.',
+          showConfirmButton: true,
+        });
       }
-    },
-    actualizarElementoEnLista(elementoActualizado) {
-      const index = this.elementos.findIndex(el => el.id === elementoActualizado.id);
-      if (index !== -1) {
-        this.elementos.splice(index, 1, elementoActualizado);
-      }
-    },
-    eliminarElementoDeLista(elementoId) {
-      this.elementos = this.elementos.filter(el => el.id !== elementoId);
     },
     openDialog() {
       this.dialog = true;
@@ -77,6 +143,13 @@ export default {
     handleElementoCreado(elementoNuevo) {
       this.elementos.push(elementoNuevo);
       this.closeDialog();
+      Swal.fire({
+        icon: 'success',
+        title: 'Elemento creado',
+        text: 'El nuevo elemento se agregó correctamente.',
+        timer: 1500,
+        showConfirmButton: false,
+      });
     },
   },
   async mounted() {
@@ -94,9 +167,51 @@ export default {
   height: 100%;
   overflow: auto;
 }
+
+.celda-encabezado {
+  background-color: #f1f1f1;
+  border-bottom: 2px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+
+.celda-titulo {
+  margin: 0;
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #333;
+}
+
+.celda-edicion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.icono-guardar {
+  cursor: pointer;
+  color: #4caf50; /* Verde para guardar */
+  margin-left: 8px;
+}
+
+.icono-cancelar {
+  cursor: pointer;
+  color: #ff5252; /* Rojo para cancelar */
+  margin-left: 8px;
+}
+
 .elemento-contenedor {
   margin-bottom: 10px;
+  color: #fff;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  border: 1px solid #ddd; /* Borde divisorio */
+  padding: 10px;
+  background-color: #f4f4f4; /* Fondo claro */
 }
+
 .celda-sin-elementos {
   margin-bottom: 10px;
 }

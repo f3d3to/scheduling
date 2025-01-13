@@ -13,9 +13,9 @@
     <strong>Usuario:</strong> {{ evento.usuario }}
     </p>
 </div>
-<div v-else>
+<!-- <div v-else>
     <p>No hay un evento asociado.</p>
-</div>
+</div> -->
 </template>
 
 <script>

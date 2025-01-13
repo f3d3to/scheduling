@@ -26,14 +26,19 @@ class CeldaSerializer(serializers.ModelSerializer):
 
 class ElementoSerializer(serializers.ModelSerializer):
     content_object = serializers.SerializerMethodField()
+    color = serializers.SerializerMethodField()
 
     class Meta:
         model = Elemento
-        fields = ['id', 'nombre', 'celda', 'estructura', 'descripcion', 'content_type', 'object_id', 'content_object']
+        fields = ['id', 'nombre', 'celda', 'estructura', 'descripcion', 'content_type', 'object_id', 'content_object', 'color']
 
     def get_content_object(self, obj):
-        # Devuelve una representación genérica del objeto relacionado
         return str(obj.content_object)
+
+    def get_color(self, obj):
+        if hasattr(obj.content_object, 'color'):
+            return getattr(obj.content_object, 'color', None)
+        return "#c7c7c7"
 
 class MensajeSerializer(serializers.ModelSerializer):
     class Meta:
