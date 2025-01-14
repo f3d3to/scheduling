@@ -62,7 +62,12 @@ class Command(BaseCommand):
                 for i in range(1, filas + 1):
                     for j in range(1, columnas + 1):
                         celda = CeldaFactory(planificador=planificador, fila=i, columna=j, contenido=f"Celda {i},{j}")
-                        tabla[f"{i},{j}"] = {"id": celda.id, "contenido": celda.contenido}
+                        tabla[f"{i},{j}"] = {
+                            "id": celda.id,
+                            "contenido": celda.contenido,
+                            "w": 1,
+                            "h": 2,
+                        }
                 planificador.estructura.tabla = json.dumps(tabla)
                 planificador.estructura.save()
 

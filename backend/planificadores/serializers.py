@@ -20,6 +20,7 @@ class PlanificadorSerializer(serializers.ModelSerializer):
         fields = ['id', 'nombre', 'tipo', 'estructura']
 
 class CeldaSerializer(serializers.ModelSerializer):
+    planificador = serializers.PrimaryKeyRelatedField(queryset=Planificador.objects.all())
     class Meta:
         model = Celda
         fields = '__all__'
@@ -101,10 +102,15 @@ class JSONSerializerField(serializers.Field):
 
 class EstructuraPlanificadorSerializer(serializers.ModelSerializer):
     tabla = serializers.JSONField()
+    nombre = serializers.SerializerMethodField()
 
     class Meta:
         model= EstructuraPlanificador
         fields = '__all__'
+
+    def get_nombre(self, obj):
+        planificador = Planificador.objects.get(estructura=obj)
+        return planificador.nombre
 
     def to_representation(self, instance):
         """ Modificar la representación de la instancia para el frontend. """

@@ -74,7 +74,7 @@ export default {
 
 <style scoped>
 .elemento-visualizacion {
-  cursor: pointer; /* Cambia el cursor a una mano para indicar que es clickable */
+  cursor: pointer;
 }
 
 .visualizacion-container {

@@ -169,10 +169,14 @@ export default {
 }
 
 .celda-encabezado {
+  flex: 0 0 auto;  /* No cambiar tamaño y permanecer visible */
   background-color: #f1f1f1;
   border-bottom: 2px solid #ddd;
   padding: 8px;
   text-align: center;
+  position: sticky;
+  top: 0;  /* Fijar en la parte superior de la vista */
+  z-index: 100; /* Asegurar que se mantiene encima del contenido al desplazar */
 }
 
 .celda-titulo {

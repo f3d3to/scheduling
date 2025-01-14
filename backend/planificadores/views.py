@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 from django.urls import URLPattern, URLResolver
-
+from django.db import transaction
 # Proyecto
 from .models import (
     Estado, Planificador, Celda, Elemento, Mensaje, Actividad, Tarea,
@@ -65,6 +65,14 @@ class CeldaListCreateView(ListCreateAPIView):
     serializer_class = CeldaSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = CeldaFilter
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, many=True)
+        if serializer.is_valid():
+            self.perform_create(serializer)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class CeldaRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     queryset = Celda.objects.all()
@@ -425,13 +433,44 @@ class CeldaContenidoUpdate(APIView):
         celda.contenido = contenido_nuevo
         celda.save()
 
-        # Asegúrate de que estás trabajando con un diccionario
         tabla = json.loads(estructura_planificador.tabla) if isinstance(estructura_planificador.tabla, str) else estructura_planificador.tabla
         clave = f"{celda.fila},{celda.columna}"
 
         if clave in tabla:
             tabla[clave]['contenido'] = contenido_nuevo
-            estructura_planificador.tabla = json.dumps(tabla)  # Vuelve a serializar el diccionario a string JSON para almacenarlo
+            estructura_planificador.tabla = json.dumps(tabla)
             estructura_planificador.save()
 
         return Response({"msg": "Contenido actualizado con éxito"}, status=200)
+
+class EstructuraPlanificadorUpdateAPIView(APIView):
+    def post(self, request, pk):
+        print("ACA")
+        estructura = get_object_or_404(EstructuraPlanificador, pk=pk)
+        planificador = estructura.planificador_set.first()
+        estructura_serializer = EstructuraPlanificadorSerializer(estructura, data=request.data, partial=True)
+        if estructura_serializer.is_valid():
+            print(estructura_serializer)
+            estructura_serializer.save()
+        else:
+            return Response(estructura_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        tabla_celdas = request.data.get('tabla', {})
+        if tabla_celdas:
+            print(tabla_celdas)
+
+            with transaction.atomic():
+                for coordenadas, datos_celda in tabla_celdas.items():
+                    fila, columna = map(int, coordenadas.split(','))
+                    celda, created = Celda.objects.update_or_create(
+                        id=datos_celda.get('id'),
+                        defaults={
+                            'planificador': planificador,  # Relación correcta
+                            'contenido': datos_celda.get('contenido', ''),
+                            'fila': fila,
+                            'columna': columna,
+                        }
+                    )
+                    print(celda, created)
+
+        return Response({'message': 'Estructura del planificador y celdas actualizadas correctamente'}, status=status.HTTP_200_OK)

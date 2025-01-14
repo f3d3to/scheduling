@@ -47,7 +47,13 @@ class MateriaEstudiante(models.Model):
     nota_final = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)  # Ejemplo: 7.50
     final_obligatorio = models.BooleanField(default=True)
     catedra = models.CharField(max_length=200, blank=True, null=True)  # Nombre de la cátedra
+
+    # REVISION DE LA MATERIA PARA ESTADISTICA. != COMENTARIOS
     comentarios = models.TextField(blank=True, null=True)
+    intentos = models.PositiveIntegerField(default=0)  # Número de intentos
+
+    # INFORMACION - HACE SEMINARIOS, TIENE GRUPO DE INVS, TIENE UN LABORATORIO, ETC-
+    comentarios_docente = models.TextField(blank=True, null=True)  # Comentarios del docente
 
     # Nuevos campos
     estado = models.CharField(
@@ -61,8 +67,9 @@ class MateriaEstudiante(models.Model):
         ],
         default='pendiente'
     )
-    intentos = models.PositiveIntegerField(default=0)  # Número de intentos
+    # FECHAS RELEVANTES -EVENTOS-.
     fecha_inscripcion = models.DateField(blank=True, null=True)  # Fecha de inscripción
+
     metodo_aprobacion = models.CharField(
         max_length=50,
         choices=[
@@ -74,9 +81,7 @@ class MateriaEstudiante(models.Model):
         null=True
     )
     creditos_asignados = models.IntegerField(blank=True, null=True)  # Créditos asignados
-    comentarios_docente = models.TextField(blank=True, null=True)  # Comentarios del docente
 
-    # Control de actualizaciones
     fecha_actualizacion = models.DateTimeField(auto_now=True)
 
     class Meta:

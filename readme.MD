@@ -196,6 +196,19 @@ Recompensas por Participación: Un sistema de puntos canjeables por beneficios a
 Optimización de Horarios: Algoritmos que sugieran la mejor combinación de materias y horarios según las preferencias del estudiante, como evitar días completos o maximizar mañanas libres.
 
 
+-  AGREGAR UN MODULO DE NOTAS.
+
+- AGREGAR DASHBOARD PARA VER COSAS GENERALES DE LA CARRERA DEL ESTUDIANTE
+
+- ENCUESTA POST CURSADA
+
+- SECCION POR CALENDARIO ACADEMICO PARA UN CUATRI
+
+- AGREGAR UN DASHBOARD DE CALIDAD DE ESTUDIO, PROGRESO, QUE HICE TAL SEMANA ()
+
+- AGREGAR ALGO TIPO GITHUB PARA SABER CUANDO ESTUVE MÁS ACTIVO ESTUDIANDO
+
+
 # TO - DO
 
 ## GENERAL
