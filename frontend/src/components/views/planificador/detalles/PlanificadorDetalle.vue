@@ -37,8 +37,6 @@
       :responsive="false"
       :margin="[0, 0]"
       :auto-size="true"
-      @layout-updated="onLayoutUpdated"
-
       placeholder-class="grid-placeholder"
       layout-class="custom-grid-layout"
     >
@@ -52,11 +50,14 @@
         :i="item.i"
         :class="'custom-grid-item'"
       >
-        <CeldaVisualizacion :celda="getCeldaById(item.i)" />
+        <CeldaVisualizacion
+          :celda="getCeldaById(item.i)"
+          @eliminar-celda="eliminarCelda"
+        />
       </GridItem>
     </GridLayout>
     <v-dialog v-model="showAddCeldaDialog" max-width="600px" persistent>
-      <add-celda @close-dialog="showAddCeldaDialog = false" @close="showAddCeldaDialog = false" />
+      <add-celda @close-dialog="showAddCeldaDialog = false" @close="showAddCeldaDialog = false" @update-layout="handleLayoutUpdate" />
     </v-dialog>
   </div>
 </template>
@@ -121,7 +122,9 @@ export default defineComponent({
         confirmButtonText: 'OK'
       });
     },
-    onLayoutUpdated(newLayout) {
+    async handleLayoutUpdate() {
+      this.showAddCeldaDialog = false;
+      await this.fetchData();
     },
     toggleEditMode() {
       if (!this.isEditing) {
@@ -137,6 +140,38 @@ export default defineComponent({
         icon: 'info',
         title: 'Edición',
         text: this.isEditing ? 'Estás en el modo edición de un planificador.' : 'Has salido del modo edición.'
+      });
+    },
+    async eliminarCelda(celdaId) {
+      Swal.fire({
+        title: "¿Estás seguro?",
+        text: "Esta acción eliminará permanentemente la celda y sus elementos.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#54a832",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Sí, eliminar",
+        cancelButtonText: "Cancelar",
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          try {
+            const response = await fetch(
+              `http://localhost:8000/planificadores/${this.$route.params.id}/celdas/${celdaId}/`,
+              {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+              }
+            );
+            if (!response.ok) {
+              throw new Error("No se pudo eliminar la celda.");
+            }
+            this.layout = this.layout.filter((celda) => celda.i !== String(celdaId));
+            this.celdas = this.celdas.filter((celda) => celda.id !== parseInt(celdaId));
+            Swal.fire("Eliminada", "La celda fue eliminada correctamente.", "success");
+          } catch (error) {
+            Swal.fire("Error", error.message, "error");
+          }
+        }
       });
     },
   async saveLayout() {

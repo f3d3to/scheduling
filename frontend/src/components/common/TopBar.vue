@@ -7,7 +7,7 @@
         placeholder="Filtrar..."
       />
     </div>
-  </template>
+</template>
 
   <script>
   export default {
@@ -23,9 +23,9 @@
       },
     },
   };
-  </script>
+</script>
 
-  <style scoped>
+<style scoped>
 .topbar {
   height: 60px;
   background: linear-gradient(90deg, #2c2c3e, #1e1e2f);

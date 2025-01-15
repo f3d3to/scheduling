@@ -2,9 +2,17 @@
   <v-card class="celda-visualizacion">
     <div class="celda-encabezado">
       <template v-if="!editing">
-        <h3 class="celda-titulo" @click="enableEditing">{{ celda.contenido }}</h3>
+        <h3 class="celda-titulo" @click="enableEditing">{{ celda.contenido || '&nbsp;'  }}</h3>
       </template>
       <div v-else class="celda-edicion">
+        <v-icon
+          class="icono-eliminar"
+          color="black"
+          @click="emitirEliminarCelda"
+          title="Eliminar esta celda"
+        >
+          mdi-minus
+        </v-icon>
         <v-text-field
           v-model="editableContenido"
           dense
@@ -12,8 +20,8 @@
           flat
           class="campo-edicion"
         ></v-text-field>
-        <v-icon class="icono-guardar" @click="saveChanges">mdi-check</v-icon>
-        <v-icon class="icono-cancelar" @click="cancelEditing">mdi-close</v-icon>
+        <v-icon class="icono-guardar" @click="saveChanges" title="Guardar">mdi-check</v-icon>
+        <v-icon class="icono-cancelar" @click="cancelEditing" title="Cancelar">mdi-window-close</v-icon>
       </div>
     </div>
 
@@ -21,6 +29,13 @@
       <div v-for="elemento in elementos" :key="elemento.id" class="elemento-contenedor" :style="{ backgroundColor: elemento.color, borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', padding: '10px', marginBottom: '10px' }">
         <ElementoVisualizacion :elemento="elemento" />
       </div>
+      <v-icon class="icono-anadir" color="primary" @click="openAddElementDialog">mdi-plus</v-icon>
+      <add-elementos
+        :planificador-id="planificadorId"
+        :celda-id="celda.id"
+        @elemento-creado="handleElementoCreado"
+        ref="addElementoDialog"
+      />
     </div>
 
     <div v-else class="celda-sin-elementos">
@@ -32,11 +47,13 @@
 
 <script>
 import ElementoVisualizacion from "@planificadorDetalle/ElementoVisualizacion.vue";
+import AddElementos from "@planificadorDetalle/AddElementos.vue";
 import Swal from 'sweetalert2/dist/sweetalert2';
 
 export default {
   components: {
     ElementoVisualizacion,
+    AddElementos,
   },
   props: {
     celda: {
@@ -58,6 +75,12 @@ export default {
     },
   },
   methods: {
+    openAddElementDialog() {
+      this.$refs.addElementoDialog.openDialog();
+    },
+    handleElementoCreado(elementoNuevo) {
+      this.elementos.push(elementoNuevo);
+    },
     enableEditing() {
       this.editableContenido = this.celda.contenido;
       this.editing = true;
@@ -140,6 +163,9 @@ export default {
     closeDialog() {
       this.dialog = false;
     },
+    emitirEliminarCelda() {
+      this.$emit("eliminar-celda", this.celda.id);
+    },
     handleElementoCreado(elementoNuevo) {
       this.elementos.push(elementoNuevo);
       this.closeDialog();
@@ -201,7 +227,7 @@ export default {
 
 .icono-cancelar {
   cursor: pointer;
-  color: #ff5252; /* Rojo para cancelar */
+  color: #c42e2e; /* Rojo para cancelar */
   margin-left: 8px;
 }
 
@@ -215,7 +241,9 @@ export default {
   padding: 10px;
   background-color: #f4f4f4; /* Fondo claro */
 }
-
+.close-button {
+  margin-right: auto; /* Empuja todo lo demás hacia la derecha */
+}
 .celda-sin-elementos {
   margin-bottom: 10px;
 }

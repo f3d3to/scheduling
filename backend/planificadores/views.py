@@ -443,34 +443,252 @@ class CeldaContenidoUpdate(APIView):
 
         return Response({"msg": "Contenido actualizado con éxito"}, status=200)
 
+    def delete(self, request, planificador_id, celda_id):
+        # Obtener la celda y asegurarse de que pertenece al planificador
+        celda = get_object_or_404(Celda, id=celda_id, planificador_id=planificador_id)
+
+        # Obtener la estructura asociada
+        planificador = get_object_or_404(Planificador, id=planificador_id)
+        estructura = planificador.estructura
+
+        if not estructura:
+            return Response(
+                {"error": "La estructura del planificador no existe."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Iniciar una transacción para asegurarse de que todo se actualiza correctamente
+        with transaction.atomic():
+            # Eliminar todos los elementos relacionados con la celda
+            elementos_relacionados = celda.elementos.all()  # Usar el related_name "elementos"
+            elementos_relacionados.delete()
+
+            # Eliminar la celda
+            celda.delete()
+
+            # Actualizar la tabla en la estructura
+            tabla = estructura.tabla  # Obtener el campo JSONField
+            coordenadas = f"{celda.fila},{celda.columna}"
+            if coordenadas in tabla:
+                del tabla[coordenadas]  # Eliminar la entrada de la celda eliminada
+                estructura.tabla = tabla  # Asignar de nuevo el JSON actualizado
+                estructura.save()  # Guardar los cambios en la estructura
+
+        return Response(
+            {"message": "Celda, sus elementos relacionados y la tabla de la estructura fueron actualizados correctamente."},
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
 class EstructuraPlanificadorUpdateAPIView(APIView):
     def post(self, request, pk):
-        print("ACA")
         estructura = get_object_or_404(EstructuraPlanificador, pk=pk)
         planificador = estructura.planificador_set.first()
-        estructura_serializer = EstructuraPlanificadorSerializer(estructura, data=request.data, partial=True)
-        if estructura_serializer.is_valid():
-            print(estructura_serializer)
-            estructura_serializer.save()
-        else:
-            return Response(estructura_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
         tabla_celdas = request.data.get('tabla', {})
+
+        if not planificador:
+            return Response({'error': 'No se encontró un planificador asociado.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        nueva_tabla = {}
+
+        # Procesar celdas primero
         if tabla_celdas:
-            print(tabla_celdas)
+            print("Procesando celdas:", tabla_celdas)
 
             with transaction.atomic():
                 for coordenadas, datos_celda in tabla_celdas.items():
                     fila, columna = map(int, coordenadas.split(','))
-                    celda, created = Celda.objects.update_or_create(
-                        id=datos_celda.get('id'),
-                        defaults={
-                            'planificador': planificador,  # Relación correcta
-                            'contenido': datos_celda.get('contenido', ''),
-                            'fila': fila,
-                            'columna': columna,
+                    celda_id = datos_celda.get('id')
+
+                    if celda_id is None:
+                        # Crear nueva celda
+                        nueva_celda = Celda.objects.create(
+                            planificador=planificador,
+                            contenido=datos_celda.get('contenido', ''),
+                            fila=fila,
+                            columna=columna,
+                        )
+                        nueva_tabla[f"{fila},{columna}"] = {
+                            'id': nueva_celda.id,
+                            'contenido': nueva_celda.contenido,
+                            'fila': nueva_celda.fila,
+                            'columna': nueva_celda.columna,
+                            'w': datos_celda.get('w', 1),
+                            'h': datos_celda.get('h', 1),
                         }
-                    )
-                    print(celda, created)
+                        print(f"Celda creada: {nueva_celda.id}")
+                    else:
+                        celda, created = Celda.objects.update_or_create(
+                            id=celda_id,
+                            defaults={
+                                'planificador': planificador,
+                                'contenido': datos_celda.get('contenido', ''),
+                                'fila': fila,
+                                'columna': columna,
+                            }
+                        )
+                        nueva_tabla[f"{fila},{columna}"] = {
+                            'id': celda.id,
+                            'contenido': celda.contenido,
+                            'fila': celda.fila,
+                            'columna': celda.columna,
+                            'w': datos_celda.get('w', 1),
+                            'h': datos_celda.get('h', 1),
+                        }
+                        print(f"Celda actualizada: {celda_id}")
+
+        estructura_serializer = EstructuraPlanificadorSerializer(
+            estructura,
+            data={
+                **request.data,
+                'tabla': nueva_tabla,
+            },
+            partial=True,
+        )
+        if estructura_serializer.is_valid():
+            estructura_serializer.save()
+        else:
+            return Response(estructura_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({'message': 'Estructura del planificador y celdas actualizadas correctamente'}, status=status.HTTP_200_OK)
+
+
+class DynamicModelInfoAPIView(APIView):
+    """
+    Endpoint dinámico que devuelve información sobre modelos registrados y sus instancias.
+    """
+
+    def get(self, request, *args, **kwargs):
+        """
+        Devuelve los modelos disponibles, sus campos y las instancias existentes.
+        """
+        # Obtener todos los modelos registrados en ContentType
+        modelos_permitidos = ContentType.objects.all()
+        modelos = []
+        for content_type in modelos_permitidos:
+            model = content_type.model_class()
+
+            if not model:  # En caso de que el modelo haya sido eliminado
+                continue
+
+            # Obtener los campos y las instancias existentes
+            campos = [field.name for field in model._meta.fields]
+            instancias = [{'id': obj.id, 'representacion': str(obj)} for obj in model.objects.all()]
+
+            modelos.append({
+                'nombre': content_type.name.title(),
+                'model': content_type.model,
+                'campos': campos,
+                'instancias': instancias,
+            })
+
+        return Response(modelos, status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        """
+        Crea una nueva instancia del modelo especificado y la devuelve.
+        """
+        modelo = request.data.get('modelo')
+        data = request.data.get('datos')
+
+        if not modelo or not data:
+            return Response({'error': 'Modelo y datos son obligatorios'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Buscar el modelo dinámicamente usando ContentType
+            content_type = ContentType.objects.get(model=modelo, app_label='tu_app')  # Ajusta 'tu_app'
+            model = content_type.model_class()
+
+            if not model:
+                return Response({'error': 'Modelo no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+            instancia = model.objects.create(**data)
+            return Response({'id': instancia.id, 'nombre': str(instancia)}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ModeloAPIView(APIView):
+    """
+    Gestión de modelos dinámicos: listar modelos y sus instancias (GET) y crear una instancia nueva (POST).
+    """
+    def get(self, request, *args, **kwargs):
+        """
+        Devuelve todos los modelos permitidos y sus instancias.
+        """
+        allowed_models = ContentType.objects.all().exclude(
+            model__in=[
+                "contenttype","permission",
+                "logentry", "session",
+                "plandeestudio", "group",
+                "tipoevaluacion", "celda",
+                "elemento", "estado",
+                "estructuraelemento", "estructuraplanificador",
+                "usuario"
+                ]
+        )
+
+        modelos = []
+        for content_type in allowed_models:
+            model = content_type.model_class()
+            if not model:
+                continue
+
+            campos = [field.name for field in model._meta.fields]
+            instancias = [{'id': obj.id, 'nombre': str(obj)} for obj in model.objects.all()]
+
+
+            modelos.append({
+                'nombre': content_type.name.title(),
+                'model': content_type.model,
+                'id': content_type.id,
+                'campos': campos,
+                'instancias': instancias,
+            })
+
+        return Response(modelos, status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        """
+        Crea una instancia de un modelo dinámicamente.
+        """
+        modelo = request.data.get('modelo')
+        datos = request.data.get('datos')
+
+        if not modelo or not datos:
+            return Response({'error': 'Modelo y datos son obligatorios'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            content_type = ContentType.objects.get(model=modelo)
+            model = content_type.model_class()
+
+            instancia = model.objects.create(**datos)
+            return Response({'id': instancia.id, 'nombre': str(instancia)}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class AsociarElementoAPIView(APIView):
+    """
+    Asocia un elemento existente a una celda.
+    """
+    def post(self, request, planificador_id, celda_id):
+        instancia_id = request.data.get('instancia_id')
+        model = request.data.get('model')
+        if not instancia_id:
+            return Response({'error': 'Se requiere el ID de la instancia'}, status=status.HTTP_400_BAD_REQUEST)
+
+        celda = get_object_or_404(Celda, id=celda_id, planificador_id=planificador_id)
+
+        try:
+            content_type = ContentType.objects.get(model=model)
+            # Asegurarse de que el objeto exista para este tipo y ID
+            model_class = content_type.model_class()
+            objeto = model_class.objects.get(id=instancia_id)
+            elemento = Elemento.objects.create(
+                celda=celda,
+                content_type=content_type,
+                object_id=instancia_id,
+                nombre=f'Elemento Celda {celda.id}({celda.fila},{celda.columna})',
+            )
+            return Response({'message': 'Elemento asociado correctamente', 'id': elemento.id}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

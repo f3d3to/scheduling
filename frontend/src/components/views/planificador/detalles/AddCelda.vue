@@ -9,8 +9,15 @@
                 <v-btn prepend-icon="mdi mdi-table-column-plus-after" @click="addColumn">
                     <template v-slot:prepend>
                         <v-icon style="color:blue;"></v-icon>
+                        <v-icon style="color:blue;">mdi mdi-plus</v-icon>
                     </template>
-                    Columna
+                </v-btn>
+                <v-btn prepend-icon="mdi mdi-table-column-remove" @click="removeColumn">
+                    <template v-slot:prepend>
+                        <v-icon style="color:red;"></v-icon>
+                        <v-icon style="color:red;">mdi mdi-minus</v-icon>
+
+                    </template>
                 </v-btn>
             </div>
             <div class="mini-tablero">
@@ -109,11 +116,12 @@
             this.layout = this.generateLayout(this.celdas);
             this.layoutGenerado = true;
         }},
+
         generateLayout(celdas) {
             const layout = celdas.map((celda, index) => {
                 const [fila, columna] = celda.coordenadas.split(",").map(Number);
                 return {
-                i: index,
+                i: celda.id,
                 x: columna - 1,
                 y: fila - 1,
                 w: celda.w,
@@ -140,7 +148,7 @@
             y: maxY,
             w: this.columnas,
             h: 1,
-            i: this.layout.length,
+            i: null,
             contenido: '',
             isNew: true,
             isResizable: true,
@@ -154,7 +162,7 @@
           y: this.layout.reduce((max, item) => Math.max(max, item.y), 0) + 1,
           w: 1,
           h: 1,
-          i: this.layout.length,
+          i: null,
           contenido: '',
           isNew: true,
           isResizable: true,
@@ -178,10 +186,8 @@
         // Procesar el layout para construir el objeto `tabla`
         this.layout.forEach((celda) => {
             const key = `${celda.y + 1},${celda.x + 1}`;
-            console.log(celda)
-            console.log(celda.id)
             estructuraData.tabla[key] = {
-            id: celda.id,
+            id: celda.i,
             contenido: celda.contenido,
             fila: celda.y + 1,
             columna: celda.x + 1,
@@ -213,13 +219,28 @@
             });
 
             if (!response.ok) throw new Error('Error al guardar los cambios');
-
+            this.$emit('update-layout');
+            this.$emit('close-dialog');
             Swal.fire('Guardado', 'Los cambios han sido guardados correctamente.', 'success');
         } catch (error) {
             Swal.fire('Error', error.message, 'error');
         }
         },
-    cancelChanges() {
+        removeColumn() {
+            if (this.columnas > 1) {
+                this.columnas--;
+                this.layout = this.layout.filter((celda) => celda.x < this.columnas);
+
+                this.layout.forEach((celda) => {
+                    if (celda.x >= this.columnas) {
+                        celda.w = Math.min(celda.w, this.columnas - celda.x);
+                    }
+                });
+            } else {
+                Swal.fire('Error', 'Debe haber al menos una columna.', 'error');
+            }
+        },
+      cancelChanges() {
         this.columnas = this.columnasOriginal;
 
         this.layout.forEach(celda => {
