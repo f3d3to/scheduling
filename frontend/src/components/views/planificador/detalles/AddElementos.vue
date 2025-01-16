@@ -216,8 +216,7 @@ export default {
         this.$emit('elemento-asociado', data.id); // Emitir evento para actualizar la celda
       } catch (error) {
         console.error("Error al asociar elemento:", error);
-        // Manejar el error, por ejemplo, mostrando un mensaje al usuario
-        alert(error.message);
+        console.log(error.message);
       }
     },
   },

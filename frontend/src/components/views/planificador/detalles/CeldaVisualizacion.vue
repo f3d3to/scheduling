@@ -26,16 +26,19 @@
     </div>
 
     <div v-if="elementos.length" class="celda-elementos">
-      <div v-for="elemento in elementos" :key="elemento.id" class="elemento-contenedor" :style="{ backgroundColor: elemento.color, borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', padding: '10px', marginBottom: '10px' }">
+      <div v-for="elemento in elementos" :key="elemento.id" class="elemento-contenedor" :style="{ backgroundColor: elemento.color, borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', padding: '10px'}">
         <ElementoVisualizacion :elemento="elemento" @elemento-desasociado="fetchElementos"/>
       </div>
-      <v-icon class="icono-anadir" color="primary" @click="openAddElementDialog">mdi-plus</v-icon>
-      <add-elementos
-        :planificador-id="planificadorId"
-        :celda-id="celda.id"
-        @elemento-asociado="fetchElementos"
-        ref="addElementoDialog"
-      />
+      <div class="anadirElemento">
+        <v-icon class="icono-anadir" color="primary" @click="openAddElementDialog">mdi-plus</v-icon>
+        <add-elementos
+          :planificador-id="planificadorId"
+          :celda-id="celda.id"
+          @elemento-asociado="fetchElementos"
+          ref="addElementoDialog"
+        />
+      </div>
+
     </div>
 
     <div v-else class="celda-sin-elementos">
@@ -183,18 +186,19 @@ export default {
 
 <style scoped>
 .celda-visualizacion {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
   height: 100%;
   overflow: auto;
+  border-radius: 0px;
 }
-
+.anadirElemento {
+  display: flex;
+  justify-content: center; /* Centrado horizontal */
+  align-items: center; /* Centrado vertical */
+  height: 100%; /* Ajusta esto según la altura deseada */
+}
 .celda-encabezado {
   flex: 0 0 auto;  /* No cambiar tamaño y permanecer visible */
   background-color: #f1f1f1;
-  border-bottom: 2px solid #ddd;
   padding: 8px;
   text-align: center;
   position: sticky;
@@ -229,19 +233,20 @@ export default {
 }
 
 .elemento-contenedor {
-  margin-bottom: 10px;
+  margin-bottom: 4px;
+  margin-left: 4px;
+  margin-right: 4px;
   color: #fff;
-  font-size: 14px;
+  font-size: 10px;
   display: flex;
-  justify-content: space-between;
-  border: 1px solid #ddd; /* Borde divisorio */
-  padding: 10px;
-  background-color: #f4f4f4; /* Fondo claro */
+  background-color: #f4f4f4;
+  align-items: center; /* Centra los ítems verticalmente */
+  justify-content: center; /* Centra los ítems horizontalmente */
 }
 .close-button {
   margin-right: auto; /* Empuja todo lo demás hacia la derecha */
 }
 .celda-sin-elementos {
-  margin-bottom: 10px;
+  margin-bottom: 2px;
 }
 </style>

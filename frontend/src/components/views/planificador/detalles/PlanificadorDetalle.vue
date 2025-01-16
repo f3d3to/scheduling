@@ -2,9 +2,16 @@
   <div class="planificador">
     <div class="planificador-encabezado">
       <h4 class="text-h6 font-weight-thin text-md-h5 text-lg-h4">{{ nombre  }}
-      <v-btn prepend-icon="mdi mdi-pencil" v-if="!isEditing" @click="toggleEditMode">
-        <template v-slot:prepend><v-icon style="color:blue;" ></v-icon></template>
-      </v-btn>
+      <v-icon
+        v-if="!isEditing"
+        @click="toggleEditMode"
+        class="icono-editar"
+        color="blue"
+        size="small"
+        title="Editar planificador"
+      >
+        mdi-pencil
+      </v-icon>
       <v-btn prepend-icon="mdi mdi-plus" v-if="isEditing" @click="showAddCeldaDialog = true">
         <template v-slot:prepend>
           <v-icon style="color:blue;" ></v-icon>
@@ -223,6 +230,9 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.icono-editar{
+  font-size: 26px;
+}
 .planificador-encabezado{
   text-align: center;
 
@@ -232,13 +242,12 @@ export default defineComponent({
 .planificador {
   display: flex;
   flex-direction: column;
-  height: 100%; /* Ocupa todo el espacio disponible */
-  width: 100%; /* Usa todo el ancho del contenedor */
-  overflow: hidden; /* Evita scroll no deseado */
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 .vue-grid-layout {
   background-color: #ffffff;
-  border-radius: 10px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 
 }

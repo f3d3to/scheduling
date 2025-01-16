@@ -7,11 +7,10 @@ class Sesion(models.Model):
     duracion_minutos = models.PositiveIntegerField(help_text="Duración de la sesión en minutos para ser completada")
     es_obligatoria = models.BooleanField(default=True, help_text="Indica si esta sesión es obligatoria para completar la tarea")
     fecha_creacion = models.DateTimeField(auto_now_add=True)
-
+    color = models.CharField(max_length=7, default="#FFFFFF", help_text="Color asociado al estado.")
     def __str__(self):
         obligatoria_str = "Obligatoria" if self.es_obligatoria else "Opcional"
         return f"{self.nombre} ({self.duracion_minutos} min, {obligatoria_str})"
-
 
 class TareaTimer(models.Model):
     tarea = models.OneToOneField('planificadores.Tarea', on_delete=models.CASCADE, related_name='tarea_timer')

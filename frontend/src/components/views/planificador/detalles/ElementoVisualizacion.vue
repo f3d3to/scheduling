@@ -176,13 +176,6 @@ export default {
 </script>
 
 <style scoped>
-.swal2-container {
-  z-index: 100000 !important;
-}
-
-.my-swal {
-  z-index: 100000 !important;
-}
 .title-container {
   display: flex;
   justify-content: space-between;
@@ -195,7 +188,8 @@ export default {
 
 .visualizacion-container {
   flex-grow: 1;
-  text-align: center;
+  display: grid;
+  place-items: center;
 }
 
 .elemento-dialog {

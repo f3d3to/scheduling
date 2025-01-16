@@ -43,9 +43,9 @@
       </v-col>
     </v-row>
 
-    <v-row justify="center" class="mt-4">
+    <v-row justify="center" class="mt-4" >
       <v-col cols="12" md="8">
-        <v-card-title v-if="tasks.length > 0">Tareas
+        <v-card-title v-if="tasks.length > 0" >Tareas
         <v-btn
           color="primary"
           @click="showAddTaskDialog"
@@ -55,12 +55,12 @@
           <v-icon>mdi-plus</v-icon>
         </v-btn>
       </v-card-title>
-        <div v-show="tasks.length > 0">
+        <div v-show="tasks.length > 0" >
           <v-card
             v-for="task in tasks"
             :key="task.id"
             class="mb-2"
-            @click="selectTask(task)"
+            @click="selectedTask && selectedTask.id === task.id ? deselectTask() : selectTask(task)"
             :color="
               selectedTask && selectedTask.id === task.id ? 'primary lighten-4' : ''
             "
@@ -330,7 +330,6 @@ async function fetchSessions() {
     const response = await fetch("http://localhost:8000/sesiones/");
     if (response.ok) {
       const data = await response.json();
-      // Accede a la propiedad 'results' para obtener el array
       if (Array.isArray(data.results)) {
         sessions.value = data.results;
       } else {
@@ -461,7 +460,9 @@ function selectSession(session) {
 function selectTask(task) {
   selectedTask.value = task;
 }
-
+function deselectTask() {
+  selectedTask.value = null;
+}
 function showAddTaskDialog() {
   newTask.value = { nombre: "", cantidad_para_completar: 1, cantidad_completadas: 0 };
   addTaskDialog.value = true;
@@ -510,19 +511,16 @@ async function updateTask() {
 }
 </script>
 <style scoped>
-/* Estilos generales para el contenedor principal */
 .v-container {
   font-family: "Roboto", sans-serif; /* Fuente principal */
 }
 
-/* Estilos para la tarjeta del temporizador */
 .v-card {
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Sombra suave */
 }
 
-/* Estilos para el título del temporizador */
 .v-card-title.text-center {
   font-weight: 500;
   font-size: 24px;
@@ -530,25 +528,21 @@ async function updateTask() {
   margin-bottom: 10px;
 }
 
-/* Estilos para el tiempo */
 .v-card-text.text-center.display-1 {
   font-size: 48px;
   margin-bottom: 20px;
 }
 
-/* Estilos para los botones */
 .v-btn {
   margin: 0 5px;
   text-transform: none; /* Quita la transformación a mayúsculas por defecto */
 }
 
-/* Estilos para la sección de tareas */
 .v-card-title {
   font-size: 20px;
   color: #2196f3; /* Azul primario */
 }
 
-/* Estilos para cada tarjeta de tarea */
 .v-card.mb-2 {
   border: 1px solid #ccc; /* Borde ligero */
   transition: box-shadow 0.2s ease-in-out;
@@ -558,19 +552,16 @@ async function updateTask() {
   box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada al hacer hover */
 }
 
-/* Estilos para el título de la tarea */
 .v-card-title.font-weight-bold {
   font-size: 18px;
   color: #333;
 }
 
-/* Estilos para el subtítulo de la tarea */
 .v-card-subtitle {
   font-size: 14px;
   color: #666;
 }
 
-/* Estilos para los modales */
 .v-dialog {
   border-radius: 10px;
 }
@@ -600,9 +591,4 @@ async function updateTask() {
   margin-top: 5px;
 }
 
-/* Estilos específicos para el botón "Manage Sessions" */
-.v-btn[data-v-54995dd9] {
-  /* Reemplaza data-v-54995dd9 con el identificador generado en tu componente */
-  margin-bottom: 10px;
-}
 </style>
