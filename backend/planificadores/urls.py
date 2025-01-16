@@ -16,13 +16,11 @@ from .views import (
     EventoListCreateView, EventoRetrieveUpdateDestroyView,
     EventoAsociadoListCreateView, EventoAsociadoRetrieveUpdateDestroyView,
     PlanificadorDetailView,
-    ModeloEstructuraListView,
-    SchemaListView,
-    FormularioCrearElementoView, FormularioInfoView,
     CeldaContenidoUpdate,
     EstructuraPlanificadorUpdateAPIView,
     AsociarElementoAPIView,
     ModeloAPIView,
+    ElementoDetailView,
 )
 
 app_name = "planificadores"
@@ -90,18 +88,11 @@ urlpatterns = [
 
     path('planificadores/<int:pk>/', PlanificadorDetailView.as_view(), name='planificador-detail'),
 
-    # Estructuras de los modelos
-    path('estructura-modelos/', ModeloEstructuraListView.as_view(), name='estructura-modelos-list'),
-
-    path('listado-urls/', SchemaListView.as_view(), name='listado-urls'),
-
-    path('formulario-crear-elemento/', FormularioCrearElementoView.as_view(), name='formulario-crear-elemento'),
-
-    path('formulario-info-elemento/', FormularioInfoView.as_view(), name='formulario-info-elemento'),
-
     path('planificadores/<int:planificador_id>/celdas/<int:celda_id>/', CeldaContenidoUpdate.as_view(), name='update_celda_content'),
     path('planificador/estructura/actualizar/<int:pk>/', EstructuraPlanificadorUpdateAPIView.as_view(), name='update-celdas-estructura'),
 
     path('models/', ModeloAPIView.as_view(), name='models'),
     path('celdas/<int:planificador_id>/<int:celda_id>/elementos/', AsociarElementoAPIView.as_view(), name='asociar-elemento'),
+
+    path('elementos/detalle/<int:content_type_id>/<int:object_id>/', ElementoDetailView.as_view(), name='elemento-detail'),
 ]

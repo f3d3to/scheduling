@@ -117,19 +117,3 @@ class MensajeFilter(django_filters.FilterSet):
     class Meta:
         model = Mensaje
         fields = ['tipo', 'icono', 'color']
-
-
-class URLFilter:
-    def __init__(self, data, queryset):
-        self.data = data
-        self.queryset = queryset
-
-    def is_valid(self):
-        return 'include_pattern' in self.data
-
-    def qs(self):
-        include_pattern = self.data.get('include_pattern', '')
-        if include_pattern:
-            return [url for url in self.queryset if include_pattern in url]
-        return self.queryset
-

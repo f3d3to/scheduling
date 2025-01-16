@@ -57,6 +57,7 @@
 </template>
 
 <script>
+import Swal from 'sweetalert2';
 export default {
   props: {
     planificadorId: {
@@ -205,7 +206,13 @@ export default {
         }
 
         const data = await response.json();
-        console.log("Elemento asociado correctamente:", data);
+        Swal.fire({
+                title: "Agregado!",
+                text: "El elemento ha sido agregado con éxito.",
+                icon: "success",
+                confirmButtonColor: "#54a832",
+              });
+
         this.$emit('elemento-asociado', data.id); // Emitir evento para actualizar la celda
       } catch (error) {
         console.error("Error al asociar elemento:", error);

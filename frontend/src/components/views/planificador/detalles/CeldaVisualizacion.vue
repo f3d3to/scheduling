@@ -27,13 +27,13 @@
 
     <div v-if="elementos.length" class="celda-elementos">
       <div v-for="elemento in elementos" :key="elemento.id" class="elemento-contenedor" :style="{ backgroundColor: elemento.color, borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', padding: '10px', marginBottom: '10px' }">
-        <ElementoVisualizacion :elemento="elemento" />
+        <ElementoVisualizacion :elemento="elemento" @elemento-desasociado="fetchElementos"/>
       </div>
       <v-icon class="icono-anadir" color="primary" @click="openAddElementDialog">mdi-plus</v-icon>
       <add-elementos
         :planificador-id="planificadorId"
         :celda-id="celda.id"
-        @elemento-creado="handleElementoCreado"
+        @elemento-asociado="fetchElementos"
         ref="addElementoDialog"
       />
     </div>
@@ -77,9 +77,6 @@ export default {
   methods: {
     openAddElementDialog() {
       this.$refs.addElementoDialog.openDialog();
-    },
-    handleElementoCreado(elementoNuevo) {
-      this.elementos.push(elementoNuevo);
     },
     enableEditing() {
       this.editableContenido = this.celda.contenido;
