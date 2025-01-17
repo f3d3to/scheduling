@@ -29,22 +29,20 @@
       <div v-for="elemento in elementos" :key="elemento.id" class="elemento-contenedor" :style="{ backgroundColor: elemento.color, borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', padding: '10px'}">
         <ElementoVisualizacion :elemento="elemento" @elemento-desasociado="fetchElementos"/>
       </div>
-      <div class="anadirElemento">
-        <v-icon class="icono-anadir" color="primary" @click="openAddElementDialog">mdi-plus</v-icon>
-        <add-elementos
-          :planificador-id="planificadorId"
-          :celda-id="celda.id"
-          @elemento-asociado="fetchElementos"
-          ref="addElementoDialog"
-        />
-      </div>
-
     </div>
 
     <div v-else class="celda-sin-elementos">
       No hay elementos relacionados con esta celda.
     </div>
-
+    <div class="anadirElemento">
+      <v-icon class="icono-anadir" color="primary" @click="openAddElementDialog">mdi-plus</v-icon>
+      <add-elementos
+        :planificador-id="planificadorId"
+        :celda-id="celda.id"
+        @elemento-asociado="fetchElementos"
+        ref="addElementoDialog"
+      />
+    </div>
   </v-card>
 </template>
 
@@ -116,14 +114,10 @@ export default {
           });
           return;
         }
-
-        Swal.fire({
-          icon: 'success',
-          title: 'Guardado exitoso',
-          text: 'El contenido de la celda fue actualizado correctamente.',
-          timer: 1500,
-          showConfirmButton: false,
-        });
+        push.success({
+          title: 'Guarado!',
+          message: 'El contenido de la celda fue actualizado correctamente.'
+        })
       } catch {
         Swal.fire({
           icon: 'error',
@@ -169,13 +163,10 @@ export default {
     handleElementoCreado(elementoNuevo) {
       this.elementos.push(elementoNuevo);
       this.closeDialog();
-      Swal.fire({
-        icon: 'success',
+      push.warning({
         title: 'Elemento creado',
-        text: 'El nuevo elemento se agregó correctamente.',
-        timer: 1500,
-        showConfirmButton: false,
-      });
+        message: 'El nuevo elemento se agregó correctamente.',
+      })
     },
   },
   async mounted() {
@@ -194,7 +185,7 @@ export default {
   display: flex;
   justify-content: center; /* Centrado horizontal */
   align-items: center; /* Centrado vertical */
-  height: 100%; /* Ajusta esto según la altura deseada */
+  /* height: 100%; */
 }
 .celda-encabezado {
   flex: 0 0 auto;  /* No cambiar tamaño y permanecer visible */

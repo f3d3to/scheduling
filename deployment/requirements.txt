@@ -21,4 +21,9 @@ django-filter
 pandas
 openpyxl
 
-# pygraphviz
+#JWT
+djangorestframework-simplejwt
+djangorestframework-simplejwt[crypto]
+
+# ASYNC
+uvicorn

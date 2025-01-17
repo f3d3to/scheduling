@@ -15,7 +15,7 @@
         <ul>
           <li><RouterLink to="/"><i class="fas fa-home"></i> Inicio</RouterLink></li>
           <li><RouterLink to="/planes"><i class="fa-solid fa-network-wired"></i>Planes de estudio</RouterLink></li>
-          <li><RouterLink to="/timer"><i class="fas fa-clock"></i> Timer</RouterLink></li>
+          <li><RouterLink to="/timer"><i class="fas fa-clock"></i> Pomodoro</RouterLink></li>
           <li><RouterLink to="/planificadores"><i class="fa-solid fa-hexagon-nodes"></i> Planificadores</RouterLink></li>
 
         </ul>

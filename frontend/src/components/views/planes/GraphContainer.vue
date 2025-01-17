@@ -100,7 +100,7 @@ export default {
         .append("svg")
         .attr("width", width)
         .attr("height", height)
-        .style("background-color", "#1E1E1E")
+        .style("background-color", "#ffffff")
         .on("click", () => this.resetHighlight())
         .call(
           d3.zoom().on("zoom", (event) => {
@@ -178,7 +178,7 @@ export default {
           .attr("y", yExtent[0] - 50)
           .attr("text-anchor", "middle")
           .attr("font-size", "16px")
-          .attr("fill", "#fff")
+          .attr("fill", "#636161")
           .text(`Año ${year}`);
 
         rectGroups.push(rectGroup);
@@ -249,7 +249,7 @@ export default {
         .attr("dy", ".35em")
         .text((d) => d.name)
         .style("font-size", "10px")
-        .style("fill", "#FFFFFF")
+        .style("fill", "#5c5a5a")
         .style("pointer-events", "none");
 
       simulation.on("tick", () => {
@@ -296,7 +296,7 @@ export default {
 svg {
   width: 100%;
   height: 100%;
-  background-color: #1e1e1e;
+  background-color: #ffffff;
 }
 
 .nodes circle {

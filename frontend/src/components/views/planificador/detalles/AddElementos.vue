@@ -57,11 +57,11 @@
 </template>
 
 <script>
-import Swal from 'sweetalert2';
+
 export default {
   props: {
     planificadorId: {
-      type: [Number, String], // Podría ser String si tu ID es un UUID
+      type: [Number, String],
       required: true,
     },
     celdaId: {
@@ -175,14 +175,10 @@ export default {
           this.selectedInstance = data.id;
         } else {
           await this.asociarElemento(this.selectedInstance);
-          console.log(
-            "Asociando instancia existente:",
-            this.selectedInstance
-          );
         }
         this.closeDialog();
       } catch (error) {
-        console.error("Error en submit:", error);
+        Swal.fire('Error', 'Error en submit:', 'error');
       }
     },
     async asociarElemento(instanciaId) {
@@ -206,17 +202,13 @@ export default {
         }
 
         const data = await response.json();
-        Swal.fire({
-                title: "Agregado!",
-                text: "El elemento ha sido agregado con éxito.",
-                icon: "success",
-                confirmButtonColor: "#54a832",
-              });
-
-        this.$emit('elemento-asociado', data.id); // Emitir evento para actualizar la celda
+        push.success({
+                title: 'Agregado',
+                message: 'El elemento ha sido agregado correctamente.'
+              })
+        this.$emit('elemento-asociado', data.id);
       } catch (error) {
-        console.error("Error al asociar elemento:", error);
-        console.log(error.message);
+        Swal.fire('Error', 'Error al asociar elemento', 'error');
       }
     },
   },

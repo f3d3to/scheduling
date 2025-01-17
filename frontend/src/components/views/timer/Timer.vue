@@ -4,15 +4,15 @@
       <v-col cols="12" md="8">
         <v-card :style="{ backgroundColor: selectedSession.color || '#dbd9d9', color: '#fff' }"
         >
-          <v-card-title class="text-center">Timer </v-card-title>
+          <v-card-title class="text-center">Pomodoro </v-card-title>
           <v-card-title class="text-center" v-if="selectedSession">
             <strong>{{ selectedSession.nombre }}</strong>
             <v-icon
               v-if="selectedSession.id"
               class="icono-deseleccionar"
-              color="black"
+              size="25px"
               @click="deseleccionarSesion"
-              title="Deseleccionar sesión"
+              title="Desmarcar sesión"
             >
               mdi-close
             </v-icon>
@@ -26,29 +26,21 @@
           </v-card-text>
 
           <v-card-actions class="justify-center">
-            <v-btn color="primary" @click="startTimer" :disabled="timerRunning">
+            <v-btn color="primary" @click="startTimer" :disabled="timerRunning" prepend-icon="mdi-play">
               Iniciar
             </v-btn>
-            <v-btn color="warning" @click="pauseTimer" :disabled="!timerRunning">
+            <v-btn color="warning" @click="pauseTimer" :disabled="!timerRunning" prepend-icon="mdi-pause">
               Pausa
             </v-btn>
-            <v-btn color="error" @click="resetTimer">Reset</v-btn>
+            <v-btn color="error" @click="resetTimer" prepend-icon="mdi-stop">Reiniciar</v-btn>
           </v-card-actions>
 
           <v-card-actions class="justify-center">
-            <v-btn color="secondary" @click="manageSessionsDialog = true">
+            <v-btn color="secondary" @click="manageSessionsDialog = true" >
+              <v-icon size="25px">mdi-dots-horizontal</v-icon>
               Sesiones
             </v-btn>
           </v-card-actions>
-
-          <v-alert
-            v-if="showAlert"
-            type="success"
-            title="Tiempo Finalizado!"
-            text="Completaste una sesión."
-            closable
-            @click:close="showAlert = false"
-          ></v-alert>
         </v-card>
       </v-col>
     </v-row>
@@ -250,6 +242,7 @@
 </template>
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { sendNotificationWithCustomConfig } from '@/utils/notificationHelper';
 
 const timer = ref(60 * 60); // 60 minutes by default
 const timerRunning = ref(false);
@@ -338,7 +331,19 @@ async function handleTimerEnd() {
   clearInterval(interval.value);
   timerRunning.value = false;
   showAlert.value = true;
+  sendNotificationWithCustomConfig({
+      component: "WelcomeNotification",
+      props: {
+        title: '¡Tiempo cumplido! ⏲️',
+        subtitle: 'Terminaste esta sesión 🎉.',
+        icon: 'mdi mdi-check-circle-outline',
+        color: "green",
+        duration:1000000,
 
+      },
+    }, {
+      position: 'top-center'
+    });
   if (selectedTask.value) {
     selectedTask.value.cantidad_completadas++;
     await updateTask();
@@ -409,6 +414,9 @@ async function addSession() {
   if (response.ok) {
     addSessionDialog.value = false;
     fetchSessions();
+    push.success({
+      title: "Sesión creada correctamente",
+    })
   } else {
     console.error("Error adding session");
     try {
@@ -444,6 +452,10 @@ async function updateSession() {
   if (response.ok) {
     editSessionDialog.value = false;
     fetchSessions();
+    push.success({
+      title: "Editado con éxito!",
+      message: 'Sesión editada correctamente.',
+    })
   } else {
     console.error("Error updating session");
   }
@@ -502,6 +514,9 @@ async function addTask() {
   if (response.ok) {
     addTaskDialog.value = false;
     fetchTasks();
+    push.success({
+      title: "Tarea creada correctamente",
+    })
   } else {
     console.error("Error adding task");
   }
@@ -526,6 +541,10 @@ async function updateTask() {
 
   if (response.ok) {
     editTaskDialog.value = false;
+    push.success({
+      title: "Cambio guardado!",
+      message: 'Tarea editada correctamente.',
+    })
     fetchTasks();
   } else {
     console.error("Error updating task");
@@ -533,6 +552,7 @@ async function updateTask() {
 }
 </script>
 <style scoped>
+
 .icono-deseleccionar {
   font-size: 18px; /* Ajusta el tamaño */
   cursor: pointer;  /* Cambia el cursor al pasar por encima */

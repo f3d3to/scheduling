@@ -42,7 +42,7 @@
 </template>
 
 <script>
-import Swal from 'sweetalert2'; // Importar Swal2
+import Swal from 'sweetalert2';
 
 export default {
   props: {
@@ -127,17 +127,10 @@ export default {
             });
 
             if (response.ok) {
-              Swal.fire({
-                title: "¡Eliminado!",
-                text: "El elemento ha sido eliminado.",
-                icon: "success",
-                confirmButtonColor: "#54a832",
-                didOpen: () => {
-                  const swalContainer = document.querySelector('.swal2-container');
-                  if (swalContainer) {
-                    swalContainer.style.zIndex = '10000';
-                  }}
-              });
+              push.success({
+                title: 'Eliminado',
+                message: 'El elemento ha sido eliminado correctamente.'
+              })
               this.$emit('elemento-desasociado', this.elemento.id);
               this.closeDialog();
             } else {

@@ -2,11 +2,18 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify';
 import { fileURLToPath, URL } from 'url';
+import Unimport from 'unimport/unplugin'
 
 export default defineConfig({
   plugins: [
     vue(),
     vuetify({ autoImport: true }),
+    Unimport.vite({
+      addons: {
+        vueTemplate: true
+      },
+      imports: [{ name: 'push', from: 'notivue' }]
+    })
   ],
   resolve: {
     alias: {

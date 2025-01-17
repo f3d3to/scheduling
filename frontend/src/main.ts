@@ -13,8 +13,13 @@ import App from './App.vue'
 import '@mdi/font/css/materialdesignicons.css'
 import 'vuetify/styles'
 
-const pinia = createPinia();
+import { createNotivue } from 'notivue'
 
+import 'notivue/notification.css' // Only needed if using built-in notifications
+import 'notivue/animations.css' // Only needed if using built-in animations
+
+const pinia = createPinia();
+const notivue = createNotivue({position: 'top-right'})
 const vuetify = createVuetify({
   components,
   directives,
@@ -23,9 +28,9 @@ const vuetify = createVuetify({
 
 const app = createApp(App)
 app.use(pinia);
+app.use(notivue);
 app.use(plugin, defaultConfig())
 app.use(VueSweetalert2);
 app.use(vuetify)
 app.use(router);
-
 app.mount('#app')

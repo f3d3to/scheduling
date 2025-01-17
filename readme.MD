@@ -120,12 +120,12 @@ En el deployment, se incluyen los archivos necesarios para configurar y desplega
 - [ ] Dashboard para una materia y para más de una a la vez
 
 ## TIMER
-- [ ] Poder des-seleccionar una tarea.
+- [X] Poder des-seleccionar una tarea.
 - [ ] Las sesiones deben decir cuando duran, en el dialog.
-- [ ] Agregar más estilos.
+- [X] Agregar más estilos.
 - [ ] Al completar una Actividad es necesario una notificación.
-- [ ] Al completar una Sesión cambiar de color a verde.
-- [ ] Al completar una Tarea, una notificación.
+- [X] Al completar una Sesión cambiar de color a verde.
+- [X] Al completar una Tarea, una notificación.
 
 ## PLANIFICADORES
 - [ ] PREVISUALIZAR CON [Html Canvas](https://html2canvas.hertzen.com/)
@@ -190,3 +190,94 @@ En el deployment, se incluyen los archivos necesarios para configurar y desplega
 ## INTEGRACION
 - [ ] Sincronización con Apps Externas: Vinculación con Google Calendar, Notion o Trello para integrar el calendario académico con herramientas personales de gestión.
 - [ ] Gestión de Documentos: Un repositorio personal en la nube para guardar apuntes, trabajos prácticos y exámenes pasados organizados por materia.
+
+
+### IMPLEMENTACIONES
+## MODULOS DE USUARIOS
+----
+Backend genera el token JWT.
+Backend firma el token JWT con su llave privada.
+Frontend recibe el token JWT.
+Frontend verifica la firma del token JWT con la llave pública del backend.
++-------------------+                                                              +-------------------+
+
+|   Vue App         |                                                              |   Back-end        |
+| (Frontend)        |                                                              |  (Django/DRF)     |
++-------------------+                                                              +-------------------+
+        |                                                                               |
+        |  1.1                                                                           |
+        |  POST http://localhost:8000/api/auth/signup                                   |
+        |  Headers: { "Content-Type": "application/json" }                              |
+        |  Body: {                                                                      |
+        |    "usuario": "nuevoUsuario",                                                  |
+        |    "email": "nuevo@email.com",                                               |
+        |    "contraseña": "contraseñaSegura123"                                         |
+        |  }                                                                            |
+        |                                   Registro de Usuario                         |
+        |                                   -------------------                         |
+        |                                                                               |
+        |                                                                               | 1.2
+        |                                                                               |----->  Comprobar si existe
+        |                                                                               |       Guardar usuario en la base de datos:
+        |                                                                               |       { id: 1, usuario: "nuevoUsuario", email: "nuevo@email.com", ... }
+        |                                                                               |
+        |  1.3                                                                           |
+        |<-------------------------------------------------------------------------------|
+        |  Status: 201 Created                                                          |
+        |  Body: { "message": "¡Registrado exitosamente!" }                             |
+        |                                                                               |
+        |  ============================================================================ |
+        |                                                                               |
+        |  2.1                                                                           |
+        |  POST http://localhost:8000/api/auth/signin                                  |
+        |  Headers: { "Content-Type": "application/json" }                              |
+        |  Body: {                                                                      |
+        |    "usuario": "usuarioExistente",                                             |
+        |    "contraseña": "contraseña123"                                              |
+        |  }                                                                            |
+        |                                                                               |
+        |                                       Inicio de Sesión                        |
+        |                                       ---------------                         |
+        |                                                                               |
+        | 2.2                                                                           |----->  Autenticar { usuario: "usuarioExistente", contraseña: "contraseña123" }
+        |-----> GET http://localhost:8000/api/public-key/                              |       Crear JWT:
+        |  Headers: { "Accept": "application/x-pem-file" }                              |       Header: { "alg": "RS256", "typ": "JWT" }
+        |  Response: (200 OK)                                                          |       Payload: { "user_id": 1, "username": "usuarioExistente", "exp": 1678886400, ... }
+        |  Body: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A...\n-----END PUBLIC KEY-----" |       Firmar con CLAVE PRIVADA
+        |   (Clave pública en formato PEM)                                              |
+        |                                                                               |
+        |  2.3                                                                           |
+        |  JwtResponse                                                                  |
+        |<-------------------------------------------------------------------------------|
+        |  Status: 200 OK                                                               |
+        |  Headers: { "Content-Type": "application/json" }                              |
+        |  Body: {                                                                      |
+        |    "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6InVzdWFyaW9FeGlzdGVudGUiLCJleHAiOjE2Nzg4ODY0MDAsIm90cm9fZGF0byI6InZhbG9yIn0.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ",
+        |    "tipo": "Bearer",                                                          |
+        |    "info_usuario": { "id": 1, "username": "usuarioExistente", "email": "existente@email.com" },  |
+        |    "roles": ["usuario"]                                                       |
+        |  }                                                                            |
+        |  VERIFICAR FIRMA con CLAVE PÚBLICA en el frontend:                            |
+        |    Payload: { "user_id": 1, "username": "usuarioExistente", "exp": 1678886400, "otro_dato": "valor" } |
+        |                                                                               |
+        |  ============================================================================ |
+        |                                                                               |
+        |  3.1                                                                           |
+        |  GET http://localhost:8000/api/recurso-protegido/                             |
+        |  Headers: {                                                                   |
+        |    "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6InVzdWFyaW9FeGlzdGVudGUiLCJleHAiOjE2Nzg4ODY0MDAsIm90cm9fZGF0byI6InZhbG9yIn0.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ",
+        |  }                                                                            |
+        |                                                                               |
+        |                                   Acceso a Recursos                          |
+        |                                   -----------------                          |
+        |                                                                               | 3.2
+        |                                                                               |----->  Obtener info de usuario y autenticar
+        |                                                                               |       Verificar firma JWT (con CLAVE PÚBLICA):
+        |                                                                               |       Payload: { "user_id": 1, "username": "usuarioExistente", "exp": 1678886400, ... }
+        |                                                                               |       Autorizar según los roles del usuario (ej. "usuario")
+        |  3.3                                                                           |
+        |<-------------------------------------------------------------------------------|
+        |  Status: 200 OK                                                               |
+        |  Body: { "mensaje": "Acceso permitido", "datos": { "valor": 123, "otro": "abc" } } |
+        |                                                                               |
++-------------------+                                                              +-------------------+

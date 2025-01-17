@@ -74,8 +74,24 @@ import { defineComponent } from "vue";
 import { GridLayout, GridItem } from "vue3-grid-layout-next";
 import CeldaVisualizacion from "./CeldaVisualizacion.vue";
 import AddCelda from "./AddCelda.vue";
-import Swal from 'sweetalert2/dist/sweetalert2';
+import { updateConfig } from 'notivue'
 
+updateConfig({
+  position: 'bottom-right',
+  enqueue: true,
+  notifications: {
+    global: {
+      duration: 10000
+    }
+  }
+})
+
+updateConfig((prevConf) => {
+  return {
+    enqueue: !prevConf.enqueue,
+    avoidDuplicates: !prevConf.avoidDuplicates
+  }
+})
 export default defineComponent({
   components: {
     GridLayout,
@@ -122,12 +138,12 @@ export default defineComponent({
     cancelChanges() {
       this.layout = JSON.parse(JSON.stringify(this.originalLayout)); // Restaurar el layout original
       this.isEditing = false;
-      Swal.fire({
-        icon: 'info',
-        title: 'Cambios Cancelados',
-        text: 'Todos los cambios no guardados han sido descartados.',
-        confirmButtonText: 'OK'
-      });
+      updateConfig()
+      push.warning({
+        title: 'Cuidado!',
+        message: "Los cambios del planificador fueron cancelados!",
+      })
+
     },
     async handleLayoutUpdate() {
       this.showAddCeldaDialog = false;
@@ -140,14 +156,11 @@ export default defineComponent({
         this.layout = this.originalLayout;
       }
       this.isEditing = !this.isEditing;
-      Swal.fire({
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: true,
-        icon: 'info',
-        title: 'Edición',
-        text: this.isEditing ? 'Estás en el modo edición de un planificador.' : 'Has salido del modo edición.'
-      });
+      push.warning({
+        title: 'Cuidado!',
+        message: this.isEditing ? 'Estás en el modo edición de un planificador.': 'Has salido del modo edición.',
+        position: 'top-right',
+      })
     },
     async eliminarCelda(celdaId) {
       Swal.fire({
@@ -174,7 +187,10 @@ export default defineComponent({
             }
             this.layout = this.layout.filter((celda) => celda.i !== String(celdaId));
             this.celdas = this.celdas.filter((celda) => celda.id !== parseInt(celdaId));
-            Swal.fire("Eliminada", "La celda fue eliminada correctamente.", "success");
+            push.success({
+                title: 'Eliminada!',
+                message: 'La celda fue eliminada correctamente.'
+              })
           } catch (error) {
             Swal.fire("Error", error.message, "error");
           }
@@ -210,12 +226,10 @@ export default defineComponent({
         body: JSON.stringify(requestBody),
       });
       if (!response.ok) throw new Error('Failed to save layout');
-      Swal.fire({
-        icon: 'success',
-        title: 'Guardado',
-        text: 'El diseño ha sido guardado exitosamente!',
-        confirmButtonText: 'OK'
-      });
+      push.success({
+        title: 'Guardado!',
+        message: 'El diseño ha sido guardado exitosamente!',
+      })
     } catch (error) {
       Swal.fire({
         icon: 'error',

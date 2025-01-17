@@ -82,7 +82,6 @@
 
 <script>
   import { GridLayout, GridItem } from 'vue3-grid-layout-next';
-  import Swal from 'sweetalert2/dist/sweetalert2';
 
   export default {
     components: {
@@ -221,7 +220,11 @@
             if (!response.ok) throw new Error('Error al guardar los cambios');
             this.$emit('update-layout');
             this.$emit('close-dialog');
-            Swal.fire('Guardado', 'Los cambios han sido guardados correctamente.', 'success');
+            push.success({
+                title: 'Guardados!',
+                message: 'Los cambios fueron guardados correctamente!'
+              })
+
         } catch (error) {
             Swal.fire('Error', error.message, 'error');
         }
@@ -248,6 +251,11 @@
             celda.w = 1;
             }
         });
+        this.$emit('close-dialog');
+        push.warning({
+                title: 'Cancelados!',
+                message: 'Los cambios fueron cancelados correctamente!'
+              })
 
         this.onLayoutUpdated(this.layout);
         }
