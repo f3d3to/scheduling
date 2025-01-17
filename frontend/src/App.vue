@@ -1,4 +1,5 @@
 <template>
+    <v-app>
   <Sidebar />
   <div class="content-wrapper overflow-y-auto" >
     <TopBar @filter-change="onFilterChange" />
@@ -6,6 +7,7 @@
       <router-view />
     </div>
   </div>
+</v-app>
 </template>
 
 <script>
