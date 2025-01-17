@@ -8,6 +8,7 @@ class Sesion(models.Model):
     es_obligatoria = models.BooleanField(default=True, help_text="Indica si esta sesión es obligatoria para completar la tarea")
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     color = models.CharField(max_length=7, default="#FFFFFF", help_text="Color asociado al estado.")
+
     def __str__(self):
         obligatoria_str = "Obligatoria" if self.es_obligatoria else "Opcional"
         return f"{self.nombre} ({self.duracion_minutos} min, {obligatoria_str})"

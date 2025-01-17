@@ -6,7 +6,7 @@ from planificadores.serializers import TareaSerializer
 class SesionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sesion
-        fields = ['id', 'nombre', 'duracion_minutos', 'es_obligatoria', 'fecha_creacion']
+        fields = '__all__'
 
 class TareaTimerSerializer(serializers.ModelSerializer):
     tarea = TareaSerializer()  # Utiliza el serializador de Tarea para detalles completos

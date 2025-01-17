@@ -17,6 +17,7 @@ class SesionFactory(factory.django.DjangoModelFactory):
     duracion_minutos = FuzzyInteger(1, 60)
     es_obligatoria = factory.Faker('boolean')
     fecha_creacion = factory.Faker('date_time_this_year')
+    color = factory.Faker('hex_color')
 
 class TareaTimerFactory(factory.django.DjangoModelFactory):
     class Meta:

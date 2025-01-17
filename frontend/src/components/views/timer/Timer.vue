@@ -2,10 +2,20 @@
   <v-container>
     <v-row justify="center">
       <v-col cols="12" md="8">
-        <v-card>
-          <v-card-title class="text-center">Timer</v-card-title>
+        <v-card :style="{ backgroundColor: selectedSession.color || '#dbd9d9', color: '#fff' }"
+        >
+          <v-card-title class="text-center">Timer </v-card-title>
           <v-card-title class="text-center" v-if="selectedSession">
             <strong>{{ selectedSession.nombre }}</strong>
+            <v-icon
+              v-if="selectedSession.id"
+              class="icono-deseleccionar"
+              color="black"
+              @click="deseleccionarSesion"
+              title="Deseleccionar sesión"
+            >
+              mdi-close
+            </v-icon>
           </v-card-title>
           <v-card-text class="text-center display-1 font-weight-bold">
             {{ formattedTime }}
@@ -62,8 +72,9 @@
             class="mb-2"
             @click="selectedTask && selectedTask.id === task.id ? deselectTask() : selectTask(task)"
             :color="
-              selectedTask && selectedTask.id === task.id ? 'primary lighten-4' : ''
+              selectedTask && selectedTask.id === task.id ? 'blue-grey-lighten-3' : ''
             "
+            :style="{ backgroundColor: task.tarea.color || '#6f6f6f', color: '#fff' }"
           >
             <v-card-title class="font-weight-bold">{{ task.nombre }}</v-card-title>
             <v-card-subtitle>
@@ -80,13 +91,20 @@
                 <v-icon>mdi-cog</v-icon>
               </v-btn>
             </v-card-actions>
+            <v-icon
+                v-if="selectedTask && selectedTask.id === task.id"
+                color="white"
+                style="position: absolute; top: 5px; right: 5px;"
+              >
+                mdi-check-circle
+              </v-icon>
           </v-card>
         </div>
         <div v-show="tasks.length === 0">No hay tareas disponibles</div>
       </v-col>
     </v-row>
 
-    <v-dialog v-model="manageSessionsDialog" max-width="700px">
+    <v-dialog v-model="manageSessionsDialog" max-width="700px" >
       <v-card>
         <v-card-title>Sesiones</v-card-title>
         <v-card-text>
@@ -157,6 +175,7 @@
             label="Obligatoria"
           ></v-checkbox>
         </v-card-text>
+        <v-color-picker v-model="selectedSession.color" label="Color de la sesión"></v-color-picker>
         <v-card-actions>
           <v-btn color="success" @click="updateSession">Guardar</v-btn>
           <v-btn color="error" text @click="editSessionDialog = false"> Cancelar </v-btn>
@@ -298,7 +317,10 @@ async function fetchActividades() {
     console.error("Error en fetchActividades:", error);
   }
 }
-
+function deseleccionarSesion() {
+  selectedSession.value = {};
+  resetTimer();
+}
 function pauseTimer() {
   timerRunning.value = false;
   clearInterval(interval.value);
@@ -511,6 +533,10 @@ async function updateTask() {
 }
 </script>
 <style scoped>
+.icono-deseleccionar {
+  font-size: 18px; /* Ajusta el tamaño */
+  cursor: pointer;  /* Cambia el cursor al pasar por encima */
+}
 .v-container {
   font-family: "Roboto", sans-serif; /* Fuente principal */
 }
