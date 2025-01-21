@@ -11,9 +11,15 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
 from .models import PlanDeEstudio, Materia, MateriaEstudiante, Evaluacion
-from .serializers import PlanDeEstudioSerializer, MateriaSerializer, PlanDeEstudioCiclosSerializer, MateriaEstudianteSerializer, \
-    EvaluacionSerializer
-from .filters import PlanDeEstudioFilter, MateriaFilter
+from .serializers import (
+    PlanDeEstudioSerializer,
+    MateriaSerializer,
+    PlanDeEstudioCiclosSerializer,
+    MateriaEstudianteSerializer,
+    EvaluacionSerializer,
+    GrafoSerializer
+)
+from .filters import PlanDeEstudioFilter, MateriaFilter, GrafoFilter
 
 
 class PlanDeEstudioList(generics.ListAPIView):
@@ -146,3 +152,24 @@ class DescargarPlanDeEstudioJSON(APIView):
         response = HttpResponse(json_data, content_type='application/json')
         response['Content-Disposition'] = f'attachment; filename="plan_de_estudio_{plan.id}.json"'
         return response
+
+
+class GenerarGrafoView(generics.ListAPIView):
+    serializer_class = GrafoSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = GrafoFilter
+
+    def get_queryset(self):
+        plan_de_estudio_id = self.request.query_params.get('plan_de_estudio__id')
+        if plan_de_estudio_id:
+            return Materia.objects.filter(plan_de_estudio__id=plan_de_estudio_id)
+        return Materia.objects.none()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if not queryset.exists():
+            return Response({"nodos": [], "relaciones": []})
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data[0])

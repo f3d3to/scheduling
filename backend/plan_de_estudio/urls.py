@@ -1,12 +1,14 @@
 
 from django.urls import path
-from .views import PlanDeEstudioList, \
-    MateriaList, DescargarPlanDeEstudioJSON, \
-    MateriaCorrelativasTreeView, \
-    PlanDeEstudioCiclosView, \
-    MateriasEstudiantesListCreateView, MateriasEstudiantesRetrieveUpdateDestroyView, \
-    EvaluacionesListCreateView, EvaluacionesRetrieveUpdateDestroyView \
-
+from .views import (
+    PlanDeEstudioList,
+    MateriaList, DescargarPlanDeEstudioJSON,
+    MateriaCorrelativasTreeView,
+    PlanDeEstudioCiclosView,
+    MateriasEstudiantesListCreateView, MateriasEstudiantesRetrieveUpdateDestroyView,
+    EvaluacionesListCreateView, EvaluacionesRetrieveUpdateDestroyView,
+    GenerarGrafoView
+)
 app_name = 'plan_de_estudio'
 
 
@@ -26,6 +28,6 @@ urlpatterns = [
     # Evaluaciones
     path('evaluaciones/', EvaluacionesListCreateView.as_view(), name='evaluaciones-list-create'),
     path('evaluaciones/<int:pk>/', EvaluacionesRetrieveUpdateDestroyView.as_view(), name='evaluaciones-retrieve-update-destroy'),
-
+    path('grafo/', GenerarGrafoView.as_view(), name='generar_grafo'),
 
 ]

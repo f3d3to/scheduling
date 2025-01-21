@@ -23,3 +23,11 @@ class MateriaFilter(filters.FilterSet):
     def filtrar_correlativas(self, queryset, name, value):
         return queryset.filter(correlativas=value)
 
+
+class GrafoFilter(filters.FilterSet):
+    plan_de_estudio__id = filters.NumberFilter(field_name='plan_de_estudio__id', lookup_expr='exact')
+    estudiante_id = filters.NumberFilter(field_name='estudiante_id', lookup_expr='exact') #Este filtro se aplica a nivel de serializador
+
+    class Meta:
+        model = Materia
+        fields = ['plan_de_estudio__id']

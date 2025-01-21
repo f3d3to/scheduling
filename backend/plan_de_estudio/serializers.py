@@ -50,3 +50,74 @@ class PlanDeEstudioSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlanDeEstudio
         fields = '__all__'
+
+from django.db.models import Prefetch
+from django.db.models import Q
+
+class GrafoSerializer(serializers.Serializer):
+    nodos = serializers.SerializerMethodField()
+    relaciones = serializers.SerializerMethodField()
+
+    def get_nodos(self, instance):
+        plan_de_estudio_id = self.context['request'].query_params.get('plan_de_estudio__id')
+        estudiante_id = self.context['request'].query_params.get('estudiante_id')
+        nodos = []
+
+        if plan_de_estudio_id:
+            materias = Materia.objects.filter(
+                plan_de_estudio__id=plan_de_estudio_id
+            ).prefetch_related('correlativas')
+
+            if estudiante_id:
+                # Obtener todas las MateriaEstudiante del estudiante en una sola consulta
+                materias_estudiante = MateriaEstudiante.objects.filter(
+                    estudiante_id=estudiante_id, materia__plan_de_estudio__id=plan_de_estudio_id
+                ).select_related('materia')
+
+                # Crear un diccionario para acceder rápidamente a la MateriaEstudiante por ID de materia
+                materias_estudiante_dict = {me.materia.id: me for me in materias_estudiante}
+            else:
+                materias_estudiante_dict = {}
+
+            for materia in materias:
+                nodo = {
+                    "id": materia.id,
+                    "tipo": "materia",
+                    "materia_endpoint": f"http://localhost:8000/materias/{materia.codigo}/",
+                    "materia_estudiante_endpoint": None,
+                }
+
+                # Usar el diccionario para obtener la MateriaEstudiante, si existe
+                materia_estudiante = materias_estudiante_dict.get(materia.id)
+                if materia_estudiante:
+                    nodo["materia_estudiante_endpoint"] = f"http://localhost:8000/materias/estudiantes/{materia_estudiante.pk}/"
+
+                nodos.append(nodo)
+
+        return nodos
+
+    def get_relaciones(self, instance):
+        plan_de_estudio_id = self.context['request'].query_params.get('plan_de_estudio__id')
+        relaciones = []
+
+        if plan_de_estudio_id:
+            materias = Materia.objects.filter(plan_de_estudio__id=plan_de_estudio_id).prefetch_related(
+                Prefetch('correlativas', queryset=Materia.objects.all())
+            )
+
+            correlativas_por_materia = {}
+            for materia in materias:
+                correlativas_por_materia[materia.id] = [
+                    correlativa.id for correlativa in materia.correlativas.all()
+                ]
+
+            for materia in materias:
+                for correlativa_id in correlativas_por_materia.get(materia.id, []):
+                    relacion = {
+                        "source": correlativa_id,
+                        "target": materia.id,
+                        "tipo": "correlativa"
+                    }
+                    relaciones.append(relacion)
+
+        return relaciones
