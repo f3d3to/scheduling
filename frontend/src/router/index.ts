@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { useAuthStore } from '../store/AuthStore';
 
 // Importaciones usando rutas relativas
 import HomePage from '../components/common/HomePage.vue';
@@ -13,14 +14,14 @@ import EditarPerfil from '../components/views/users/EditarPerfil.vue'
 
 
 const routes = [
-  { path: '/', name: 'Home', component: HomePage },
+  { path: '/', name: 'Home', component: HomePage, meta: { requiresAuth: true },},
   {
     path: '/planificador/:id',
     name: 'PlanificadorDetalle',
     component: PlanificadorDetalle,
     props: true,
   },
-  { path: '/iniciar-sesion', name: 'Login', component: IniciarSesion },
+  { path: '/login', name: 'Login', component: IniciarSesion },
   { path: '/registro', name: 'RegistroUsuario', component: RegistroUsuario },
   { path: '/mi-perfil', name: 'PerfilUsuario', component: PerfilUsuario },
   { path: '/editar-mi-perfil', name: 'EditarPerfil', component: EditarPerfil },
@@ -33,6 +34,17 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore();
+
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    // Si la ruta requiere autenticación y el usuario no está autenticado
+    next('/login'); // Redirige al login
+  } else {
+    next(); // Continúa con la navegación
+  }
 });
 
 export default router;

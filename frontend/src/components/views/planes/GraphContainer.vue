@@ -1,7 +1,7 @@
 <template>
   <div>
     <select v-model="selectedPlan" @change="fetchSelectedPlan">
-      <option v-for="plan in plans" :key="plan.id" :value="plan.id">
+      <option v-for="plan in store.plans" :key="plan.id" :value="plan.id">
         {{ plan.nombre }}
       </option>
     </select>
@@ -11,24 +11,24 @@
 
 <script>
 import * as d3 from "d3";
-import { fetchPlans, fetchCycles } from "@services/apiService";
+import { defineComponent, computed } from "vue";
+import { useGraphStore } from "@store/GraphStore";
 
-export default {
+export default defineComponent({
   name: "GraphContainer",
-  data() {
-    return {
-      plans: [],
-      selectedPlan: null,
-      nodes: [],
-      links: [],
-    };
+  setup() {
+    const store = useGraphStore();
+    const selectedPlan = computed({
+      get: () => store.selectedPlan,
+      set: (value) => { store.selectedPlan = value; }
+    });
+
+    return { store, selectedPlan };
   },
   async mounted() {
     try {
-      const plansData = await fetchPlans();
-      this.plans = plansData.results;
-      if (this.plans.length > 0) {
-        this.selectedPlan = this.plans[0].id;
+      await this.store.fetchPlans();
+      if (this.store.plans.length > 0) {
         await this.fetchSelectedPlan();
       }
     } catch (error) {
@@ -40,55 +40,13 @@ export default {
       if (!this.selectedPlan) return;
 
       try {
-        const data = await fetchCycles(this.selectedPlan);
-        this.processData(data.anios);
+        await this.store.fetchCycles();
         this.createChart();
       } catch (error) {
         console.error("Error fetching plan cycles:", error);
       }
     },
-    processData(anios) {
-      const nodes = [];
-      const links = [];
-      const nodeMap = new Map();
 
-      Object.entries(anios).forEach(([key, materias]) => {
-        if (Array.isArray(materias)) {
-          materias.forEach((materia) => {
-            const node = {
-              id: materia.codigo.trim(),
-              name: materia.nombre.trim(),
-              year: key === "0" ? "Sin año" : parseInt(key, 10),
-            };
-            nodes.push(node);
-            nodeMap.set(materia.codigo.trim(), node);
-          });
-        }
-      });
-
-      Object.entries(anios).forEach(([key, materias]) => {
-        if (Array.isArray(materias)) {
-          materias.forEach((materia) => {
-            if (materia.correlativas && Array.isArray(materia.correlativas)) {
-              materia.correlativas.forEach((correlativa) => {
-                const trimmedCorrelativa = correlativa.trim();
-                if (nodeMap.has(trimmedCorrelativa)) {
-                  links.push({
-                    source: trimmedCorrelativa,
-                    target: materia.codigo.trim(),
-                  });
-                } else {
-                  console.warn(`Correlativa ${trimmedCorrelativa} no encontrada en los nodos.`);
-                }
-              });
-            }
-          });
-        }
-      });
-
-      this.nodes = nodes;
-      this.links = links;
-    },
     createChart() {
       d3.select(this.$refs.chart).select("svg").remove();
 
@@ -124,7 +82,7 @@ export default {
         .attr("d", "M0,-5L10,0L0,5")
         .attr("fill", "#FFD700");
 
-      const nodesByYear = d3.group(this.nodes, (d) => d.year);
+      const nodesByYear = d3.group(this.store.nodes, (d) => d.year);
       const sortedYears = Array.from(nodesByYear.keys()).sort((a, b) => (a === "Sin año" ? 1 : b === "Sin año" ? -1 : a - b));
 
       let xOffset = 100;
@@ -186,11 +144,11 @@ export default {
       });
 
       const simulation = d3
-        .forceSimulation(this.nodes)
+        .forceSimulation(this.store.nodes)
         .force(
           "link",
           d3
-            .forceLink(this.links)
+            .forceLink(this.store.links)
             .id((d) => d.id)
             .distance(150)
         )
@@ -201,7 +159,7 @@ export default {
         .append("g")
         .attr("class", "links")
         .selectAll("line")
-        .data(this.links)
+        .data(this.store.links)
         .enter()
         .append("line")
         .attr("stroke", "#FFD700")
@@ -213,7 +171,7 @@ export default {
         .append("g")
         .attr("class", "nodes")
         .selectAll("circle")
-        .data(this.nodes)
+        .data(this.store.nodes)
         .enter()
         .append("circle")
         .attr("r", 20)
@@ -242,7 +200,7 @@ export default {
         .append("g")
         .attr("class", "labels")
         .selectAll("text")
-        .data(this.nodes)
+        .data(this.store.nodes)
         .enter()
         .append("text")
         .attr("text-anchor", "middle")
@@ -266,11 +224,12 @@ export default {
 
       simulation.restart();
     },
+
     highlightConnections(selectedNode) {
       const connectedNodes = new Set();
       const connectedLinks = new Set();
 
-      this.links.forEach((link) => {
+      this.store.links.forEach((link) => {
         if (link.source.id === selectedNode.id || link.target.id === selectedNode.id) {
           connectedNodes.add(link.source.id);
           connectedNodes.add(link.target.id);
@@ -284,12 +243,13 @@ export default {
       d3.selectAll(".links line")
         .attr("opacity", (d) => (connectedLinks.has(d) ? 1 : 0.1));
     },
+
     resetHighlight() {
       d3.selectAll(".nodes circle").attr("opacity", 1);
       d3.selectAll(".links line").attr("opacity", 1);
     },
   },
-};
+});
 </script>
 
 <style scoped>

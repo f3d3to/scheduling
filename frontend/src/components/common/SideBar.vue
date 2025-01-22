@@ -1,6 +1,5 @@
 <template>
-  <div>
-    <!-- Botón fijo para mostrar/ocultar la sidebar -->
+  <div v-if="authStore.isAuthenticated">
     <button
       class="fixed-btn"
       :class="{ 'shifted': isVisible }"
@@ -9,7 +8,6 @@
       <i :class="isVisible ? 'fas fa-angle-left' : 'fas fa-angle-right'"></i>
     </button>
 
-    <!-- Sidebar -->
     <div :class="['sidebar sidebar-scrollable', { 'is-hidden': !isVisible }]">
       <nav>
         <ul>
@@ -24,20 +22,24 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: "SideBar",
-  data() {
-    return {
-      isVisible: true,
-    };
-  },
-  methods: {
-    toggleSidebar() {
-      this.isVisible = !this.isVisible;
-    },
-  },
-};
+<script setup>
+import { ref, onBeforeMount } from "vue";
+import { useAuthStore } from "@/store/AuthStore";
+import { useRouter } from "vue-router";
+
+const isVisible = ref(true);
+const authStore = useAuthStore();
+const router = useRouter();
+
+onBeforeMount(() => {
+  if (!authStore.isAuthenticated) {
+    router.push("/login");
+  }
+});
+
+function toggleSidebar() {
+  isVisible.value = !isVisible.value;
+}
 </script>
 
 <style scoped>

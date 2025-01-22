@@ -84,6 +84,8 @@ class MateriaEstudiante(models.Model):
 
     fecha_actualizacion = models.DateTimeField(auto_now=True)
 
+    dificultad = models.PositiveIntegerField(blank=True, null=True)
+
     class Meta:
         unique_together = ('estudiante', 'materia')
         verbose_name = "Materia Estudiante"

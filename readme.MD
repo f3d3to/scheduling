@@ -192,92 +192,291 @@ En el deployment, se incluyen los archivos necesarios para configurar y desplega
 - [ ] Gestión de Documentos: Un repositorio personal en la nube para guardar apuntes, trabajos prácticos y exámenes pasados organizados por materia.
 
 
-### IMPLEMENTACIONES
-## MODULOS DE USUARIOS
-----
-Backend genera el token JWT.
-Backend firma el token JWT con su llave privada.
-Frontend recibe el token JWT.
-Frontend verifica la firma del token JWT con la llave pública del backend.
-+-------------------+                                                              +-------------------+
+## GRAFICO DEL SISTEMA
 
-|   Vue App         |                                                              |   Back-end        |
-| (Frontend)        |                                                              |  (Django/DRF)     |
-+-------------------+                                                              +-------------------+
-        |                                                                               |
-        |  1.1                                                                           |
-        |  POST http://localhost:8000/api/auth/signup                                   |
-        |  Headers: { "Content-Type": "application/json" }                              |
-        |  Body: {                                                                      |
-        |    "usuario": "nuevoUsuario",                                                  |
-        |    "email": "nuevo@email.com",                                               |
-        |    "contraseña": "contraseñaSegura123"                                         |
-        |  }                                                                            |
-        |                                   Registro de Usuario                         |
-        |                                   -------------------                         |
-        |                                                                               |
-        |                                                                               | 1.2
-        |                                                                               |----->  Comprobar si existe
-        |                                                                               |       Guardar usuario en la base de datos:
-        |                                                                               |       { id: 1, usuario: "nuevoUsuario", email: "nuevo@email.com", ... }
-        |                                                                               |
-        |  1.3                                                                           |
-        |<-------------------------------------------------------------------------------|
-        |  Status: 201 Created                                                          |
-        |  Body: { "message": "¡Registrado exitosamente!" }                             |
-        |                                                                               |
-        |  ============================================================================ |
-        |                                                                               |
-        |  2.1                                                                           |
-        |  POST http://localhost:8000/api/auth/signin                                  |
-        |  Headers: { "Content-Type": "application/json" }                              |
-        |  Body: {                                                                      |
-        |    "usuario": "usuarioExistente",                                             |
-        |    "contraseña": "contraseña123"                                              |
-        |  }                                                                            |
-        |                                                                               |
-        |                                       Inicio de Sesión                        |
-        |                                       ---------------                         |
-        |                                                                               |
-        | 2.2                                                                           |----->  Autenticar { usuario: "usuarioExistente", contraseña: "contraseña123" }
-        |-----> GET http://localhost:8000/api/public-key/                              |       Crear JWT:
-        |  Headers: { "Accept": "application/x-pem-file" }                              |       Header: { "alg": "RS256", "typ": "JWT" }
-        |  Response: (200 OK)                                                          |       Payload: { "user_id": 1, "username": "usuarioExistente", "exp": 1678886400, ... }
-        |  Body: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A...\n-----END PUBLIC KEY-----" |       Firmar con CLAVE PRIVADA
-        |   (Clave pública en formato PEM)                                              |
-        |                                                                               |
-        |  2.3                                                                           |
-        |  JwtResponse                                                                  |
-        |<-------------------------------------------------------------------------------|
-        |  Status: 200 OK                                                               |
-        |  Headers: { "Content-Type": "application/json" }                              |
-        |  Body: {                                                                      |
-        |    "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6InVzdWFyaW9FeGlzdGVudGUiLCJleHAiOjE2Nzg4ODY0MDAsIm90cm9fZGF0byI6InZhbG9yIn0.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ",
-        |    "tipo": "Bearer",                                                          |
-        |    "info_usuario": { "id": 1, "username": "usuarioExistente", "email": "existente@email.com" },  |
-        |    "roles": ["usuario"]                                                       |
-        |  }                                                                            |
-        |  VERIFICAR FIRMA con CLAVE PÚBLICA en el frontend:                            |
-        |    Payload: { "user_id": 1, "username": "usuarioExistente", "exp": 1678886400, "otro_dato": "valor" } |
-        |                                                                               |
-        |  ============================================================================ |
-        |                                                                               |
-        |  3.1                                                                           |
-        |  GET http://localhost:8000/api/recurso-protegido/                             |
-        |  Headers: {                                                                   |
-        |    "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6InVzdWFyaW9FeGlzdGVudGUiLCJleHAiOjE2Nzg4ODY0MDAsIm90cm9fZGF0byI6InZhbG9yIn0.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ",
-        |  }                                                                            |
-        |                                                                               |
-        |                                   Acceso a Recursos                          |
-        |                                   -----------------                          |
-        |                                                                               | 3.2
-        |                                                                               |----->  Obtener info de usuario y autenticar
-        |                                                                               |       Verificar firma JWT (con CLAVE PÚBLICA):
-        |                                                                               |       Payload: { "user_id": 1, "username": "usuarioExistente", "exp": 1678886400, ... }
-        |                                                                               |       Autorizar según los roles del usuario (ej. "usuario")
-        |  3.3                                                                           |
-        |<-------------------------------------------------------------------------------|
-        |  Status: 200 OK                                                               |
-        |  Body: { "mensaje": "Acceso permitido", "datos": { "valor": 123, "otro": "abc" } } |
-        |                                                                               |
-+-------------------+                                                              +-------------------+
+```mermaid
+
+sequenceDiagram
+
+participant Estudiante
+
+participant UI as Frontend (UI)
+
+participant Store as Pinia Store
+
+participant Backend
+
+participant Auth as Auth Service
+
+%% Inicialización del gráfico
+
+UI->>Store: Componente montado
+
+Store->>Backend: GET /api/planes/
+
+Backend-->>Store: Lista de Planes
+
+Store->>Backend: GET /api/materias/?plan_id={id} (sin filtros)
+
+Backend-->>Store: Datos iniciales (nodes, links)
+
+Store->>UI: Actualiza estado (planes, nodes, links)
+
+UI->>UI: Renderiza gráfico inicial
+
+%% Filtrado
+
+loop Interacción con Filtros
+
+Estudiante->>UI: Aplica filtros (año, estado, búsqueda)
+
+UI->>Store: applyFilters(filters)
+
+Store->>Backend: GET /api/materias/?plan_id={id}&[filters]
+
+Backend-->>Store: Datos filtrados
+
+Store->>UI: Actualiza filteredNodes/filteredLinks
+
+UI->>UI: Re-renderiza gráfico con datos filtrados
+
+end
+
+%% Interacción con nodo (sin autenticación)
+
+Estudiante->>UI: Click en nodo (Materia)
+
+UI->>Auth: checkAuthStatus()
+
+alt No autenticado
+
+Auth-->>UI: false
+
+UI->>Estudiante: Muestra modal login
+
+else Autenticado
+
+Auth-->>UI: true (con user_id)
+
+UI->>Store: fetchMateriaDetalle(codigo, user_id)
+
+Store->>Backend: GET /api/materias/{codigo}/estado?estudiante_id={id}
+
+Backend-->>Store: Detalles completos
+
+Store->>UI: Actualiza selectedMateria
+
+UI->>UI: Muestra detalles en panel lateral
+
+end
+
+%% Manejo de errores
+
+Backend--xStore: Error 500
+
+Store->>UI: setError("Error cargando datos")
+
+UI->>Estudiante: Muestra notificación de error
+
+%% Actualizaciones en tiempo real
+
+loop Movimiento de nodos
+
+Estudiante->>UI: Arrastra nodo
+
+UI->>Store: updateNodePosition(nodeId, x, y)
+
+Store->>UI: Actualiza nodes[pos]
+
+UI->>UI: Actualiza renderizado D3
+
+end
+
+```
+
+## FLUJO DE FILTRADO DE GRAFOS
+```mermaid
+
+sequenceDiagram
+    participant Frontend
+    participant Backend
+    Frontend->>Backend: GET /api/materias?plan_id=1&año=2
+    Backend->>Backend: 1. Filtra materias por año 2.
+    Backend->>Backend: 2. Calcula correlatividades.
+    Backend->>Backend: 3. Convierte a Node[] y Link[].
+    Backend-->>Frontend: { nodes: [...], links: [...] }
+    Frontend->>D3.js: render(nodes, links)
+```
+```mermaid
+sequenceDiagram
+    participant Frontend
+    participant Backend
+    participant DB
+
+    Frontend->>Backend: GET /api/grafo?plan_id=1&filtro=aprobadas
+    Backend->>DB: Obtener VisualizacionGrafo con nodos y enlaces
+    DB-->>Backend: Datos del grafo
+    Backend->>DB: Consultar MateriaEstudiante para usuario
+    DB-->>Backend: Estados de materias
+    Backend->>Backend: Aplicar filtros y calcular metadatos
+    Backend->>Frontend: JSON con estructura D3-ready
+    Frontend->>D3: Renderizar grafo
+```
+
+## GRAFICO DE AUTENTICACION
+```mermaid
+sequenceDiagram
+participant Frontend
+participant Backend
+Frontend->>Backend: POST /token/ (credenciales)
+Backend-->>Frontend: JWT (access + refresh)
+Frontend->>Backend: GET /public-key/
+Backend-->>Frontend: Clave pública
+Frontend->>Frontend: Verificar JWT
+Frontend->>Backend: GET /usuarios/me/ (con JWT)
+Backend-->>Frontend: Datos usuario
+```
+
+
+## FLUJO DE INTERACCION DE AUTENTICACION
+```mermaid
+sequenceDiagram
+    participant Frontend
+    participant AuthStore
+    participant APIService
+    participant JWTUtils
+    participant Backend
+
+    Frontend->>AuthStore: initialize()
+    AuthStore->>APIService: GET /public-key/
+    APIService->>Backend: Solicitud clave pública
+    Backend-->>APIService: Clave pública PEM
+    APIService-->>AuthStore: Almacena clave
+
+    Frontend->>AuthStore: login(credenciales)
+    AuthStore->>APIService: POST /token/
+    APIService->>Backend: Envía credenciales
+    Backend-->>APIService: JWT tokens
+    APIService-->>AuthStore: Recibe tokens
+    AuthStore->>JWTUtils: verifyJWT(token, publicKey)
+    JWTUtils-->>AuthStore: Validación firma
+    AuthStore->>APIService: GET /usuarios/me/
+    APIService->>Backend: Solicita datos usuario
+    Backend-->>APIService: Datos del usuario
+    APIService-->>AuthStore: Actualiza estado
+    AuthStore-->>Frontend: Autenticación completada
+
+    Frontend->>AuthStore: Acceso a ruta protegida
+    AuthStore->>JWTUtils: verifyJWT(localStorage)
+    JWTUtils-->>AuthStore: Token válido?
+    AuthStore->>Frontend: Permite/Deniega acceso
+
+    Frontend->>APIService: Cualquier otra solicitud
+    APIService->>Backend: Request con JWT
+    Backend-->>APIService: Respuesta encriptada
+    APIService-->>Frontend: Datos solicitados
+```
+
+
+## ENDPOINTS
+```mermaid
+graph TD
+    subgraph Planes[Planes de Estudio]
+        A[GET /planes/] --> B[Listar planes]
+        C[POST /planes/] --> D[Crear nuevo plan]
+        E[GET /planes/-id-/] --> F[Detalles del plan]
+        G[PUT/PATCH /planes/<id>/] --> H[Actualizar plan]
+        I[DELETE /planes/<id>/] --> J[Eliminar plan]
+        K[GET /planes/<id>/ciclos/] --> L[Obtener ciclos del plan]
+    end
+
+    subgraph Planificadores[Planificadores Académicos]
+        M[GET /planificadores/] --> N[Listar planificadores]
+        O[POST /planificadores/] --> P[Crear nuevo planificador]
+        Q[GET /planificadores/<id>/] --> R[Detalles planificador]
+        S[PUT/PATCH /planificadores/<id>/] --> T[Actualizar planificador]
+        U[DELETE /planificadores/<id>/] --> V[Eliminar planificador]
+        W[GET /planificadores/<id>/celdas/] --> X[Obtener celdas]
+        Y[POST /planificadores/<id>/celdas/] --> Z[Agregar celda]
+        AA[GET /planificadores/<id>/celdas/<celda_id>/elementos/] --> BB[Elementos de celda]
+        CC[POST /planificadores/<id>/celdas/<celda_id>/elementos/] --> DD[Agregar elemento]
+    end
+
+    subgraph Pomodoro[Timer Pomodoro]
+        EE[GET /sesiones/] --> FF[Listar sesiones]
+        GG[POST /sesiones/] --> HH[Crear sesión]
+        II[PUT/PATCH /sesiones/<id>/] --> JJ[Actualizar sesión]
+        KK[DELETE /sesiones/<id>/] --> LL[Eliminar sesión]
+        MM[GET /tareasTimer/] --> NN[Listar tareas]
+        OO[POST /tareasTimer/] --> PP[Crear tarea]
+        QQ[Actions] --> RR[Start/Pause/Reset Timer]
+    end
+
+    Planificadores -->|pertenece a| Planes
+    Pomodoro -->|usa| Planificadores
+    Tareas -->|relacionadas con| Pomodoro
+    Sesiones -->|asociadas a| Tareas
+
+    classDef plan fill:#e6f3ff,stroke:#4d90fe;
+    classDef planner fill:#e6ffe6,stroke:#34a853;
+    classDef pomodoro fill:#fff0e6,stroke:#fbbc05;
+
+    class Planes plan
+    class Planificadores planner
+    class Pomodoro pomodoro
+```
+
+## AUTENTICACION
+```mermaid
+sequenceDiagram
+    participant Frontend as Vue App (Frontend)
+    participant Backend as Django/DRF (Backend)
+    participant DB as Base de Datos
+
+    rect rgb(245, 245, 245)
+        Note over Frontend, Backend: Registro de Usuario
+        Frontend->>Backend: POST /api/auth/signup
+        Backend->>DB: ¿Existe el usuario?
+        DB-->>Backend: No existe
+        Backend->>DB: Guardar nuevo usuario
+        Backend-->>Frontend: 201 Created<br>{ message: "¡Registrado exitosamente!" }
+    end
+
+    rect rgb(245, 245, 245)
+        Note over Frontend, Backend: Inicio de Sesión
+        Frontend->>Backend: POST /api/auth/signin
+        Backend->>DB: Verificar credenciales
+        DB-->>Backend: Credenciales válidas
+        Backend->>Backend: Generar JWT (firmado con clave privada)
+        Backend-->>Frontend: 200 OK<br>{ token, tipo, info_usuario, roles }
+        Frontend->>Backend: GET /api/public-key/
+        Backend-->>Frontend: Clave pública en formato PEM
+        Frontend->>Frontend: Verificar firma JWT
+    end
+
+    rect rgb(245, 245, 245)
+        Note over Frontend, Backend: Acceso a Recurso Protegido
+        Frontend->>Backend: GET /api/recurso-protegido/<br>Header: Bearer {token}
+        Backend->>Backend: Verificar firma JWT<br>Validar expiración<br>Checkear roles
+        Backend->>DB: Obtener datos del usuario
+        DB-->>Backend: Datos del usuario
+        Backend-->>Frontend: 200 OK<br>{ mensaje: "Acceso permitido", datos }
+    end
+
+    rect rgb(245, 245, 245)
+        Note over Frontend, Backend: Flujo JWT
+        Backend->>Backend: Generar par de claves RSA
+        Backend->>Backend: Almacenar clave privada
+        Backend->>Frontend: Proporcionar clave pública
+        Frontend->>Frontend: Almacenar clave pública
+        loop Para cada request
+            Frontend->>Backend: Incluir JWT en header
+            Backend->>Backend: Verificar firma con clave pública
+            alt Token válido
+                Backend->>Frontend: Respuesta con datos
+            else Token inválido/expirado
+                Backend->>Frontend: 401 Unauthorized
+            end
+        end
+    end
+```
