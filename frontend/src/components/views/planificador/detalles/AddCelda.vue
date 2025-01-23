@@ -82,39 +82,47 @@
 
 <script>
   import { GridLayout, GridItem } from 'vue3-grid-layout-next';
+  import { usePlanificadorStore } from '@store/PlanificadorStore';
+  import Swal from 'sweetalert2';
 
   export default {
     components: {
-      GridLayout,
-      GridItem,
+        GridLayout,
+        GridItem,
+    },
+    setup() {
+        const planificadorStore = usePlanificadorStore();
+        return { planificadorStore };
     },
     data() {
-      return {
-        layout: [],
-        columnas: 0,
-        columnasOriginal: 0, // Agrega esta línea para guardar el estado original
-        filas: 0,
-        celdas: [],
-        layoutGenerado: false,
-      };
+        return {
+            layout: [],
+            columnas: 0,
+            columnasOriginal: 0,
+            filas: 0,
+            celdas: [],
+            layoutGenerado: false,
+        };
     },
     created() {
-      this.fetchData();
+        this.fetchData();
     },
 
     methods: {
-    async fetchData() {
-        const planificadorId = this.$route.params.id || "pk";
-        const response = await fetch(`http://localhost:8000/estructuras-planificador/${planificadorId}/`);
-        if (response.ok) {
-            const data = await response.json();
-            this.columnas = data.columnas;
-            this.columnasOriginal = data.columnas;
-            this.filas = data.filas;
-            this.celdas = Object.entries(data.tabla).map(([coordenadas, celda]) => ({...celda, coordenadas}));
-            this.layout = this.generateLayout(this.celdas);
-            this.layoutGenerado = true;
-        }},
+        async fetchData() {
+            try {
+                const planificadorId = this.$route.params.id;
+                await this.planificadorStore.fetchData(planificadorId);
+                this.columnas = this.planificadorStore.columnas;
+                this.columnasOriginal = this.planificadorStore.columnas;
+                this.filas = this.planificadorStore.filas;
+                this.celdas = this.planificadorStore.celdas;
+                this.layout = this.generateLayout(this.celdas);
+                this.layoutGenerado = true;
+            } catch (error) {
+                Swal.fire('Error', 'Error cargando datos del planificador', 'error');
+            }
+        },
 
         generateLayout(celdas) {
             const layout = celdas.map((celda, index) => {
@@ -175,73 +183,54 @@
         this.layout = this.layout.filter(celda => !celda.isNew);
       },
       async commitChanges() {
-        // Preparar datos para la estructura
-        const estructuraData = {
-            filas: this.filas,
-            columnas: this.columnas,
-            tabla: {},
-        };
+            try {
+                const estructuraData = {
+                    filas: this.filas,
+                    columnas: this.columnas,
+                    tabla: {},
+                    celdas: this.layout
+                        .filter(celda => celda.isNew)
+                        .map(celda => ({
+                            contenido: celda.contenido,
+                            fila: celda.y + 1,
+                            columna: celda.x + 1,
+                            w: celda.w,
+                            h: celda.h
+                        }))
+                };
 
-        // Procesar el layout para construir el objeto `tabla`
-        this.layout.forEach((celda) => {
-            const key = `${celda.y + 1},${celda.x + 1}`;
-            estructuraData.tabla[key] = {
-            id: celda.i,
-            contenido: celda.contenido,
-            fila: celda.y + 1,
-            columna: celda.x + 1,
-            w: celda.w,
-            h: celda.h,
-            };
-        });
-
-        // Preparar datos de nuevas celdas
-        const nuevasCeldas = this.layout
-            .filter((celda) => celda.isNew)
-            .map((celda) => ({
-            contenido: celda.contenido,
-            fila: celda.y + 1,
-            columna: celda.x + 1,
-            }));
-
-        try {
-            // Enviar datos al backend
-            const response = await fetch(`http://localhost:8000/planificador/estructura/actualizar/${this.$route.params.id}/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                filas: estructuraData.filas,
-                columnas: estructuraData.columnas,
-                tabla: estructuraData.tabla,
-                celdas: nuevasCeldas,
-            }),
-            });
-
-            if (!response.ok) throw new Error('Error al guardar los cambios');
-            this.$emit('update-layout');
-            this.$emit('close-dialog');
-            push.success({
-                title: 'Guardados!',
-                message: 'Los cambios fueron guardados correctamente!'
-              })
-
-        } catch (error) {
-            Swal.fire('Error', error.message, 'error');
-        }
-        },
-        removeColumn() {
-            if (this.columnas > 1) {
-                this.columnas--;
-                this.layout = this.layout.filter((celda) => celda.x < this.columnas);
-
-                this.layout.forEach((celda) => {
-                    if (celda.x >= this.columnas) {
-                        celda.w = Math.min(celda.w, this.columnas - celda.x);
-                    }
+                // Construir tabla para el backend
+                const tabla = {};
+                this.layout.forEach(celda => {
+                    const key = `${celda.y + 1},${celda.x + 1}`;
+                    tabla[key] = {
+                        id: celda.i,
+                        contenido: celda.contenido,
+                        w: celda.w,
+                        h: celda.h
+                    };
                 });
-            } else {
-                Swal.fire('Error', 'Debe haber al menos una columna.', 'error');
+
+                // Usar acción del store
+                await this.planificadorStore.updateEstructura(
+                    this.$route.params.id,
+                    {
+                        filas: estructuraData.filas,
+                        columnas: estructuraData.columnas,
+                        tabla: tabla,
+                        celdas: estructuraData.celdas
+                    }
+                );
+
+                Swal.fire('Éxito', 'Estructura actualizada correctamente', 'success');
+                this.$emit('update-layout');
+                this.$emit('close-dialog');
+
+            } catch (error) {
+                Swal.fire('Error', error.message || 'Error guardando cambios', 'error');
             }
+
+
         },
       cancelChanges() {
         this.columnas = this.columnasOriginal;

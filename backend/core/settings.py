@@ -37,6 +37,7 @@ THIRD_PARTY = [
     'corsheaders',
     'django_filters',
     'rest_framework_simplejwt',
+    'drf_spectacular',
 ]
 
 APPS = [
@@ -199,5 +200,19 @@ LOGGING = {
         #     'level': 'DEBUG',
         #     'propagate': True,
         }
+    },
+}
+# API DOCS
+SPECTACULAR_SETTINGS = {
+    'SCHEMA_PATH_PREFIX': '',
+    # 'SCHEMA_PATH_PREFIX_INSERT': 'back/',
+    "USER_ID_CLAIM": "user_id",
+    'TITLE': 'Estudiar API',
+    'DESCRIPTION': 'Esquema de APIS de la app',
+    'VERSION': config('API_VERSION', default='1.0.0'),
+    'SERVE_INCLUDE_SCHEMA': True,
+    "SWAGGER_UI_SETTINGS": {
+        "displayRequestDuration": True,
+        'persistAuthorization': True,
     },
 }

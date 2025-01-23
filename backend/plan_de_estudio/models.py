@@ -31,7 +31,7 @@ class Materia(models.Model):
     correlativas = models.ManyToManyField('self', symmetrical=False, related_name='requerida_por', blank=True)
 
     def __str__(self):
-        return self.codigo
+        return f"{self.nombre}"
 
     class Meta:
         verbose_name = "Materia"

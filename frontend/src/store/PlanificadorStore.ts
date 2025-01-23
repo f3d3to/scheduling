@@ -1,4 +1,3 @@
-// PlanificadorStore.ts
 import { defineStore } from 'pinia';
 import { api } from '../services/apiServiceAuth';
 
@@ -9,6 +8,13 @@ interface Celda {
   w: number;
   h: number;
   coordenadas: string;
+}
+
+interface Elemento {
+  id: number;
+  nombre: string;
+  color: string;
+  celda: number;
 }
 
 interface LayoutItem {
@@ -23,6 +29,7 @@ export const usePlanificadorStore = defineStore('planificador', {
   state: () => ({
     layout: [] as LayoutItem[],
     celdas: [] as Celda[],
+    elementos: [] as Elemento[], // Nuevo estado para elementos
     columnas: 7,
     layoutGenerado: false,
     isEditing: false,
@@ -101,11 +108,11 @@ export const usePlanificadorStore = defineStore('planificador', {
       }
     },
 
-    async saveLayout(planificadorId: string) {
+    async saveLayoutCelda(planificadorId: string, data: any) {
       try {
         const tablaActualizada: Record<string, any> = {};
 
-        this.layout.forEach(item => {
+        data.layout.forEach(item => {
           const celda = this.getCeldaById(item.i);
           if (celda) {
             tablaActualizada[`${item.y + 1},${item.x + 1}`] = {
@@ -120,8 +127,8 @@ export const usePlanificadorStore = defineStore('planificador', {
         const requestBody = {
           tabla: tablaActualizada,
           nombre: this.nombrePlanificador,
-          columnas: this.columnas,
-          filas: this.filas,
+          columnas: data.columnas,
+          filas: data.filas,
           ancho_columna: this.anchoColumna,
         };
 
@@ -132,80 +139,172 @@ export const usePlanificadorStore = defineStore('planificador', {
         throw error;
       }
     },
-
     handleLayoutUpdate() {
       this.showAddCeldaDialog = false;
     },
+
     async fetchPlanners() {
-        try {
-          const response = await api.get('planificadores/');
-          this.planners = response.data.results || [];
-        } catch (error) {
-          console.error('Error fetching planners:', error);
-          throw error;
-        }
-      },
-
-      async fetchTemplates() {
-        try {
-          const response = await api.get('estructuras-planificador/');
-          this.templates = response.data.results || [];
-          this.templateTypes = this.templates.map(t => t.nombre);
-        } catch (error) {
-          console.error('Error fetching templates:', error);
-          throw error;
-        }
-      },
-
-      async createPlanner(data: any) {
-        try {
-          await api.post('planificadores/', data);
-          await this.fetchPlanners();
-        } catch (error) {
-          console.error('Error creating planner:', error);
-          throw error;
-        }
-      },
-
-      async updatePlanner(id: string, data: any) {
-        try {
-          await api.patch(`planificadores/${id}/`, data);
-          await this.fetchPlanners();
-        } catch (error) {
-          console.error('Error updating planner:', error);
-          throw error;
-        }
-      },
-
-      async deletePlanner(id: string) {
-        try {
-          await api.delete(`planificadores-eliminar/${id}/`);
-          await this.fetchPlanners();
-        } catch (error) {
-          console.error('Error deleting planner:', error);
-          throw error;
-        }
-      },
-
-      async createFromTemplate(template: any) {
-        try {
-          await api.post('planificadores/', {
-            nombre: `Planificador - ${template.nombre}`,
-            tipo: template.nombre,
-            estructura: template.id
-          });
-          await this.fetchPlanners();
-        } catch (error) {
-          console.error('Error creating from template:', error);
-          throw error;
-        }
+      try {
+        const response = await api.get('planificadores/');
+        this.planners = response.data.results || [];
+      } catch (error) {
+        console.error('Error fetching planners:', error);
+        throw error;
       }
+    },
+
+    async fetchTemplates() {
+      try {
+        const response = await api.get('estructuras-planificador/');
+        this.templates = response.data.results || [];
+        this.templateTypes = this.templates.map(t => t.nombre);
+      } catch (error) {
+        console.error('Error fetching templates:', error);
+        throw error;
+      }
+    },
+
+    async createPlanner(data: any) {
+      try {
+        await api.post('planificadores/', data);
+        await this.fetchPlanners();
+      } catch (error) {
+        console.error('Error creating planner:', error);
+        throw error;
+      }
+    },
+
+    async updatePlanner(id: string, data: any) {
+      try {
+        await api.patch(`planificadores/${id}/`, data);
+        await this.fetchPlanners();
+      } catch (error) {
+        console.error('Error updating planner:', error);
+        throw error;
+      }
+    },
+
+    async deletePlanner(id: string) {
+      try {
+        await api.delete(`planificadores-eliminar/${id}/`);
+        await this.fetchPlanners();
+      } catch (error) {
+        console.error('Error deleting planner:', error);
+        throw error;
+      }
+    },
+
+    async createFromTemplate(template: any) {
+      try {
+        await api.post('planificadores/', {
+          nombre: `Planificador - ${template.nombre}`,
+          tipo: template.nombre,
+          estructura: template.id,
+        });
+        await this.fetchPlanners();
+      } catch (error) {
+        console.error('Error creating from template:', error);
+        throw error;
+      }
+    },
+
+    // Nuevas acciones para manejar elementos
+    async updateCelda(planificadorId: string, celdaId: number, data: any) {
+      try {
+        await api.patch(`planificadores/${planificadorId}/celdas/${celdaId}/`, data);
+      } catch (error) {
+        console.error('Error updating cell:', error);
+        throw error;
+      }
+    },
+
+    async fetchElementos(celdaId: number) {
+      try {
+        const response = await api.get(`elementos/?celda=${celdaId}`);
+        this.elementos = response.data.results || [];
+      } catch (error) {
+        console.error('Error fetching elementos:', error);
+        throw error;
+      }
+    },
+    async fetchElementoDetalle(contentType: string, objectId: number) {
+      try {
+        const response = await api.get(`elementos/detalle/${contentType}/${objectId}/`);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching elemento detalle:', error);
+        throw error;
+      }
+    },
+
+    async eliminarElemento(elementoId: number) {
+      try {
+        await api.delete(`elementos/${elementoId}/`);
+      } catch (error) {
+        console.error('Error deleting elemento:', error);
+        throw error;
+      }
+    },
+    async fetchModels() {
+      try {
+        const response = await api.get("models/");
+        return response.data; // Asegúrate de que la API devuelva los resultados en `results`
+      } catch (error) {
+        console.error('Error fetching models:', error);
+        throw error;
+      }
+    },
+
+    async createInstance(data: any) {
+      try {
+        const response = await api.post("models/", data);
+        return response;
+      } catch (error) {
+        console.error('Error creating instance:', error);
+        throw error;
+      }
+    },
+
+    async asociarElemento(planificadorId: number, celdaId: number, instanciaId: number, model: string) {
+      try {
+        const response = await api.post(`celdas/${planificadorId}/${celdaId}/elementos/`, {
+          instancia_id: instanciaId,
+          model: model,
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Error asociando elemento:', error);
+        throw error;
+      }
+    },
+    async updateEstructura(planificadorId: string, data: any) {
+      try {
+          const response = await api.post(`planificador/estructura/actualizar/${planificadorId}/`, {
+              filas: data.filas,
+              columnas: data.columnas,
+              tabla: data.tabla,
+              celdas: data.celdas
+          });
+
+          // Actualizar estado local
+          await this.fetchData(planificadorId);
+          return response.data;
+      } catch (error) {
+          console.error('Error actualizando estructura:', error);
+          throw error;
+      }
+  },
 
   },
 
   getters: {
     getCeldaById: (state) => (id: string) => {
       return state.celdas.find(celda => celda.id === parseInt(id));
+    },
+
+    // Nuevo getter para obtener elementos por celdaId
+    getElementosByCeldaId: (state) => (celdaId: number) => {
+      return state.elementos.filter(elemento => elemento.celda === celdaId);
     },
   },
 });

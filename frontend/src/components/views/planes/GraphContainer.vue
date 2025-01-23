@@ -1,11 +1,36 @@
 <template>
   <div>
-    <select v-model="selectedPlan" @change="fetchSelectedPlan">
-      <option v-for="plan in store.plans" :key="plan.id" :value="plan.id">
-        {{ plan.nombre }}
-      </option>
-    </select>
-    <div ref="chart"></div>
+    <!-- <v-container fluid>
+      <v-row>
+        <v-col cols="12" md="3">
+          <v-select
+            v-model="selectedPlan"
+            :items="store.plans"
+            item-title="nombre"
+            item-value="id"
+            label="Seleccionar Plan"
+            @update:modelValue="fetchSelectedPlan"
+          ></v-select>
+        </v-col>
+      </v-row>
+    </v-container> -->
+
+    <div ref="chart" class="graph-container">
+      <GraphFilter
+        :plans="store.plans"
+        :selectedPlan="selectedPlan"
+        @update:selectedPlan="handlePlanChange"
+        @filter-changed="handleFilterChanged"
+        class="floating-filter"
+      />
+    </div>
+
+    <!-- Mostrar GraphMateriaDetalle si hay una materia seleccionada -->
+    <GraphMateriaDetalle
+      v-show="selectedMateria"
+      :selectedMateria="selectedMateria"
+      @close-detail="closeDetail"
+    />
   </div>
 </template>
 
@@ -13,17 +38,36 @@
 import * as d3 from "d3";
 import { defineComponent, computed } from "vue";
 import { useGraphStore } from "@store/GraphStore";
+import GraphFilter from "./GraphFilter.vue";
+import GraphMateriaDetalle from "./GraphMateriaDetalle.vue";
 
 export default defineComponent({
   name: "GraphContainer",
+  components: {
+    GraphFilter,
+    GraphMateriaDetalle,
+  },
   setup() {
     const store = useGraphStore();
     const selectedPlan = computed({
       get: () => store.selectedPlan,
-      set: (value) => { store.selectedPlan = value; }
+      set: (value) => {
+        store.selectedPlan = value;
+      },
     });
 
     return { store, selectedPlan };
+  },
+  data() {
+    return {
+      activeFilters: {},
+      estadosOptions: [
+        { text: "Aprobada", value: "aprobado" },
+        { text: "Cursando", value: "cursando" },
+        { text: "No Cursada", value: "no_cursada" },
+      ],
+      selectedMateria: null, // Estado para almacenar la materia seleccionada
+    };
   },
   async mounted() {
     try {
@@ -40,13 +84,24 @@ export default defineComponent({
       if (!this.selectedPlan) return;
 
       try {
-        await this.store.fetchCycles();
+        await this.store.fetchCycles({ condicion: "carrera" });
         this.createChart();
       } catch (error) {
         console.error("Error fetching plan cycles:", error);
       }
     },
-
+    async handleFilterChanged(filters) {
+      try {
+        await this.store.fetchCycles(filters);
+        this.createChart();
+      } catch (error) {
+        console.error("Error applying filters:", error);
+      }
+    },
+    handlePlanChange(newPlan) {
+      this.selectedPlan = newPlan;
+      this.fetchSelectedPlan();
+    },
     createChart() {
       d3.select(this.$refs.chart).select("svg").remove();
 
@@ -83,7 +138,9 @@ export default defineComponent({
         .attr("fill", "#FFD700");
 
       const nodesByYear = d3.group(this.store.nodes, (d) => d.year);
-      const sortedYears = Array.from(nodesByYear.keys()).sort((a, b) => (a === "Sin año" ? 1 : b === "Sin año" ? -1 : a - b));
+      const sortedYears = Array.from(nodesByYear.keys()).sort((a, b) =>
+        a === "Sin año" ? 1 : b === "Sin año" ? -1 : a - b
+      );
 
       let xOffset = 100;
       const rectGroups = [];
@@ -108,8 +165,14 @@ export default defineComponent({
               const dx = event.dx;
               const dy = event.dy;
               rectGroup.attr("transform", (d) => {
-                const transform = d3.select(rectGroup.node()).attr("transform") || "translate(0,0)";
-                const [, tx, ty] = transform.match(/translate\(([-\d.]+),\s*([-\d.]+)\)/) || [null, 0, 0];
+                const transform =
+                  d3.select(rectGroup.node()).attr("transform") || "translate(0,0)";
+                const [, tx, ty] =
+                  transform.match(/translate\(([-\d.]+),\s*([-\d.]+)\)/) || [
+                    null,
+                    0,
+                    0,
+                  ];
                 return `translate(${+tx + dx}, ${+ty + dy})`;
               });
               nodes.forEach((node) => {
@@ -177,7 +240,8 @@ export default defineComponent({
         .attr("r", 20)
         .attr("fill", (d) => d3.schemeTableau10[sortedYears.indexOf(d.year) % 10])
         .call(
-          d3.drag()
+          d3
+            .drag()
             .on("start", (event, d) => {
               if (!event.active) simulation.alphaTarget(0.3).restart();
               d.fx = d.x;
@@ -194,6 +258,7 @@ export default defineComponent({
         .on("click", (event, d) => {
           event.stopPropagation();
           this.highlightConnections(d);
+          this.selectedMateria = d;
         });
 
       const labels = g
@@ -237,16 +302,34 @@ export default defineComponent({
         }
       });
 
+      // Quitar el borde de todos los nodos
       d3.selectAll(".nodes circle")
+        .attr("stroke", null) // Eliminar el borde
+        .attr("stroke-width", null)
         .attr("opacity", (d) => (connectedNodes.has(d.id) ? 1 : 0.1));
+
+      // Agregar un borde gris al nodo seleccionado
+      d3.selectAll(".nodes circle")
+        .filter((d) => d.id === selectedNode.id)
+        .attr("stroke", "#bfb9b8") // Color gris
+        .attr("stroke-width", 4); // Grosor del borde
 
       d3.selectAll(".links line")
         .attr("opacity", (d) => (connectedLinks.has(d) ? 1 : 0.1));
     },
 
     resetHighlight() {
-      d3.selectAll(".nodes circle").attr("opacity", 1);
-      d3.selectAll(".links line").attr("opacity", 1);
+      d3.selectAll(".nodes circle")
+        .attr("stroke", null) // Eliminar el borde
+        .attr("stroke-width", null)
+        .attr("opacity", 1);
+
+      d3.selectAll(".links line")
+        .attr("opacity", 1);
+    },
+
+    closeDetail() {
+      this.selectedMateria = null; // Limpiar la materia seleccionada
     },
   },
 });

@@ -91,18 +91,20 @@ En el deployment, se incluyen los archivos necesarios para configurar y desplega
 - [ ] (CELU) Herramienta de Control de Gastos: Herramienta para registrar gastos académicos (materiales, transporte, etc.) y sugerir formas de ahorrar.
 
 ## PLANES DE ESTUDIO
-- [ ] Visualización diferenciada para materias aprobadas (se deben ver el nombre tachado, el color gris y sus conexiones de gris tmb )
-- [ ] Filtrar por materias disponibles (logica de disponibilidad: cantidad de creditos y correlativas aprobadas)
-- [ ] Combinaciones más comunes (Podría mostrar las combinaciones de materias que los estudiantes suelen cursar por ejemplo juntas o separadas por nivel de dificultad, también por cantidad, etc),
-- [ ] "Detalle de materia" (Al hacer clic en un nodo, se abrirá un modal (dialog móvil) con la información detallada de la materia para el usuario.)
-- [ ] "Calificaciones" y progreso (Se permitirá al usuario marcar materias como "aprobadas" para simular el cálculo de créditos y porcentaje en la carrera, sin que esto implique una aprobación real). Se mostrará la cantidad de créditos que el usuario tiene, el porcentaje de la carrera completado (real y simulado) y otros datos relevantes, como promedios.
-- [ ] Filtro de materias por sus campos (nombre, año, etc)
 - [ ] Personalización de colores del grafo.
-- [ ] Permite filtrar por un conjunto de materias seleccionadas (por ejemplo para ver las que está cursando en el cuatrimestre)
-- [ ] LAS MATERIAS OPTATIVAS DEBEN INICIAR "OCULTAS"
-- [ ] Nivel de dificultad o materia densa o materia larga
-
+- [ ] Filtrar por materias disponibles (logica de disponibilidad: cantidad de creditos y correlativas aprobadas)
+- [ ] Visualización diferenciada para materias aprobadas (se deben ver el nombre tachado, el color gris y sus conexiones de gris tmb )
+- [ ] Visualizacion de un apartado promedio de carrera: Se mostrará la cantidad de créditos que el usuario tiene, el porcentaje de la carrera completado (real y si fuese el simulado) y otros datos relevantes, como promedios.
+- [ ] "Calificaciones" y progreso (Se permitirá al usuario marcar materias como "aprobadas" para simular el cálculo de créditos y porcentaje en la carrera, sin que esto implique cambiar su estado en el backend).
+- [ ] Visualizacion de nivel de dificultad diferenciada (tipo un termometro?)
 - [ ] Promedio de finalización de carrera, cuando te recibís te felicita y cambia de colores
+- [ ] Permite filtrar por un conjunto de materias seleccionadas (por ejemplo para ver las que está cursando en el cuatrimestre)
+- [ ] Combinaciones más comunes (Podría mostrar las combinaciones de materias que los estudiantes suelen cursar por ejemplo juntas o separadas por nivel de dificultad, también por cantidad, etc),
+
+- [X] Nivel de dificultad
+- [X] "Detalle de materia" (Al hacer clic en un nodo, se abrirá un modal (dialog móvil) con la información detallada de la materia para el usuario.)
+- [X] Filtro de materias por sus campos (nombre, año, etc)
+- [X] LAS MATERIAS OPTATIVAS DEBEN INICIAR "OCULTAS"
 
 ---
 - [ ] **MODO EDICION DE LOS PLANES DE ESTUDIO**: DEBE HABER UNA FORMA DE EDITAR/ELIMINAR Y CREAR (CONECTAR,ETC) MATERIAS Y PLANES DE ESTUDIO.

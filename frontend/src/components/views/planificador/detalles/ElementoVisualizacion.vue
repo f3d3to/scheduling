@@ -43,6 +43,7 @@
 
 <script>
 import Swal from 'sweetalert2';
+import { usePlanificadorStore } from '@store/PlanificadorStore';
 
 export default {
   props: {
@@ -50,6 +51,10 @@ export default {
       type: Object,
       required: true,
     },
+  },
+  setup() {
+    const planificadorStore = usePlanificadorStore();
+    return { planificadorStore };
   },
   data() {
     return {
@@ -73,18 +78,15 @@ export default {
       this.dialog = false;
     },
     async fetchElementoData() {
-      const url = `http://localhost:8000/elementos/detalle/${this.elemento.content_type}/${this.elemento.object_id}/`;
       try {
-        const response = await fetch(url);
-        if (response.ok) {
-          this.elementoData = await response.json();
-        } else {
-          console.error("Error al obtener los datos:", response.status);
-          this.elementoData = { error: "Error al obtener los datos" };
-        }
+        const response = await this.planificadorStore.fetchElementoDetalle(
+          this.elemento.content_type,
+          this.elemento.object_id
+        );
+        this.elementoData = response;
       } catch (error) {
-        console.error("Error en la petición:", error);
-        this.elementoData = { error: "Error en la petición" };
+        console.error("Error al obtener los datos:", error);
+        this.elementoData = { error: "Error al obtener los datos" };
       }
     },
     formatKey(key) {
@@ -116,50 +118,27 @@ export default {
           }}
       }).then(async (result) => {
         if (result.isConfirmed) {
-          const url = `http://localhost:8000/elementos/${this.elemento.id}/`;
-
           try {
-            const response = await fetch(url, {
-              method: "DELETE",
-              headers: {
-                "Content-Type": "application/json",
-              },
+            await this.planificadorStore.eliminarElemento(this.elemento.id);
+            push.success({
+              title: 'Eliminado',
+              message: 'El elemento ha sido eliminado correctamente.'
             });
-
-            if (response.ok) {
-              push.success({
-                title: 'Eliminado',
-                message: 'El elemento ha sido eliminado correctamente.'
-              })
-              this.$emit('elemento-desasociado', this.elemento.id);
-              this.closeDialog();
-            } else {
-              console.error("Error al eliminar el elemento:", response.status);
-              Swal.fire({
-                title: "Error",
-                text: "No se pudo eliminar el elemento.",
-                icon: "error",
-                confirmButtonColor: "#54a832",
-                didOpen: () => {
-                  const swalContainer = document.querySelector('.swal2-container');
-                  if (swalContainer) {
-                    swalContainer.style.zIndex = '10000';
-                  }}
-              });
-            }
+            this.$emit('elemento-desasociado', this.elemento.id);
+            this.closeDialog();
           } catch (error) {
-            console.error("Error en la petición:", error);
+            console.error("Error al eliminar el elemento:", error);
             Swal.fire({
-                title: "Error",
-                text: "No se pudo desasociar el elemento.",
-                icon: "error",
-                confirmButtonColor: "#54a832",
-                didOpen: () => {
-                  const swalContainer = document.querySelector('.swal2-container');
-                  if (swalContainer) {
-                    swalContainer.style.zIndex = '10000';
-                  }}
-              });
+              title: "Error",
+              text: "No se pudo eliminar el elemento.",
+              icon: "error",
+              confirmButtonColor: "#54a832",
+              didOpen: () => {
+                const swalContainer = document.querySelector('.swal2-container');
+                if (swalContainer) {
+                  swalContainer.style.zIndex = '10000';
+                }}
+            });
           }
         }
       });

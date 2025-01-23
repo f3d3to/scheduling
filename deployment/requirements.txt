@@ -27,3 +27,6 @@ djangorestframework-simplejwt[crypto]
 
 # ASYNC
 uvicorn
+
+# Documentación
+drf-spectacular

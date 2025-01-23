@@ -1,18 +1,23 @@
-from rest_framework.generics import RetrieveAPIView
+# Third Party
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+# Django
+from django.db.models import Q
+# Proyecto
 from .models import VisualizacionGrafo
-from django_filters.rest_framework import DjangoFilterBackend
 from .serializers import VisualizacionGrafoSerializer
+from .models import VisualizacionGrafo, Materia, MateriaEstudiante, NodoGrafo, EnlaceGrafo
 
-# Vista para listar y crear grafos
+
 class VisualizacionGrafoListCreateView(ListCreateAPIView):
     """
     Vista para listar y crear visualizaciones de grafos.
     """
     queryset = VisualizacionGrafo.objects.all()
     serializer_class = VisualizacionGrafoSerializer
-    # Considera agregar filter_backends y filterset_class si necesitas filtrar la lista de grafos
 
 class VisualizacionGrafoRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     """
@@ -20,46 +25,77 @@ class VisualizacionGrafoRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     """
     queryset = VisualizacionGrafo.objects.all()
     serializer_class = VisualizacionGrafoSerializer
-    lookup_field = 'plan_id'
+    lookup_field = 'plan_de_estudio_id'
 
-class GrafoFiltradoView(RetrieveAPIView):
-    """
-    Vista para obtener un grafo filtrado basado en el ID del plan y los parámetros de consulta.
+class GrafoFiltradoView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, plan_de_estudio_id):
+        try:
+            # Obtener la visualización de grafo
+            visualizacion = VisualizacionGrafo.objects.get(plan_de_estudio_id__id=plan_de_estudio_id)
+        except VisualizacionGrafo.DoesNotExist:
+            return Response({'error': 'Visualización no encontrada'}, status=404)
 
-    Utiliza RetrieveAPIView para obtener una instancia específica (el grafo).
-    """
-    queryset = VisualizacionGrafo.objects.all()
-    lookup_field = 'plan_id'  # Usamos 'plan_id' como campo de búsqueda
+        # Obtener parámetros de filtro
+        filters = request.query_params.dict()
+        estado = filters.pop('estado', None)
 
-    def get(self, request, *args, **kwargs):
-        """
-        Devuelve la representación JSON del grafo filtrado.
-        """
-        instance = self.get_object()
-        usuario = request.user
-        filtros = request.GET.dict()
+        # Base queryset de materias del plan
+        materias = Materia.objects.filter(plan_de_estudio=visualizacion.plan_de_estudio)
 
-        data = instance.generar_json_visualizacion(usuario if usuario.is_authenticated else None)
+        # Aplicar filtros dinámicos para Materia
+        allowed_filters = {
+            'materia': 'id',
+            'nombre__icontains': 'nombre',
+            'ciclo': 'ciclo',
+            'creditos': 'creditos',
+            'anio': 'anio',
+            'formato_didactico': 'formato_didactico',
+            'condicion': 'condicion',
+            'correlativas__in': 'correlativas'
+        }
 
-        # Aplicar filtros dinámicos
-        data['nodos'] = self._aplicar_filtros(data['nodos'], filtros)
-        data['enlaces'] = self._filtrar_enlaces(data['enlaces'], data['nodos'])
+        for param, field in allowed_filters.items():
+            if param in filters:
+                value = filters[param]
+                if '__in' in param:
+                    materias = materias.filter(**{field + '__in': value.split(',')})
+                else:
+                    materias = materias.filter(**{field: value})
+
+        # Filtrar por estado del estudiante
+        if estado:
+            if estado == 'no_cursada':
+                # Materias sin registro en MateriaEstudiante
+                cursadas = MateriaEstudiante.objects.filter(
+                    estudiante=request.user
+                ).values_list('materia_id', flat=True)
+                materias = materias.exclude(id__in=cursadas)
+            else:
+                # Materias con estado específico
+                materias_estado = MateriaEstudiante.objects.filter(
+                    estudiante=request.user,
+                    estado=estado
+                ).values_list('materia_id', flat=True)
+                materias = materias.filter(id__in=materias_estado)
+
+        # Obtener nodos y enlaces filtrados
+        nodos_filtrados = NodoGrafo.objects.filter(
+            grafo=visualizacion,
+            materia__in=materias
+        )
+        nodos_ids = nodos_filtrados.values_list('id', flat=True)
+
+        enlaces_filtrados = EnlaceGrafo.objects.filter(
+            grafo=visualizacion,
+            fuente__in=nodos_ids,
+            destino__in=nodos_ids
+        )
+
+        # Serializar datos
+        data = {
+            'nodos': [nodo.to_dict(request.user) for nodo in nodos_filtrados],
+            'enlaces': [enlace.to_dict() for enlace in enlaces_filtrados]
+        }
 
         return Response(data)
-
-    def _aplicar_filtros(self, nodos, filtros):
-        """
-        Aplica filtros a la lista de nodos.
-        """
-        if 'aprobadas' in filtros:
-            nodos = [n for n in nodos if n['metadata'].get('estado') == 'aprobada']
-        if 'optativas' in filtros:
-            nodos = [n for n in nodos if n['metadata'].get('es_optativa')]
-        return nodos
-
-    def _filtrar_enlaces(self, enlaces, nodos_filtrados):
-        """
-        Filtra los enlaces basándose en los nodos filtrados.
-        """
-        ids_nodos = {n['id'] for n in nodos_filtrados}
-        return [e for e in enlaces if e['fuente'] in ids_nodos and e['destino'] in ids_nodos]

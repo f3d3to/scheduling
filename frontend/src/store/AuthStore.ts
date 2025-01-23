@@ -147,16 +147,9 @@ const initializeDependentStores = async () => {
     const plannerStore = usePlanificadorStore();
     const pomodoroStore = usePomodoroStore();
 
-    await graphStore.fetchPlans();
     await pomodoroStore.fetchSessions();
     await pomodoroStore.fetchTasks();
     await pomodoroStore.fetchActividades();
-
-    // Acceder a las propiedades reactivas con .value
-    console.log("Graph plans: ", graphStore.plans)
-    console.log("Graph selectedPlan: ", graphStore.selectedPlan)
-    console.log("Graph nodes: ", graphStore.nodes)
-    console.log("Graph links: ", graphStore.links)
 
 
 

@@ -15,6 +15,7 @@
     "@formkit/vue": "^1.6.9",
     "@mdi/font": "^7.4.47",
     "d3": "^7.9.0",
+    "interactjs": "^1.10.27",
     "jsrsasign": "^11.1.0",
     "jwt-decode": "^4.0.0",
     "notivue": "^2.4.5",

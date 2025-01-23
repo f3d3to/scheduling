@@ -251,7 +251,6 @@ class CeldaContenidoUpdate(APIView):
         # Obtener la estructura asociada
         planificador = get_object_or_404(Planificador, id=planificador_id)
         estructura = planificador.estructura
-
         if not estructura:
             return Response(
                 {"error": "La estructura del planificador no existe."},
@@ -268,7 +267,7 @@ class CeldaContenidoUpdate(APIView):
             celda.delete()
 
             # Actualizar la tabla en la estructura
-            tabla = estructura.tabla  # Obtener el campo JSONField
+            tabla = json.loads(estructura.tabla) if isinstance(estructura.tabla, str) else estructura.tabla
             coordenadas = f"{celda.fila},{celda.columna}"
             if coordenadas in tabla:
                 del tabla[coordenadas]  # Eliminar la entrada de la celda eliminada
@@ -277,7 +276,7 @@ class CeldaContenidoUpdate(APIView):
 
         return Response(
             {"message": "Celda, sus elementos relacionados y la tabla de la estructura fueron actualizados correctamente."},
-            status=status.HTTP_204_NO_CONTENT,
+            status=status.HTTP_200_OK,
         )
 
 class EstructuraPlanificadorUpdateAPIView(APIView):
@@ -416,24 +415,31 @@ class ModeloAPIView(APIView):
         """
         Devuelve todos los modelos permitidos y sus instancias.
         """
-        allowed_models = ContentType.objects.all().exclude(
-            model__in=[
-                "contenttype","permission",
-                "logentry", "session",
-                "plandeestudio", "group",
-                "tipoevaluacion", "celda",
-                "elemento", "estado",
-                "estructuraelemento", "estructuraplanificador",
-                "usuario"
-                ]
-        )
-
+        print("Obteniendo información de los modelos permitidos...")
+        modelos_a_incluir = [
+            'materia',
+            'tipoevaluacion',
+            'evaluacion',
+            'actividad',
+            'comentario',
+            'estado',
+            'etiqueta',
+            'evento',
+            'eventoasociado',
+            'mensaje',
+            'objetivo',
+            'recurrente',
+            'registroprogreso',
+            'tarea',
+            'sesion',
+            'tareatimer'
+        ]
+        allowed_models = ContentType.objects.filter(model__in=modelos_a_incluir)
         modelos = []
         for content_type in allowed_models:
             model = content_type.model_class()
             if not model:
                 continue
-
             campos = [field.name for field in model._meta.fields]
             instancias = [{'id': obj.id, 'nombre': str(obj)} for obj in model.objects.all()]
             modelos.append({
@@ -443,7 +449,6 @@ class ModeloAPIView(APIView):
                 'campos': campos,
                 'instancias': instancias,
             })
-
         return Response(modelos, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):

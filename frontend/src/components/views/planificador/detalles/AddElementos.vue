@@ -57,6 +57,7 @@
 </template>
 
 <script>
+import { usePlanificadorStore } from '@store/PlanificadorStore';
 
 export default {
   props: {
@@ -68,6 +69,10 @@ export default {
       type: [Number, String],
       required: true,
     },
+  },
+  setup() {
+    const planificadorStore = usePlanificadorStore();
+    return { planificadorStore };
   },
   data() {
     return {
@@ -116,27 +121,31 @@ export default {
     },
     async fetchModels() {
       try {
-        const response = await fetch("http://localhost:8000/models/");
-        if (!response.ok) throw new Error("Error al obtener modelos");
-        this.models = await response.json();
+        const response = await this.planificadorStore.fetchModels();
+        this.models = response;
         this.modelsLoaded = true;
       } catch (error) {
         console.error("Error en fetchModels:", error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron cargar los modelos.'
+        });
         this.modelsLoaded = false;
       }
     },
     onModelChange() {
-        this.selectedInstance = null;
-        this.createInstance = false;
-        this.createFormVisible = false;
-        if (this.selectedModel) {
-          this.instances = this.selectedModelData
-            ? this.selectedModelData.instancias
-            : [];
-        } else {
-          this.instances = [];
-        }
-      },
+      this.selectedInstance = null;
+      this.createInstance = false;
+      this.createFormVisible = false;
+      if (this.selectedModel) {
+        this.instances = this.selectedModelData
+          ? this.selectedModelData.instancias
+          : [];
+      } else {
+        this.instances = [];
+      }
+    },
     toggleCreateForm() {
       this.createFormVisible = this.createInstance;
       if (this.createFormVisible) {
@@ -154,61 +163,50 @@ export default {
     async submit() {
       try {
         if (this.createFormVisible) {
-          const response = await fetch(
-            "http://localhost:8000/models/",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                modelo: this.selectedModel,
-                datos: this.newInstance,
-              }),
-            }
-          );
-          if (!response.ok)
-            throw new Error("Error al crear la instancia");
-          const data = await response.json();
+          const valid = await this.$refs.createForm.validate();
+          if (!valid.valid) return;
+
+          const response = await this.planificadorStore.createInstance({
+            model: this.selectedModel,
+            datos: this.newInstance,
+          });
           await this.fetchModels();
           this.onModelChange();
-          this.selectedInstance = data.id;
+          this.selectedInstance = response.id;
         } else {
           await this.asociarElemento(this.selectedInstance);
         }
         this.closeDialog();
       } catch (error) {
-        Swal.fire('Error', 'Error en submit:', 'error');
+        console.error("Error en submit:", error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: error.message || 'Ocurrió un error inesperado.'
+        });
       }
     },
     async asociarElemento(instanciaId) {
-      const planificadorId = this.planificadorId;
-      const celdaId = this.celdaId;
       try {
-        const response = await fetch(
-          `http://localhost:8000/celdas/${planificadorId}/${celdaId}/elementos/`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ instancia_id: instanciaId , model:this.selectedModel}),
-          }
+        const response = await this.planificadorStore.asociarElemento(
+          this.planificadorId,
+          this.celdaId,
+          instanciaId,
+          this.selectedModel
         );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Error al asociar el elemento");
-        }
-
-        const data = await response.json();
         push.success({
-                title: 'Agregado',
-                message: 'El elemento ha sido agregado correctamente.'
-              })
-        this.$emit('elemento-asociado', data.id);
+          title: 'Agregado!',
+          message: 'El elemento ha sido agregado correctamente.'
+
+        })
+        this.$emit('elemento-asociado', response.id);
       } catch (error) {
-        Swal.fire('Error', 'Error al asociar elemento', 'error');
+        console.error("Error al asociar elemento:", error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: error.message || 'Error al asociar el elemento.'
+        });
       }
     },
   },

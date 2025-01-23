@@ -19,7 +19,7 @@ const handleRequest = async (url: string, method: string, body?: any) => {
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
     }
-    console.log("BODY: ",body)
+    // console.log("BODY: ",body)
     const config: RequestInit = {
         method,
         headers,

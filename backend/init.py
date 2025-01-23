@@ -44,9 +44,7 @@ print(f"{GREEN}Migraciones aplicadas exitosamente!{RESET}")
 subprocess.call(["python", "manage.py", "crear_planes"])
 subprocess.call(["python", "manage.py", "crear_planificadores_factories"])
 subprocess.call(["python", "manage.py", "crear_factories"])
-# subprocess.call(["python", "manage.py", "crear_usuarios"])
-# subprocess.call(["python", "manage.py", "crear_planificadores"])
-# subprocess.call(["python", "manage.py", "crear_sesiones_tareas"])
+subprocess.call(["python", "manage.py", "crear_materias_estudiante"])
 
 # Verificar si DEBUG está en True para iniciar con Gunicorn
 subprocess.call(["gunicorn", "core.wsgi", "--bind", "0.0.0.0:8000", "--reload"])
