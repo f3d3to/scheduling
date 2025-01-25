@@ -11,8 +11,8 @@
         <input type="text" placeholder="Filtrar..." />
       </div>
       <div class="user-actions">
-        <div v-if="isLoggedIn" class="user-info">
-          <span class="username">{{ userName }}</span>
+        <div v-if="authStore.isAuthenticated" class="user-info">
+          <span class="username">{{ authStore.user?.username }}</span>
           <v-menu v-model="showDropdown" location="bottom" :close-on-content-click="false" offset-y>
             <template v-slot:activator="{ props }">
               <v-btn icon v-bind="props" class="profile-icon">
@@ -20,19 +20,17 @@
               </v-btn>
             </template>
             <v-list density="compact" class="dropdown-menu">
-
-              <v-list-item to="/mi-perfil">
+              <v-list-item :to="{ path: '/mi-perfil' }">
                 <v-icon>mdi-account</v-icon> Ver Perfil
-
               </v-list-item>
-              <v-list-item @click="logout">
+              <v-list-item @click="confirmLogout">
                 <v-icon>mdi-logout</v-icon> Cerrar Sesión
               </v-list-item>
             </v-list>
           </v-menu>
         </div>
         <template v-else>
-          <router-link to="/iniciar-sesion" class="login-icon">
+          <router-link to="/login" class="login-icon">
             <v-icon>mdi-login</v-icon> Iniciar Sesión
           </router-link>
           <router-link to="/registro" class="register-link">
@@ -44,26 +42,37 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: "TopBar",
-  data() {
-    return {
-      showDropdown: false,
-      isLoggedIn: true,
-      userName: "username",
-    };
-  },
-  methods: {
-    toggleDropdown() {
-      this.showDropdown = !this.showDropdown;
-    },
-    logout() {
-      console.log("debería desloguear");
-    },
-  },
-};
+<script setup>
+import { ref, computed } from 'vue';
+import { useAuthStore } from '@/store/AuthStore';
+import { useRouter } from 'vue-router';
+import Swal from 'sweetalert2';
+const showDropdown = ref(false);
+const authStore = useAuthStore();
+const router = useRouter();
+
+const isLoggedIn = computed(() => authStore.isAuthenticated);
+const userName = computed(() => authStore.user?.username || '');
+
+function confirmLogout() {
+  Swal.fire({
+    title: '¿Estás seguro?',
+    text: '¿Querés cerrar sesión?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Sí, cerrar sesión',
+    cancelButtonText: 'Cancelar',
+  }).then((result) => {
+    if (result.isConfirmed) {
+      authStore.logout();
+      router.push('/login');
+    }
+  });
+}
 </script>
+
 <style scoped>
 /* Importamos la fuente de MDI aquí (si ya la tienes instalada globalmente, puedes omitir esto) */
 

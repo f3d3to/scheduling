@@ -1,34 +1,64 @@
 <template>
   <div>
-    <select v-model="selectedPlan" @change="fetchSelectedPlan">
-      <option v-for="plan in plans" :key="plan.id" :value="plan.id">
-        {{ plan.nombre }}
-      </option>
-    </select>
-    <div ref="chart"></div>
+    <div ref="chart" class="graph-container">
+      <GraphFilter
+        :plans="store.plans"
+        :selectedPlan="selectedPlan"
+        @update:selectedPlan="handlePlanChange"
+        @filter-changed="handleFilterChanged"
+        class="floating-filter"
+      />
+    </div>
+
+    <!-- Mostrar GraphMateriaDetalle si hay una materia seleccionada -->
+    <GraphMateriaDetalle
+      v-show="selectedMateria"
+      :selectedMateria="selectedMateria"
+      @close-detail="closeDetail"
+      @update-node-color="updateNodeColor"
+    />
   </div>
 </template>
 
 <script>
 import * as d3 from "d3";
-import { fetchPlans, fetchCycles } from "@services/apiService";
+import { defineComponent, computed } from "vue";
+import { useGraphStore } from "@store/GraphStore";
+import GraphFilter from "./GraphFilter.vue";
+import GraphMateriaDetalle from "./GraphMateriaDetalle.vue";
 
-export default {
+export default defineComponent({
   name: "GraphContainer",
+  components: {
+    GraphFilter,
+    GraphMateriaDetalle,
+  },
+  setup() {
+    const store = useGraphStore();
+    const selectedPlan = computed({
+      get: () => store.selectedPlan,
+      set: (value) => {
+        store.selectedPlan = value;
+      },
+    });
+
+    return { store, selectedPlan };
+  },
   data() {
     return {
-      plans: [],
-      selectedPlan: null,
-      nodes: [],
-      links: [],
+      activeFilters: {},
+      estadosOptions: [
+        { text: "Aprobada", value: "aprobado" },
+        { text: "Cursando", value: "cursando" },
+        { text: "No Cursada", value: "no_cursada" },
+      ],
+      selectedMateria: null, // Estado para almacenar la materia seleccionada
     };
   },
   async mounted() {
     try {
-      const plansData = await fetchPlans();
-      this.plans = plansData.results;
-      if (this.plans.length > 0) {
-        this.selectedPlan = this.plans[0].id;
+      await this.store.fetchPlans();
+      if (this.store.plans.length > 0) {
         await this.fetchSelectedPlan();
       }
     } catch (error) {
@@ -40,56 +70,25 @@ export default {
       if (!this.selectedPlan) return;
 
       try {
-        const data = await fetchCycles(this.selectedPlan);
-        this.processData(data.anios);
+        await this.store.fetchCycles({ condicion: "carrera" });
         this.createChart();
       } catch (error) {
         console.error("Error fetching plan cycles:", error);
       }
     },
-    processData(anios) {
-      const nodes = [];
-      const links = [];
-      const nodeMap = new Map();
-
-      Object.entries(anios).forEach(([key, materias]) => {
-        if (Array.isArray(materias)) {
-          materias.forEach((materia) => {
-            const node = {
-              id: materia.codigo.trim(),
-              name: materia.nombre.trim(),
-              year: key === "0" ? "Sin año" : parseInt(key, 10),
-            };
-            nodes.push(node);
-            nodeMap.set(materia.codigo.trim(), node);
-          });
-        }
-      });
-
-      Object.entries(anios).forEach(([key, materias]) => {
-        if (Array.isArray(materias)) {
-          materias.forEach((materia) => {
-            if (materia.correlativas && Array.isArray(materia.correlativas)) {
-              materia.correlativas.forEach((correlativa) => {
-                const trimmedCorrelativa = correlativa.trim();
-                if (nodeMap.has(trimmedCorrelativa)) {
-                  links.push({
-                    source: trimmedCorrelativa,
-                    target: materia.codigo.trim(),
-                  });
-                } else {
-                  console.warn(`Correlativa ${trimmedCorrelativa} no encontrada en los nodos.`);
-                }
-              });
-            }
-          });
-        }
-      });
-
-      this.nodes = nodes;
-      this.links = links;
+    async handleFilterChanged(filters) {
+      try {
+        await this.store.fetchCycles(filters);
+        this.createChart(filters.mostrarAprobadas || false); // Pasar el filtro
+      } catch (error) {
+        console.error("Error applying filters:", error);
+      }
     },
-    createChart() {
+    handlePlanChange(newPlan) {
+      this.selectedPlan = newPlan;
+      this.fetchSelectedPlan();
+    },
+    createChart(mostrarAprobadas = false) {
       d3.select(this.$refs.chart).select("svg").remove();
 
       const width = window.innerWidth;
@@ -110,22 +109,28 @@ export default {
 
       const g = svg.append("g");
 
-      svg
-        .append("defs")
-        .append("marker")
-        .attr("id", "arrowhead")
-        .attr("viewBox", "0 -5 10 10")
-        .attr("refX", 15)
-        .attr("refY", 0)
-        .attr("markerWidth", 8)
-        .attr("markerHeight", 8)
-        .attr("orient", "auto")
-        .append("path")
-        .attr("d", "M0,-5L10,0L0,5")
-        .attr("fill", "#FFD700");
+      // Crear un marcador para cada color único en los enlaces
+      const uniqueColors = [...new Set(this.store.links.map(link => link.color || '#FFD700'))];
+      uniqueColors.forEach(color => {
+        svg
+          .append("defs")
+          .append("marker")
+          .attr("id", `arrowhead-${color.replace('#', '')}`)
+          .attr("viewBox", "0 -5 10 10")
+          .attr("refX", 15)
+          .attr("refY", 0)
+          .attr("markerWidth", 8)
+          .attr("markerHeight", 8)
+          .attr("orient", "auto")
+          .append("path")
+          .attr("d", "M0,-5L10,0L0,5")
+          .attr("fill", color);
+      });
 
-      const nodesByYear = d3.group(this.nodes, (d) => d.year);
-      const sortedYears = Array.from(nodesByYear.keys()).sort((a, b) => (a === "Sin año" ? 1 : b === "Sin año" ? -1 : a - b));
+      const nodesByYear = d3.group(this.store.nodes, (d) => d.year);
+      const sortedYears = Array.from(nodesByYear.keys()).sort((a, b) =>
+        a === "Sin año" ? 1 : b === "Sin año" ? -1 : a - b
+      );
 
       let xOffset = 100;
       const rectGroups = [];
@@ -150,8 +155,14 @@ export default {
               const dx = event.dx;
               const dy = event.dy;
               rectGroup.attr("transform", (d) => {
-                const transform = d3.select(rectGroup.node()).attr("transform") || "translate(0,0)";
-                const [, tx, ty] = transform.match(/translate\(([-\d.]+),\s*([-\d.]+)\)/) || [null, 0, 0];
+                const transform =
+                  d3.select(rectGroup.node()).attr("transform") || "translate(0,0)";
+                const [, tx, ty] =
+                  transform.match(/translate\(([-\d.]+),\s*([-\d.]+)\)/) || [
+                    null,
+                    0,
+                    0,
+                  ];
                 return `translate(${+tx + dx}, ${+ty + dy})`;
               });
               nodes.forEach((node) => {
@@ -186,11 +197,11 @@ export default {
       });
 
       const simulation = d3
-        .forceSimulation(this.nodes)
+        .forceSimulation(this.store.nodes)
         .force(
           "link",
           d3
-            .forceLink(this.links)
+            .forceLink(this.store.links)
             .id((d) => d.id)
             .distance(150)
         )
@@ -201,25 +212,26 @@ export default {
         .append("g")
         .attr("class", "links")
         .selectAll("line")
-        .data(this.links)
+        .data(this.store.links)
         .enter()
         .append("line")
-        .attr("stroke", "#FFD700")
+        .attr("stroke", (d) => (mostrarAprobadas && d.color === '#BDBDBD' ? '#BDBDBD' : d.color || '#FFD700')) // Gris para aprobadas o color por defecto
         .attr("stroke-opacity", 0.8)
         .attr("stroke-width", 2)
-        .attr("marker-end", "url(#arrowhead)");
+        .attr("marker-end", (d) => `url(#arrowhead-${(d.color || '#FFD700').replace('#', '')})`);
 
       const node = g
         .append("g")
         .attr("class", "nodes")
         .selectAll("circle")
-        .data(this.nodes)
+        .data(this.store.nodes)
         .enter()
         .append("circle")
         .attr("r", 20)
-        .attr("fill", (d) => d3.schemeTableau10[sortedYears.indexOf(d.year) % 10])
+        .attr("fill", (d) => (mostrarAprobadas && d.materiaEstudiante?.estado === 'aprobada' ? '#BDBDBD' : d.customColor || d.color || d3.schemeTableau10[sortedYears.indexOf(d.year) % 10])) // Gris para aprobadas
         .call(
-          d3.drag()
+          d3
+            .drag()
             .on("start", (event, d) => {
               if (!event.active) simulation.alphaTarget(0.3).restart();
               d.fx = d.x;
@@ -236,13 +248,14 @@ export default {
         .on("click", (event, d) => {
           event.stopPropagation();
           this.highlightConnections(d);
+          this.selectedMateria = d;
         });
 
       const labels = g
         .append("g")
         .attr("class", "labels")
         .selectAll("text")
-        .data(this.nodes)
+        .data(this.store.nodes)
         .enter()
         .append("text")
         .attr("text-anchor", "middle")
@@ -250,6 +263,7 @@ export default {
         .text((d) => d.name)
         .style("font-size", "10px")
         .style("fill", "#5c5a5a")
+        .style("text-decoration", (d) => (mostrarAprobadas && d.materiaEstudiante?.estado === 'aprobada' ? 'line-through' : 'none')) // Tachar nombres de aprobadas
         .style("pointer-events", "none");
 
       simulation.on("tick", () => {
@@ -266,11 +280,12 @@ export default {
 
       simulation.restart();
     },
+
     highlightConnections(selectedNode) {
       const connectedNodes = new Set();
       const connectedLinks = new Set();
 
-      this.links.forEach((link) => {
+      this.store.links.forEach((link) => {
         if (link.source.id === selectedNode.id || link.target.id === selectedNode.id) {
           connectedNodes.add(link.source.id);
           connectedNodes.add(link.target.id);
@@ -278,18 +293,45 @@ export default {
         }
       });
 
+      // Quitar el borde de todos los nodos
       d3.selectAll(".nodes circle")
+        .attr("stroke", null) // Eliminar el borde
+        .attr("stroke-width", null)
         .attr("opacity", (d) => (connectedNodes.has(d.id) ? 1 : 0.1));
+
+      // Agregar un borde gris al nodo seleccionado
+      d3.selectAll(".nodes circle")
+        .filter((d) => d.id === selectedNode.id)
+        .attr("stroke", "#bfb9b8") // Color gris
+        .attr("stroke-width", 4); // Grosor del borde
 
       d3.selectAll(".links line")
         .attr("opacity", (d) => (connectedLinks.has(d) ? 1 : 0.1));
     },
+
     resetHighlight() {
-      d3.selectAll(".nodes circle").attr("opacity", 1);
-      d3.selectAll(".links line").attr("opacity", 1);
+      d3.selectAll(".nodes circle")
+        .attr("stroke", null) // Eliminar el borde
+        .attr("stroke-width", null)
+        .attr("opacity", 1);
+
+      d3.selectAll(".links line")
+        .attr("opacity", 1);
+    },
+
+    closeDetail() {
+      this.selectedMateria = null; // Limpiar la materia seleccionada
+    },
+
+    updateNodeColor(nodeId, color) {
+      const node = this.store.nodes.find((n) => n.id === nodeId);
+      if (node) {
+        node.customColor = color;  // Actualizar el color personalizado
+        this.createChart();  // Volver a renderizar el gráfico
+      }
     },
   },
-};
+});
 </script>
 
 <style scoped>

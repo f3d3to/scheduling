@@ -15,7 +15,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             # Crear Usuarios usando factories
-            for i in range(1, 6):
+            for i in range(1, 3):
                 username = f'user{i}'
                 usuario = UsuarioFactory(username=username, password=username)
                 usuario.set_password(username)

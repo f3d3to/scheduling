@@ -31,7 +31,7 @@ class Materia(models.Model):
     correlativas = models.ManyToManyField('self', symmetrical=False, related_name='requerida_por', blank=True)
 
     def __str__(self):
-        return self.codigo
+        return f"{self.nombre}"
 
     class Meta:
         verbose_name = "Materia"
@@ -83,6 +83,8 @@ class MateriaEstudiante(models.Model):
     creditos_asignados = models.IntegerField(blank=True, null=True)  # Créditos asignados
 
     fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    dificultad = models.PositiveIntegerField(blank=True, null=True)
 
     class Meta:
         unique_together = ('estudiante', 'materia')

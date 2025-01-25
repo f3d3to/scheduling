@@ -19,12 +19,6 @@
               Empezá ahora
             </v-btn>
           </v-card-actions>
-           <v-card-text class="text-center mt-4">
-            <p class="text-body-2">
-              ¿Ya tenés una cuenta?
-              <router-link to="/iniciar-sesion" class="text-decoration-none">Iniciá sesión</router-link>
-            </p>
-          </v-card-text>
         </v-card>
       </v-col>
     </v-row>

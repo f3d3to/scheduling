@@ -58,6 +58,20 @@ class TareaSerializer(serializers.ModelSerializer):
         model = Tarea
         fields = ['id', 'actividad', 'nombre', 'descripcion', 'fecha_limite', 'color', 'estado', 'esta_realizada', 'fecha_actualizacion']
 
+class TareaForTimeSerializer(serializers.ModelSerializer):
+    actividad_id = serializers.PrimaryKeyRelatedField(
+        queryset=Actividad.objects.all(),
+        source='actividad',
+        write_only=True,
+        required=True
+    )
+
+    class Meta:
+        model = Tarea
+        fields = ['id', 'actividad_id', 'nombre', 'descripcion', 'fecha_limite', 'color', 'estado', 'esta_realizada', 'fecha_actualizacion']
+        read_only_fields = ('estado','esta_realizada','fecha_actualizacion')
+
+
 class RegistroProgresoSerializer(serializers.ModelSerializer):
     class Meta:
         model = RegistroProgreso

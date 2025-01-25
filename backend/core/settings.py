@@ -2,6 +2,7 @@
 Django settings for core project.
 """
 import os
+from datetime import timedelta
 
 from pathlib import Path
 from decouple import AutoConfig
@@ -35,6 +36,8 @@ THIRD_PARTY = [
     'rest_framework',
     'corsheaders',
     'django_filters',
+    'rest_framework_simplejwt',
+    'drf_spectacular',
 ]
 
 APPS = [
@@ -43,6 +46,7 @@ APPS = [
     'planificadores',
     'pomodoro',
     'users',
+    'visualizacion_grafo',
 ]
 
 INSTALLED_APPS = DJANGO + THIRD_PARTY + APPS
@@ -62,7 +66,12 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_HEADERS = [
-"*"
+    'Authorization',
+    'Content-Type',
+]
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Origen de tu frontend
+    "http://127.0.0.1:5173",  # Otra forma de referirse a localhost
 ]
 
 
@@ -127,7 +136,9 @@ USE_TZ = True
 
 
 REST_FRAMEWORK = {
-
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
     ),
@@ -139,11 +150,28 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': (
         'rest_framework.pagination.PageNumberPagination'),
     'PAGE_SIZE': (10),
-    'DEFAULT_AUTHENTICATION_CLASSES': [],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny'
-    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
 }
+
+with open(config('JWT_PUB_KEY', cast=str), 'r') as public_key_file:
+    public_key = public_key_file.read()
+
+with open(config('JWT_PRIVATE_KEY', cast=str), 'r') as private_key_file:
+    private_key = private_key_file.read()
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+
+    'ALGORITHM': 'RS256',
+    'VERIFYING_KEY': public_key,
+    'SIGNING_KEY': private_key,
+
+    'USER_ID_FIELD': 'id',
+}
+
 
 STATIC_URL = 'static/'
 
@@ -172,5 +200,19 @@ LOGGING = {
         #     'level': 'DEBUG',
         #     'propagate': True,
         }
+    },
+}
+# API DOCS
+SPECTACULAR_SETTINGS = {
+    'SCHEMA_PATH_PREFIX': '',
+    # 'SCHEMA_PATH_PREFIX_INSERT': 'back/',
+    "USER_ID_CLAIM": "user_id",
+    'TITLE': 'Estudiar API',
+    'DESCRIPTION': 'Esquema de APIS de la app',
+    'VERSION': config('API_VERSION', default='1.0.0'),
+    'SERVE_INCLUDE_SCHEMA': True,
+    "SWAGGER_UI_SETTINGS": {
+        "displayRequestDuration": True,
+        'persistAuthorization': True,
     },
 }

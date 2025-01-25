@@ -2,7 +2,7 @@
   <v-card class="celda-visualizacion">
     <div class="celda-encabezado">
       <template v-if="!editing">
-        <h3 class="celda-titulo" @click="enableEditing">{{ celda.contenido || '&nbsp;'  }}</h3>
+        <h3 class="celda-titulo" @click="enableEditing">{{ celda.contenido || '&nbsp;' }}</h3>
       </template>
       <div v-else class="celda-edicion">
         <v-icon
@@ -50,6 +50,7 @@
 import ElementoVisualizacion from "@planificadorDetalle/ElementoVisualizacion.vue";
 import AddElementos from "@planificadorDetalle/AddElementos.vue";
 import Swal from 'sweetalert2/dist/sweetalert2';
+import { usePlanificadorStore } from '@store/PlanificadorStore'; // Ajusta la ruta según tu estructura
 
 export default {
   components: {
@@ -61,6 +62,10 @@ export default {
       type: Object,
       required: true,
     },
+  },
+  setup() {
+    const planificadorStore = usePlanificadorStore();
+    return { planificadorStore };
   },
   data() {
     return {
@@ -96,57 +101,29 @@ export default {
       };
 
       try {
-        const response = await fetch(`http://localhost:8000/planificadores/${this.planificadorId}/celdas/${this.celda.id}/`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        });
-
-        if (!response.ok) {
-          const errorResponse = await response.json();
-          Swal.fire({
-            icon: 'error',
-            title: 'Error al guardar',
-            text: errorResponse.detail || 'No se pudo guardar el cambio.',
-            showConfirmButton: true,
-          });
-          return;
-        }
+        await this.planificadorStore.updateCelda(this.planificadorId, this.celda.id, requestBody);
         push.success({
-          title: 'Guarado!',
-          message: 'El contenido de la celda fue actualizado correctamente.'
-        })
-      } catch {
+          title: 'Guardado!',
+          message: 'El contenido de la celda fue actualizado correctamente.',
+        });
+      } catch (error) {
         Swal.fire({
           icon: 'error',
-          title: 'Error crítico',
-          text: 'Ocurrió un problema al conectar con el servidor.',
+          title: 'Error al guardar',
+          text: error.message || 'No se pudo guardar el cambio.',
           showConfirmButton: true,
         });
       }
     },
-
     async fetchElementos() {
       try {
-        const response = await fetch(`http://localhost:8000/elementos/?celda=${this.celda.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          this.elementos = data.results || [];
-        } else {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error al cargar',
-            text: 'No se pudieron cargar los elementos relacionados.',
-            showConfirmButton: true,
-          });
-        }
-      } catch {
+        await this.planificadorStore.fetchElementos(this.celda.id);
+        this.elementos = this.planificadorStore.getElementosByCeldaId(this.celda.id);
+      } catch (error) {
         Swal.fire({
           icon: 'error',
-          title: 'Error crítico',
-          text: 'Ocurrió un problema al conectar con el servidor.',
+          title: 'Error al cargar',
+          text: 'No se pudieron cargar los elementos relacionados.',
           showConfirmButton: true,
         });
       }
@@ -166,7 +143,7 @@ export default {
       push.warning({
         title: 'Elemento creado',
         message: 'El nuevo elemento se agregó correctamente.',
-      })
+      });
     },
   },
   async mounted() {
@@ -185,18 +162,16 @@ export default {
   display: flex;
   justify-content: center; /* Centrado horizontal */
   align-items: center; /* Centrado vertical */
-  /* height: 100%; */
 }
 .celda-encabezado {
-  flex: 0 0 auto;  /* No cambiar tamaño y permanecer visible */
+  flex: 0 0 auto;
   background-color: #f1f1f1;
   padding: 8px;
   text-align: center;
   position: sticky;
-  top: 0;  /* Fijar en la parte superior de la vista */
-  z-index: 100; /* Asegurar que se mantiene encima del contenido al desplazar */
+  top: 0;
+  z-index: 100;
 }
-
 .celda-titulo {
   margin: 0;
   font-size: 16px;
@@ -204,25 +179,21 @@ export default {
   text-transform: uppercase;
   color: #333;
 }
-
 .celda-edicion {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
-
 .icono-guardar {
   cursor: pointer;
-  color: #4caf50; /* Verde para guardar */
+  color: #4caf50;
   margin-left: 8px;
 }
-
 .icono-cancelar {
   cursor: pointer;
-  color: #c42e2e; /* Rojo para cancelar */
+  color: #c42e2e;
   margin-left: 8px;
 }
-
 .elemento-contenedor {
   margin-bottom: 4px;
   margin-left: 4px;
@@ -231,11 +202,11 @@ export default {
   font-size: 10px;
   display: flex;
   background-color: #f4f4f4;
-  align-items: center; /* Centra los ítems verticalmente */
-  justify-content: center; /* Centra los ítems horizontalmente */
+  align-items: center;
+  justify-content: center;
 }
 .close-button {
-  margin-right: auto; /* Empuja todo lo demás hacia la derecha */
+  margin-right: auto;
 }
 .celda-sin-elementos {
   margin-bottom: 2px;

@@ -8,4 +8,4 @@ class UsuarioFilter(django_filters.FilterSet):
 
     class Meta:
         model = Usuario
-        fields = ['username', 'email']
+        fields = ['id','username', 'email']

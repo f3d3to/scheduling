@@ -19,7 +19,6 @@ def importar_plan_de_estudios(ruta_archivo, nombre_plan="Ciencia de Datos", año
             año_creacion=año_creacion,
             descripcion=descripcion
         )
-
         # Primera pasada: Crear todas las materias
         materias_creadas = {}
         for _, row in df.iterrows():

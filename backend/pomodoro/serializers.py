@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from .models import TareaTimer, Sesion
 from planificadores.models import Tarea
-from planificadores.serializers import TareaSerializer
+from planificadores.serializers import TareaSerializer, TareaForTimeSerializer
+from planificadores.models import Actividad
 
 class SesionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -39,3 +40,31 @@ class TareaTimerSerializer(serializers.ModelSerializer):
         Tarea.objects.filter(id=tarea.id).update(**tarea_data)
 
         return instance
+
+class TareaTimerCreateSerializer(serializers.ModelSerializer):
+    actividad_id = serializers.IntegerField(write_only=True) # Recibe solo el ID
+    tarea = TareaForTimeSerializer()
+
+    class Meta:
+        model = TareaTimer
+        fields = [
+            'id',
+            'cantidad_completadas',
+            'cantidad_para_completar',
+            'actividad_id',
+            'tarea'
+        ]
+
+    def create(self, validated_data):
+        tarea_data = validated_data.pop('tarea')
+        actividad_id = validated_data.pop('actividad_id')
+
+        # Obtener la instancia de Actividad
+        actividad = Actividad.objects.get(pk=actividad_id)
+
+        # Crear la tarea asociada
+        tarea = Tarea.objects.create(**tarea_data)
+
+        # Crear la instancia de TareaTimer
+        tarea_timer = TareaTimer.objects.create(tarea=tarea, **validated_data)
+        return tarea_timer
