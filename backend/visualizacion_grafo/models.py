@@ -39,19 +39,14 @@ class NodoGrafo(models.Model):
         if estado and estado.get('estado') == 'aprobada':
             return '#BDBDBD'  # Gris
 
-        # # Lógica para filtro de disponibles
-        # if 'disponible' in filtros_activos:
-        #     # disponible = self._calcular_disponibilidad(usuario)
-        #     return '#4CAF50' if "disponible" else '#BDBDBD'
+        if 'disponible' in filtros_activos and filtros_activos['disponible']:
+            disponible = self._calcular_disponibilidad(usuario)
+            return '#800080' if disponible else 'transparent'
 
         return color_default
 
-    # def _calcular_disponibilidad(self, usuario):
-    #     from .services import calcular_disponibilidad_materia  # Lógica reutilizable
-    #     return calcular_disponibilidad_materia(self.materia, usuario)
-
-
     def to_dict(self, usuario=None, filtros=None):
+        estado = self._obtener_estado(usuario) if usuario else None
         data = {
             'id': self.materia_id,
             'posicion': [self.pos_x, self.pos_y],
@@ -59,8 +54,9 @@ class NodoGrafo(models.Model):
             'correlativas': [m.codigo for m in self.materia.correlativas.all()],
             'anio': self.materia.anio,
             'metadata': MateriaSerializer(self.materia).data,
-            'materia_estudiante': self._obtener_estado(usuario) if usuario else None,
+            'materia_estudiante': estado,
             'color': self.calcular_color(usuario, filtros or {}),
+            'disponible': estado.get('disponible', False) if estado else False,
         }
         return data
 

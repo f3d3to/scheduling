@@ -28,8 +28,8 @@ export interface MateriaEstudiante {
 
 interface MateriaMetadata {
   plan_de_estudio: {
-    id: number; // Asumiendo que el ID del plan de estudio es un número
-    nombre: string; // Asumiendo que el plan de estudio tiene un campo "nombre"
+    id: number;
+    nombre: string;
   };
   codigo: string;
   anio: number | null;
@@ -45,7 +45,7 @@ interface MateriaMetadata {
   ch_distancia: number | null;
   ch_total: number | null;
   descripcion: string | null;
-  correlativas: string[]; // Asumiendo que las correlativas son un array de códigos (strings)
+  correlativas: string[];
 }
 
 interface Node {
@@ -58,6 +58,7 @@ interface Node {
   metadata?: MateriaMetadata | null;
   color?: string;
   customColor?: string; // Color personalizado
+  disponible: boolean; // <-- Añadir campo disponible
 }
 
 interface Link {
@@ -142,10 +143,10 @@ export const useGraphStore = defineStore("graph", {
             correlativas: correlativasMap.get(nodo.metadata.codigo.trim()) || [],
             materiaEstudiante: nodo.materia_estudiante,
             metadata: nodo.metadata,
+            disponible: nodo.disponible,
           });
         });
 
-        // Procesar datos con el filtro de aprobadas
         this.processData(anios, filters?.mostrarAprobadas || false);
       } catch (error) {
         console.error("Error fetching filtered graph:", error);
@@ -169,11 +170,12 @@ export const useGraphStore = defineStore("graph", {
               materiaEstudiante: materia.materiaEstudiante,
               metadata: materia.metadata,
               color: materia.color,
+              disponible: materia.disponible,
             };
 
             // Aplicar estilo de aprobadas si el filtro está activo
             if (mostrarAprobadas && materia.materiaEstudiante?.estado === 'aprobada') {
-              node.color = '#BDBDBD'; // Gris para aprobadas
+              node.color = '#BDBDBD';
             }
 
             nodes.push(node);

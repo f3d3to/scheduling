@@ -78,8 +78,14 @@ export default defineComponent({
     },
     async handleFilterChanged(filters) {
       try {
-        await this.store.fetchCycles(filters);
-        this.createChart(filters.mostrarAprobadas || false); // Pasar el filtro
+        // Separar filtros de backend y flags visuales
+        const { mostrarAprobadas, mostrarDisponibles, ...backendFilters } = filters;
+
+        // Enviar solo los filtros de backend al store
+        await this.store.fetchCycles(backendFilters);
+
+        // Pasar los flags visuales a createChart
+        this.createChart(mostrarAprobadas, mostrarDisponibles);
       } catch (error) {
         console.error("Error applying filters:", error);
       }
@@ -88,7 +94,7 @@ export default defineComponent({
       this.selectedPlan = newPlan;
       this.fetchSelectedPlan();
     },
-    createChart(mostrarAprobadas = false) {
+    createChart(mostrarAprobadas = false, mostrarDisponibles = false) {
       d3.select(this.$refs.chart).select("svg").remove();
 
       const width = window.innerWidth;
@@ -109,7 +115,22 @@ export default defineComponent({
 
       const g = svg.append("g");
 
-      // Crear un marcador para cada color único en los enlaces
+      // Crear un marcador para el caso de materias aprobadas/promocionadas (gris)
+      svg
+        .append("defs")
+        .append("marker")
+        .attr("id", "arrowhead-aprobada")
+        .attr("viewBox", "0 -5 10 10")
+        .attr("refX", 15)
+        .attr("refY", 0)
+        .attr("markerWidth", 8)
+        .attr("markerHeight", 8)
+        .attr("orient", "auto")
+        .append("path")
+        .attr("d", "M0,-5L10,0L0,5")
+        .attr("fill", "#BDBDBD"); // Color gris para materias aprobadas/promocionadas
+
+      // Crear un marcador para los casos normales (color del enlace o color por defecto)
       const uniqueColors = [...new Set(this.store.links.map(link => link.color || '#FFD700'))];
       uniqueColors.forEach(color => {
         svg
@@ -215,10 +236,34 @@ export default defineComponent({
         .data(this.store.links)
         .enter()
         .append("line")
-        .attr("stroke", (d) => (mostrarAprobadas && d.color === '#BDBDBD' ? '#BDBDBD' : d.color || '#FFD700')) // Gris para aprobadas o color por defecto
+        .attr("stroke", (d) => {
+          if (mostrarAprobadas) {
+            const sourceNode = this.store.nodes.find(n => n.id === d.source.id);
+            const targetNode = this.store.nodes.find(n => n.id === d.target.id);
+            if (
+              (sourceNode?.materiaEstudiante?.estado === 'aprobada' || sourceNode?.materiaEstudiante?.estado === 'promocionada') ||
+              (targetNode?.materiaEstudiante?.estado === 'aprobada' || targetNode?.materiaEstudiante?.estado === 'promocionada')
+            ) {
+              return '#BDBDBD'; // Gris si alguna de las materias conectadas está aprobada o promocionada
+            }
+          }
+          return d.color || '#FFD700'; // Color por defecto
+        })
         .attr("stroke-opacity", 0.8)
         .attr("stroke-width", 2)
-        .attr("marker-end", (d) => `url(#arrowhead-${(d.color || '#FFD700').replace('#', '')})`);
+        .attr("marker-end", (d) => {
+          if (mostrarAprobadas) {
+            const sourceNode = this.store.nodes.find(n => n.id === d.source.id);
+            const targetNode = this.store.nodes.find(n => n.id === d.target.id);
+            if (
+              (sourceNode?.materiaEstudiante?.estado === 'aprobada' || sourceNode?.materiaEstudiante?.estado === 'promocionada') ||
+              (targetNode?.materiaEstudiante?.estado === 'aprobada' || targetNode?.materiaEstudiante?.estado === 'promocionada')
+            ) {
+              return "url(#arrowhead-aprobada)"; // Usar el marcador gris
+            }
+          }
+          return `url(#arrowhead-${(d.color || '#FFD700').replace('#', '')})`; // Usar el marcador normal
+        });
 
       const node = g
         .append("g")
@@ -228,7 +273,15 @@ export default defineComponent({
         .enter()
         .append("circle")
         .attr("r", 20)
-        .attr("fill", (d) => (mostrarAprobadas && d.materiaEstudiante?.estado === 'aprobada' ? '#BDBDBD' : d.customColor || d.color || d3.schemeTableau10[sortedYears.indexOf(d.year) % 10])) // Gris para aprobadas
+        .attr("fill", (d) => {
+          if (mostrarAprobadas && (d.materiaEstudiante?.estado === 'aprobada' || d.materiaEstudiante?.estado === 'promocionada')) {
+            return '#BDBDBD'; // Gris para aprobadas
+          }
+          if (mostrarDisponibles && d.disponible) { // Solo colorear si el switch está activo
+            return '#800080'; // Violeta para disponibles
+          }
+          return d.customColor || d.color || d3.schemeTableau10[sortedYears.indexOf(d.year) % 10]; // Color por defecto
+        })
         .call(
           d3
             .drag()
@@ -263,7 +316,7 @@ export default defineComponent({
         .text((d) => d.name)
         .style("font-size", "10px")
         .style("fill", "#5c5a5a")
-        .style("text-decoration", (d) => (mostrarAprobadas && d.materiaEstudiante?.estado === 'aprobada' ? 'line-through' : 'none')) // Tachar nombres de aprobadas
+        .style("text-decoration", (d) => (mostrarAprobadas && (d.materiaEstudiante?.estado === 'aprobada' || d.materiaEstudiante?.estado === 'promocionada') ? 'line-through' : 'none')) // Tachar nombres de aprobadas
         .style("pointer-events", "none");
 
       simulation.on("tick", () => {

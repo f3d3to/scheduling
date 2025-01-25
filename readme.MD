@@ -91,16 +91,18 @@ En el deployment, se incluyen los archivos necesarios para configurar y desplega
 - [ ] (CELU) Herramienta de Control de Gastos: Herramienta para registrar gastos académicos (materiales, transporte, etc.) y sugerir formas de ahorrar.
 
 ## PLANES DE ESTUDIO
-- [ ] Personalización de colores del grafo.
-- [ ] Filtrar por materias disponibles (logica de disponibilidad: cantidad de creditos y correlativas aprobadas)
-- [ ] Visualización diferenciada para materias aprobadas (se deben ver el nombre tachado, el color gris y sus conexiones de gris tmb )
-- [ ] Visualizacion de un apartado promedio de carrera: Se mostrará la cantidad de créditos que el usuario tiene, el porcentaje de la carrera completado (real y si fuese el simulado) y otros datos relevantes, como promedios.
 - [ ] "Calificaciones" y progreso (Se permitirá al usuario marcar materias como "aprobadas" para simular el cálculo de créditos y porcentaje en la carrera, sin que esto implique cambiar su estado en el backend).
 - [ ] Visualizacion de nivel de dificultad diferenciada (tipo un termometro?)
 - [ ] Promedio de finalización de carrera, cuando te recibís te felicita y cambia de colores
 - [ ] Permite filtrar por un conjunto de materias seleccionadas (por ejemplo para ver las que está cursando en el cuatrimestre)
-- [ ] Combinaciones más comunes (Podría mostrar las combinaciones de materias que los estudiantes suelen cursar por ejemplo juntas o separadas por nivel de dificultad, también por cantidad, etc),
+- [ ] Combinaciones más comunes (debería mostrar las combinaciones de materias que los estudiantes suelen cursar -según una serie de parametros que el backend debe calcular- por ejemplo juntas o separadas por nivel de dificultad, también por cantidad, etc). Este tipo de filtro permite seleccionar varias opciones y cambia de color los nodos y sus uniones.
+- [ ] Crear un componente (GraphEstadoCarrera) que muestre en el componente principal (GraphContainer) el porcentaje de carrera: Se mostrará la cantidad de créditos que el usuario tiene, el porcentaje de la carrera completado (el real -materias que en el backend figuran aprobadas- y si el usuario marcó a proposito como aprobado para calcular, el promedio simulado) y otros datos relevantes, como cantidad de creditos y el promedio.
+- [ ] Personalización de colores del grafo.
 
+
+- [X] Filtrar por materias disponibles (logica de disponibilidad: cantidad de creditos y correlativas aprobadas)
+- [X] Personalización de colores del grafo.
+- [X] Visualización diferenciada para materias aprobadas (se deben ver el nombre tachado, el color gris y sus conexiones de gris tmb )
 - [X] Nivel de dificultad
 - [X] "Detalle de materia" (Al hacer clic en un nodo, se abrirá un modal (dialog móvil) con la información detallada de la materia para el usuario.)
 - [X] Filtro de materias por sus campos (nombre, año, etc)
@@ -482,3 +484,108 @@ sequenceDiagram
         end
     end
 ```
+
+## MODELOS DE PLAN_DE_ESTUDIO
+classDiagram
+    class Usuario {
+        +id
+        +username
+    }
+
+    class PlanDeEstudio {
+        +id
+        +nombre
+        +año_creacion
+        +descripcion
+    }
+
+    class Materia {
+        +id
+        +codigo
+        +anio
+        +ciclo
+        +cuatrimestre
+        +condicion
+        +nombre
+        +formato_didactico
+        +ch_semanal
+        +ch_cuatrimestral
+        +creditos
+        +ch_presencial
+        +ch_distancia
+        +ch_total
+        +descripcion
+        +plan_de_estudio_id
+    }
+
+    class MateriaEstudiante {
+        +id
+        +estudiante_id
+        +materia_id
+        +nota_final
+        +final_obligatorio
+        +catedra
+        +comentarios
+        +intentos
+        +comentarios_docente
+        +estado
+        +fecha_inscripcion
+        +metodo_aprobacion
+        +creditos_asignados
+        +fecha_actualizacion
+        +dificultad
+        +disponible
+    }
+
+    class TipoEvaluacion {
+        +id
+        +nombre
+        +descripcion
+        +peso_defecto
+    }
+
+    class Evaluacion {
+        +id
+        +materia_estudiante_id
+        +tipo_id
+        +descripcion
+        +nota
+        +fecha
+    }
+
+    class VisualizacionGrafo {
+        +id
+        +plan_de_estudio_id
+        +nombre
+        +config_global
+    }
+
+    class NodoGrafo {
+        +id
+        +grafo_id
+        +materia_id
+        +pos_x
+        +pos_y
+        +config_visual
+    }
+
+    class EnlaceGrafo {
+        +id
+        +grafo_id
+        +fuente_id
+        +destino_id
+        +config_visual
+    }
+
+    Usuario "1" --* "many" MateriaEstudiante : tiene
+    PlanDeEstudio "1" --* "many" Materia : contiene
+    Materia "1" --* "many" MateriaEstudiante : tiene
+    Materia "many" --* "many" Materia : correlativas
+    MateriaEstudiante "1" --* "many" Evaluacion : tiene
+    TipoEvaluacion "1" --* "many" Evaluacion : tiene
+    PlanDeEstudio "1" --* "1" VisualizacionGrafo : tiene
+    VisualizacionGrafo "1" --* "many" NodoGrafo : contiene
+    VisualizacionGrafo "1" --* "many" EnlaceGrafo : contiene
+    NodoGrafo "1" --* "1" Materia : representa
+    EnlaceGrafo "1" --* "1" NodoGrafo : fuente
+    EnlaceGrafo "1" --* "1" NodoGrafo : destino

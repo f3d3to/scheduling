@@ -7,9 +7,6 @@
           <h3>ESTUDI-AR</h3>
         </router-link>
       </div>
-      <div class="search-bar">
-        <input type="text" placeholder="Filtrar..." />
-      </div>
       <div class="user-actions">
         <div v-if="authStore.isAuthenticated" class="user-info">
           <span class="username">{{ authStore.user?.username }}</span>
@@ -113,32 +110,6 @@ function confirmLogout() {
 .logo {
   height: 40px; /* Ajusta el tamaño del logo según tus necesidades */
   margin-right: 10px; /* Espacio entre el logo y el texto */
-}
-
-.search-bar {
-  flex-grow: 1;
-  margin: 0 20px;
-  max-width: 400px;
-}
-
-.search-bar input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 5px;
-  background-color: #1e1e2f;
-  color: #fff;
-  font-size: 1rem;
-  outline: none;
-  transition: border-color 0.3s ease;
-}
-
-.search-bar input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.search-bar input:focus {
-  border-color: #535bf2;
 }
 
 .user-actions {

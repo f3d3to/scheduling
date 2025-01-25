@@ -70,6 +70,12 @@ class GrafoFiltradoView(APIView):
                 else:
                     materias = materias.filter(**{field: value})
 
+        if 'disponible' in request.query_params:
+            materias = materias.filter(
+                estudiantes__estudiante=request.user,
+                estudiantes__disponible=True
+            )
+
         # Filtrar por estado del estudiante
         if estado:
             if estado == 'no_cursada':

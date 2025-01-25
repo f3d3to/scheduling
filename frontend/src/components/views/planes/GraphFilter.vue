@@ -128,7 +128,14 @@
         @change="applyFilter"
       ></v-switch>
     </v-col>
-
+    <v-col cols="12" sm="6" md="4" lg="3">
+      <v-switch
+        v-model="mostrarDisponibles"
+        label="Mostrar disponibles en violeta"
+        @change="applyFilter"
+        color="purple"
+      ></v-switch>
+    </v-col>
     <!-- Botón de acción -->
     <v-col cols="12" class="text-right">
         <v-btn
@@ -190,7 +197,6 @@ export default {
     });
 
     const handlePlanChange = (newPlan) => {
-        console.log("Nuevo plan seleccionado:", newPlan);
         emit("update:selectedPlan", newPlan);
     };
 
@@ -213,6 +219,7 @@ export default {
       materia: "",
       correlativasIn: "",
       mostrarAprobadas: false,
+      mostrarDisponibles: false,
       estadoOptions: [
         { title: 'Pendiente', value: 'pendiente' },
         { title: 'Cursando', value: 'cursando' },
@@ -239,6 +246,7 @@ export default {
         'formato_didactico': this.formatoDidactico,
         condicion: this.condicion,
         materia: this.materia,
+        mostrarDisponibles: this.mostrarDisponibles,
         'correlativas__in': this.correlativasIn,
         mostrarAprobadas: this.mostrarAprobadas,
       };
