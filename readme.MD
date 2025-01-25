@@ -146,9 +146,8 @@ En el deployment, se incluyen los archivos necesarios para configurar y desplega
 - [ ] Marcar que estudias y laburas
 
 ## SISTEMA DE NOTIFICACIONES
-- [ ] IMPLEMENTAR
-- [ ] Modelo cursada notificación por horario de inscripción en el celu y mail: Notificaciones push y por correo electrónico sobre fechas de inscripción, inicio de clases, etc., serían de gran ayuda.
-
+- [ ] IMPLEMENTAR NOTIFICACIONES MAS OPTIMAS, TAL VEZ POR SSE.
+- [ ] El usuario será notificado con una gran variedad de tipos, la prioridad es que si creó una instancia EVENTO o EVENTO A MODELO ASOCIADO, te informe con una notificacion (este issue refiere a las notificaciones de la web, pero estarán ligadas a notificaciones por mail y a la app mobile). Como ejemplo habrá notificaciones como fecha de inscripcion a materias, fecha de asignacion de prioridad, fecha de presentacion de certificado de trabajo, fecha de inicio de cursada, fecha de examen parcial, fecha de examen final (integrados final), entre otros.
 ---
 
 ## DASHBOARD FACULTATIVO
