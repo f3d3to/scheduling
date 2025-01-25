@@ -39,12 +39,13 @@ class GrafoFiltradoView(APIView):
 
         # Obtener parámetros de filtro
         filters = request.query_params.dict()
-        estado = filters.pop('estado', None)
+        promocionadas = filters.pop('promocionadas', None)
+        disponibles = filters.pop('disponibles', None)
 
         # Identificar filtros activos
         filtros_activos = {
-            'estado': estado,
-            'disponible': 'disponible' in filters,
+            'promocionadas': promocionadas,
+            'disponibles': disponibles,
         }
 
         # Base queryset de materias del plan
@@ -52,15 +53,27 @@ class GrafoFiltradoView(APIView):
 
         # Aplicar filtros dinámicos para Materia
         allowed_filters = {
-            'materia': 'id',
-            'nombre__icontains': 'nombre',
+            'materia': 'codigo',
+            'nombre__icontains': 'nombre__icontains',
             'ciclo': 'ciclo',
             'creditos': 'creditos',
             'anio': 'anio',
             'formato_didactico': 'formato_didactico',
             'condicion': 'condicion',
-            'correlativas__in': 'correlativas',
         }
+
+        # Filtro de correlativas (por código de materia)
+        if 'correlativas__in' in filters:
+            codigos_correlativas = filters['correlativas__in'].split(',')
+            # Obtener IDs de las materias correlativas
+            materias_correlativas = Materia.objects.filter(
+                codigo__in=codigos_correlativas
+            ).values_list('id', flat=True)
+            # Filtrar materias que tengan estas correlativas
+            materias = materias.filter(correlativas__in=materias_correlativas)
+
+        if 'estado' in filters:
+            materias = materias.filter(estudiantes__estado=filters['estado'], estudiantes__estudiante=request.user)
 
         for param, field in allowed_filters.items():
             if param in filters:
@@ -70,27 +83,6 @@ class GrafoFiltradoView(APIView):
                 else:
                     materias = materias.filter(**{field: value})
 
-        if 'disponible' in request.query_params:
-            materias = materias.filter(
-                estudiantes__estudiante=request.user,
-                estudiantes__disponible=True
-            )
-
-        # Filtrar por estado del estudiante
-        if estado:
-            if estado == 'no_cursada':
-                # Materias sin registro en MateriaEstudiante
-                cursadas = MateriaEstudiante.objects.filter(
-                    estudiante=request.user
-                ).values_list('materia_id', flat=True)
-                materias = materias.exclude(id__in=cursadas)
-            else:
-                # Materias con estado específico
-                materias_estado = MateriaEstudiante.objects.filter(
-                    estudiante=request.user,
-                    estado=estado
-                ).values_list('materia_id', flat=True)
-                materias = materias.filter(id__in=materias_estado)
 
         # Obtener nodos y enlaces filtrados
         nodos_filtrados = NodoGrafo.objects.filter(
@@ -104,15 +96,14 @@ class GrafoFiltradoView(APIView):
             fuente__in=nodos_ids,
             destino__in=nodos_ids
         )
-
         # Serializar datos con colores computados
         data = {
             'nodos': [
-                nodo.to_dict(request.user, filtros_activos)  # Pasar filtros activos
+                nodo.to_dict(request.user, filtros_activos)
                 for nodo in nodos_filtrados
             ],
             'enlaces': [
-                enlace.to_dict(request.user, filtros_activos)  # Pasar filtros activos
+                enlace.to_dict(request.user, filtros_activos)
                 for enlace in enlaces_filtrados
             ],
         }

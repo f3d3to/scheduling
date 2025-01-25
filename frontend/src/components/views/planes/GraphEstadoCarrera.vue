@@ -1,184 +1,247 @@
 <template>
-    <div class="career-status" v-if="visible">
-      <div class="header">
-        <h3>Progreso de la Carrera</h3>
-        <button @click="toggleVisibility" class="toggle-btn">×</button>
+    <div class="career-progress">
+      <!-- Primera columna - Créditos -->
+      <div class="column credits-column">
+        <div class="credits-header">
+          <font-awesome-icon :icon="['fas', 'book-open']" class="icon" />
+          <h3>Créditos</h3>
+        </div>
+        <div class="credits-content">
+          <span class="credits-obtained">{{ obtainedCredits }}</span>
+          <span class="credits-separator">de</span>
+          <span class="credits-total">{{ totalCredits }}</span>
+        </div>
+        <div class="percentage" :style="{ color: percentageColor }">
+          {{ calculatedPercentage }}%
+        </div>
       </div>
 
-      <div class="stats-container">
-        <!-- Columna Izquierda -->
-        <div class="stat-column">
-          <div class="stat-card">
-            <h4>Création (2)</h4>
-            <div class="credits-section">
-              <p class="main-credits">50 de 226 <span class="total-credits">[255]</span></p>
-              <div class="percentage-bar">
-                <div class="progress" :style="{ width: realPercentage + '%' }"></div>
-              </div>
-              <p class="percentage">{{ realPercentage.toFixed(1) }}%</p>
-            </div>
-
-            <div class="additional-info">
-              <p>FMC <span>12</span></p>
-              <p>RELATIONNAI <span>8</span></p>
-              <p>RECONNÉ <span>6</span></p>
-              <p>PRIOR <span>10</span></p>
-              <p>IPE <span>14</span></p>
-            </div>
+      <!-- Segunda columna - Barra de progreso -->
+      <div class="column progress-column">
+        <div class="progress-bar">
+          <div
+            v-for="(cycle, index) in cyclesProgress"
+            :key="index"
+            class="progress-segment"
+            :style="{
+              width: cycle.percentage + '%',
+              backgroundColor: cycle.color
+            }"
+            @mouseover="showTooltip(cycle)"
+            @mouseleave="hideTooltip"
+          >
+            <span class="segment-label">{{ cycle.name }} {{ cycle.percentage }}%</span>
           </div>
         </div>
+        <div v-if="activeTooltip" class="progress-tooltip">
+          {{ tooltipContent }}
+        </div>
+      </div>
 
-        <!-- Columna Derecha -->
-        <div class="stat-column">
-          <div class="stat-card">
-            <h4>Promedio</h4>
-            <div class="average-section">
-              <p class="average-value">{{ formattedRealAverage }}</p>
-              <div class="simulated-average">
-                <span>Simulado: {{ formattedSimulatedAverage }}</span>
-              </div>
-            </div>
-          </div>
+      <!-- Tercera columna - Promedio -->
+      <div class="column average-column">
+        <div class="average-header">
+          <font-awesome-icon :icon="['fas', 'medal']" class="icon" />
+          <h3>Promedio</h3>
+        </div>
+        <div class="average-value">
+          {{ formattedAverage }}
         </div>
       </div>
     </div>
   </template>
 
   <script>
-  import { defineComponent } from 'vue';
-  import { useGraphStore } from '@store/GraphStore';
+  import { computed, ref } from 'vue';
+  import { useStore } from '@/stores/mainStore';
 
-  export default defineComponent({
-    name: 'GraphEstadoCarrera',
-    props: {
-      visible: {
-        type: Boolean,
-        default: true
-      }
-    },
+  export default {
+    name: 'CareerProgress',
     setup() {
-      const store = useGraphStore();
-      return { store };
-    },
-    computed: {
-      // Mantener los cálculos anteriores y añadir:
-      totalRequiredCredits() {
-        return 226; // Ejemplo estático - deberías obtenerlo del store
-      },
-      realPercentage() {
-        return (this.realCompletedCredits / this.totalRequiredCredits) * 100;
-      },
-      // ... otros computed properties
-    },
-    methods: {
-      toggleVisibility() {
-        this.$emit('update:visible', !this.visible);
-      }
+      const store = useStore();
+      const activeTooltip = ref(false);
+      const tooltipContent = ref('');
+
+      // Cálculo de créditos
+      const obtainedCredits = computed(() =>
+        store.courses.reduce((sum, course) =>
+          course.approved ? sum + course.credits : sum, 0)
+      );
+
+      const totalCredits = computed(() =>
+        store.courses.reduce((sum, course) => sum + course.credits, 0)
+      );
+
+      const calculatedPercentage = computed(() =>
+        ((obtainedCredits.value / totalCredits.value) * 100).toFixed(2)
+      );
+
+      // Colores y porcentaje por ciclo
+      const cycleColors = {
+        'CBC': '#4CAF50',
+        'OBLIGATORIAS': '#2196F3',
+        'ELECTIVAS': '#9C27B0',
+        'INGLÉS': '#FFEB3B',
+        'TIF': '#F44336'
+      };
+
+      const cyclesProgress = computed(() => {
+        const cycles = store.courses.reduce((acc, course) => {
+          if (!acc[course.cycle]) {
+            acc[course.cycle] = {
+              total: 0,
+              obtained: 0
+            };
+          }
+          acc[course.cycle].total += course.credits;
+          if (course.approved) acc[course.cycle].obtained += course.credits;
+          return acc;
+        }, {});
+
+        return Object.entries(cycles).map(([name, data]) => ({
+          name,
+          percentage: ((data.obtained / data.total) * 100).toFixed(2),
+          color: cycleColors[name] || '#607D8B',
+          credits: `${data.obtained}/${data.total}`
+        }));
+      });
+
+      // Cálculo del promedio
+      const studentAverage = computed(() => {
+        const validCourses = store.courses.filter(course => course.grade);
+        if (validCourses.length === 0) return 0;
+
+        const total = validCourses.reduce((sum, course) =>
+          sum + parseFloat(course.grade), 0);
+
+        return total / validCourses.length;
+      });
+
+      const formattedAverage = computed(() =>
+        studentAverage.value.toFixed(2)
+      );
+
+      // Tooltip interactivo
+      const showTooltip = (cycle) => {
+        tooltipContent.value = `Créditos obtenidos: ${cycle.credits}`;
+        activeTooltip.value = true;
+      };
+
+      const hideTooltip = () => {
+        activeTooltip.value = false;
+      };
+
+      return {
+        obtainedCredits,
+        totalCredits,
+        calculatedPercentage,
+        percentageColor: computed(() =>
+          calculatedPercentage.value >= 50 ? '#4CAF50' : '#F44336'),
+        cyclesProgress,
+        formattedAverage,
+        activeTooltip,
+        tooltipContent,
+        showTooltip,
+        hideTooltip
+      };
     }
-  });
+  };
   </script>
 
   <style scoped>
-  .career-status {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    background: white;
-    padding: 15px;
+  .career-progress {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    padding: 1.5rem;
+    background: #ffffff;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 1000;
-    width: 320px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin: 1rem;
   }
 
-  .header {
+  .column {
+    padding: 1rem;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
-    margin-bottom: 15px;
   }
 
-  .toggle-btn {
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: #666;
-  }
-
-  .stats-container {
+  .credits-header, .average-header {
     display: flex;
-    gap: 15px;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
   }
 
-  .stat-column {
-    flex: 1;
-  }
-
-  .stat-card h4 {
+  .icon {
+    font-size: 1.5rem;
     color: #2c3e50;
-    margin: 0 0 10px 0;
-    font-size: 14px;
   }
 
-  .credits-section {
-    margin-bottom: 15px;
+  .credits-content {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
   }
 
-  .main-credits {
-    font-size: 18px;
-    font-weight: bold;
-    margin: 0;
+  .credits-obtained {
+    font-weight: 700;
+    color: #2c3e50;
   }
 
-  .total-credits {
-    color: #95a5a6;
-    font-size: 14px;
-  }
-
-  .percentage-bar {
-    height: 6px;
-    background: #ecf0f1;
-    border-radius: 3px;
-    margin: 8px 0;
-  }
-
-  .progress {
-    height: 100%;
-    background: #3498db;
-    border-radius: 3px;
-    transition: width 0.3s ease;
+  .credits-total {
+    color: #7f8c8d;
   }
 
   .percentage {
-    font-size: 14px;
-    color: #7f8c8d;
-    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
   }
 
-  .additional-info p {
+  .progress-bar {
+    width: 100%;
+    height: 30px;
+    background: #ecf0f1;
+    border-radius: 15px;
+    overflow: hidden;
     display: flex;
-    justify-content: space-between;
-    margin: 6px 0;
-    font-size: 12px;
-    color: #34495e;
   }
 
-  .average-section {
-    text-align: center;
-    padding: 15px 0;
+  .progress-segment {
+    height: 100%;
+    transition: width 0.3s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .segment-label {
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  .progress-tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
   }
 
   .average-value {
-    font-size: 28px;
-    font-weight: bold;
-    color: #27ae60;
-    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
   }
 
-  .simulated-average {
-    margin-top: 10px;
-    font-size: 12px;
-    color: #95a5a6;
+  @media (max-width: 768px) {
+    .career-progress {
+      grid-template-columns: 1fr;
+    }
   }
   </style>

@@ -4,6 +4,14 @@ from django.dispatch import receiver
 from plan_de_estudio.models import PlanDeEstudio, Materia, MateriaEstudiante
 from plan_de_estudio.serializers import MateriaSerializer, MateriaEstudianteSerializer
 
+COLORES_POR_ANIO = {
+    1: '#4e79a7',
+    2: '#f28e2c',
+    3: '#e15759',
+    4: '#76b7b2',
+    5: '#59a14f',
+}
+
 class VisualizacionGrafo(models.Model):
     plan_de_estudio = models.OneToOneField(PlanDeEstudio, on_delete=models.CASCADE, related_name='visualizacion_grafo', null=True, blank=True)
     nombre = models.CharField(max_length=100, default="Visualización Principal")
@@ -20,6 +28,7 @@ class VisualizacionGrafo(models.Model):
         }
 
 class NodoGrafo(models.Model):
+
     grafo = models.ForeignKey(VisualizacionGrafo, on_delete=models.CASCADE, related_name='nodos')
     materia = models.ForeignKey('plan_de_estudio.Materia', on_delete=models.CASCADE)
 
@@ -29,24 +38,31 @@ class NodoGrafo(models.Model):
     config_visual = models.JSONField(default=dict, help_text="Configuración para visualizacion del nodo.")
 
     def calcular_color(self, usuario, filtros_activos):
-        color_default = self.config_visual.get('color', '#4CAF50')
+        # Color por defecto basado en el año
+        color_default = COLORES_POR_ANIO.get(self.materia.anio, '#edc949')  # Color por defecto si no hay año
 
         if not usuario:
             return color_default
 
-        # Lógica para aprobadas
-        estado = self._obtener_estado(usuario)
-        if estado and estado.get('estado') == 'aprobada':
-            return '#BDBDBD'  # Gris
+        # Obtener el estado de la materia para el usuario
+        materia_estudiante = self._obtener_materia(usuario)
 
-        if 'disponible' in filtros_activos and filtros_activos['disponible']:
-            disponible = self._calcular_disponibilidad(usuario)
-            return '#800080' if disponible else 'transparent'
+        # Verificar si hay filtros activos
+        if not materia_estudiante:
+            return color_default
 
-        return color_default
+        # Lógica para materias promocionadas
+        if filtros_activos.get("promocionadas", False) and materia_estudiante["estado"] == "promocionada":
+            return '#BDBDBD'  # Gris para materias promocionadas
+
+        # Lógica para materias disponibles
+        if filtros_activos.get("disponibles", False) and materia_estudiante["disponible"]:
+            return '#905ea6'  # Violeta para materias disponibles
+
+        return color_default  # Color por defecto si no se aplica ningún filtro
 
     def to_dict(self, usuario=None, filtros=None):
-        estado = self._obtener_estado(usuario) if usuario else None
+        materia = self._obtener_materia(usuario) if usuario else None
         data = {
             'id': self.materia_id,
             'posicion': [self.pos_x, self.pos_y],
@@ -54,13 +70,12 @@ class NodoGrafo(models.Model):
             'correlativas': [m.codigo for m in self.materia.correlativas.all()],
             'anio': self.materia.anio,
             'metadata': MateriaSerializer(self.materia).data,
-            'materia_estudiante': estado,
+            'materia_estudiante': materia,
             'color': self.calcular_color(usuario, filtros or {}),
-            'disponible': estado.get('disponible', False) if estado else False,
         }
         return data
 
-    def _obtener_estado(self, usuario):
+    def _obtener_materia(self, usuario):
         if not usuario:
             return {}
         try:
