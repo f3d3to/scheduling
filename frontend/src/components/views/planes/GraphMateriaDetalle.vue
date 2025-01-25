@@ -7,6 +7,12 @@
       <v-card-title class="d-flex justify-space-between align-center">
         <v-icon @click="closeDetail" size="small" class="close-icon">mdi-close</v-icon>
         <span class="sidebar-title">{{ selectedMateria.name }}</span>
+        <div>
+          <v-icon v-if="isEditMode" @click="cancelEdit" class="cancel-icon">mdi-close</v-icon>
+          <v-icon @click="toggleEditMode" class="edit-icon">
+            {{ isEditMode ? 'mdi-content-save' : 'mdi-pencil' }}
+          </v-icon>
+        </div>
       </v-card-title>
 
       <v-card-text>
@@ -14,7 +20,7 @@
           <v-tab value="info">Información</v-tab>
           <v-tab value="correlativas">Correlativas</v-tab>
           <v-tab value="historial">Historial</v-tab>
-          <v-tab value="personalizar">Personalizar</v-tab> <!-- Nueva pestaña -->
+          <v-tab value="personalizar">Personalizar</v-tab>
         </v-tabs>
 
         <v-window v-model="tab">
@@ -23,7 +29,11 @@
             <v-list class="info-list">
               <v-list-item>
                 <v-icon class="list-icon">mdi-calendar</v-icon>
-                <v-list-item-title>Año: {{ selectedMateria.year }}</v-list-item-title>
+                <v-list-item-title>
+                  Año:
+                  <span v-if="!isEditMode">{{ selectedMateria.year }}</span>
+                  <v-text-field v-else v-model="editableMateria.year" dense></v-text-field>
+                </v-list-item-title>
               </v-list-item>
               <v-list-item>
                 <v-icon class="list-icon">mdi-identifier</v-icon>
@@ -35,45 +45,80 @@
               </v-list-item>
               <v-list-item>
                 <v-icon class="list-icon">mdi-school</v-icon>
-                <v-list-item-title>Créditos: {{ selectedMateria.metadata.creditos }}</v-list-item-title>
+                <v-list-item-title>
+                  Créditos:
+                  <span v-if="!isEditMode">{{ selectedMateria.metadata.creditos }}</span>
+                  <v-text-field v-else v-model="editableMateria.creditos" dense></v-text-field>
+                </v-list-item-title>
               </v-list-item>
               <v-list-item>
                 <v-icon class="list-icon" :class="getEstadoIconClass(selectedMateria.materiaEstudiante.estado)">
                   {{ getEstadoIcon(selectedMateria.materiaEstudiante.estado) }}
                 </v-icon>
-                <v-list-item-title>Estado: {{ selectedMateria.materiaEstudiante.estado }}</v-list-item-title>
+                <v-list-item-title>
+                  Estado:
+                  <span v-if="!isEditMode">{{ selectedMateria.materiaEstudiante.estado }}</span>
+                  <v-select v-else v-model="editableMateria.estado" :items="estados" dense></v-select>
+                </v-list-item-title>
               </v-list-item>
               <v-list-item>
                 <v-icon class="list-icon">mdi-numeric</v-icon>
-                <v-list-item-title>Nota Final: {{ selectedMateria.materiaEstudiante.nota_final }}</v-list-item-title>
+                <v-list-item-title>
+                  Nota Final:
+                  <span v-if="!isEditMode">{{ selectedMateria.materiaEstudiante.nota_final }}</span>
+                  <v-text-field v-else v-model="editableMateria.nota_final" dense></v-text-field>
+                </v-list-item-title>
               </v-list-item>
               <v-list-item>
                 <v-icon class="list-icon">mdi-checkbox-marked-circle</v-icon>
-                <v-list-item-title>Método de Aprobación: {{ selectedMateria.materiaEstudiante.metodo_aprobacion }}</v-list-item-title>
+                <v-list-item-title>
+                  Método de Aprobación:
+                  <span v-if="!isEditMode">{{ selectedMateria.materiaEstudiante.metodo_aprobacion }}</span>
+                  <v-select v-else v-model="editableMateria.metodo_aprobacion" :items="metodosAprobacion" dense></v-select>
+                </v-list-item-title>
               </v-list-item>
               <v-list-item>
                 <v-icon class="list-icon">mdi-calendar-check</v-icon>
-                <v-list-item-title>Fecha de Inscripción: {{ selectedMateria.materiaEstudiante.fecha_inscripcion }}</v-list-item-title>
+                <v-list-item-title>
+                  Fecha de Inscripción:
+                  <span v-if="!isEditMode">{{ selectedMateria.materiaEstudiante.fecha_inscripcion }}</span>
+                  <v-text-field v-else v-model="editableMateria.fecha_inscripcion" dense type="date"></v-text-field>
+                </v-list-item-title>
               </v-list-item>
               <v-list-item>
                 <v-icon class="list-icon">mdi-account-group</v-icon>
-                <v-list-item-title>Cátedra: {{ selectedMateria.materiaEstudiante.catedra }}</v-list-item-title>
+                <v-list-item-title>
+                  Cátedra:
+                  <span v-if="!isEditMode">{{ selectedMateria.materiaEstudiante.catedra }}</span>
+                  <v-text-field v-else v-model="editableMateria.catedra" dense></v-text-field>
+                </v-list-item-title>
               </v-list-item>
               <v-list-item>
                 <v-icon class="list-icon">mdi-alert-circle</v-icon>
-                <v-list-item-title>Dificultad: {{ selectedMateria.materiaEstudiante.dificultad }}</v-list-item-title>
+                <v-list-item-title>
+                  Dificultad:
+                  <span v-if="!isEditMode">{{ selectedMateria.materiaEstudiante.dificultad }}</span>
+                  <v-text-field v-else v-model="editableMateria.dificultad" dense></v-text-field>
+                </v-list-item-title>
               </v-list-item>
               <v-list-item>
                 <v-icon class="list-icon">mdi-comment</v-icon>
-                <v-list-item-title>Comentarios: {{ selectedMateria.materiaEstudiante.comentarios }}</v-list-item-title>
+                <v-list-item-title>
+                  Comentarios:
+                  <span v-if="!isEditMode">{{ selectedMateria.materiaEstudiante.comentarios }}</span>
+                  <v-textarea v-else v-model="editableMateria.comentarios" dense></v-textarea>
+                </v-list-item-title>
               </v-list-item>
               <v-list-item>
                 <v-icon class="list-icon">mdi-teach</v-icon>
-                <v-list-item-title>Comentarios del Docente: {{ selectedMateria.materiaEstudiante.comentarios_docente }}</v-list-item-title>
+                <v-list-item-title>
+                  Comentarios del Docente:
+                  <span v-if="!isEditMode">{{ selectedMateria.materiaEstudiante.comentarios_docente }}</span>
+                  <v-textarea v-else v-model="editableMateria.comentarios_docente" dense></v-textarea>
+                </v-list-item-title>
               </v-list-item>
             </v-list>
           </v-window-item>
-
           <!-- Pestaña de Correlativas -->
           <v-window-item value="correlativas">
             <v-list class="correlativas-list">
@@ -101,17 +146,17 @@
             </v-list>
           </v-window-item>
 
-          <!-- Pestaña de Personalización -->
           <v-window-item value="personalizar">
-            <v-list class="personalizar-list">
-              <v-list-item>
-                <v-icon class="list-icon">mdi-palette</v-icon>
-                <v-list-item-title>Color Personalizado</v-list-item-title>
-                <input type="color" v-model="customColor" @change="updateNodeColor" />
-              </v-list-item>
-            </v-list>
-          </v-window-item>
+              <v-list class="personalizar-list">
+                <v-list-item>
+                  <v-icon class="list-icon">mdi-palette</v-icon>
+                  <v-list-item-title>Color Personalizado</v-list-item-title>
+                  <input type="color" v-model="customColor" @change="updateNodeColor" />
+                </v-list-item>
+              </v-list>
+            </v-window-item>
         </v-window>
+
       </v-card-text>
     </v-card>
   </div>
@@ -119,6 +164,7 @@
 
 <script>
 import { defineComponent, ref, watch } from "vue";
+import { useGraphStore } from "@store/GraphStore";
 
 export default defineComponent({
   name: "GraphMateriaDetalle",
@@ -130,61 +176,78 @@ export default defineComponent({
   },
   setup(props) {
     const isVisible = ref(false);
-    const customColor = ref(props.selectedMateria?.customColor || "#FFFFFF");
+    const isEditMode = ref(false);
+    const editableMateria = ref({});
+    const estados = ref(['pendiente', 'cursando', 'aprobada', 'desaprobada', 'promocionada']);
+    const metodosAprobacion = ref(['final', 'promocion', 'equivalencia']);
 
-    // Abrir el sidebar cuando se selecciona una materia
+    const graphStore = useGraphStore();
+
     watch(
       () => props.selectedMateria,
       (newVal) => {
         isVisible.value = !!newVal;
         if (newVal) {
-          customColor.value = newVal.customColor || "#FFFFFF";
+          editableMateria.value = { ...newVal.materiaEstudiante };
         }
       }
     );
 
-    return { isVisible, customColor };
+    const toggleEditMode = async () => {
+      if (isEditMode.value) {
+        // Guardar cambios
+        await graphStore.updateMateriaEstudiante(editableMateria.value);
+      }
+      isEditMode.value = !isEditMode.value;
+    };
+
+    const cancelEdit = () => {
+      isEditMode.value = false;
+      editableMateria.value = { ...props.selectedMateria.materiaEstudiante };
+    };
+
+    return { isVisible, isEditMode, editableMateria, estados, metodosAprobacion, toggleEditMode, cancelEdit };
   },
   data() {
     return {
-      tab: "info", // Pestaña activa por defecto
+      tab: "info",
     };
   },
   methods: {
     closeDetail() {
       this.$emit("close-detail");
-      this.isVisible = false; // Cerrar el sidebar
+      this.isVisible = false;
     },
     getEstadoIcon(estado) {
       switch (estado) {
         case "promocionada":
-          return "mdi-star"; // Icono para "Promocionada"
+          return "mdi-star";
         case "aprobada":
-          return "mdi-check"; // Icono para "Aprobada"
+          return "mdi-check";
         case "cursando":
-          return "mdi-progress-check"; // Icono para "Cursando"
+          return "mdi-progress-check";
         case "pendiente":
-          return "mdi-clock-alert"; // Icono para "Pendiente"
+          return "mdi-clock-alert";
         case "desaprobada":
-          return "mdi-alert"; // Icono para "Desaprobada"
+          return "mdi-alert";
         default:
-          return "mdi-alert"; // Icono por defecto
+          return "mdi-alert";
       }
     },
     getEstadoIconClass(estado) {
       switch (estado) {
         case "promocionada":
-          return "icon-promocionada"; // Clase para "Promocionada"
+          return "icon-promocionada";
         case "aprobada":
-          return "icon-aprobada"; // Clase para "Aprobada"
+          return "icon-aprobada";
         case "cursando":
-          return "icon-cursando"; // Clase para "Cursando"
+          return "icon-cursando";
         case "pendiente":
-          return "icon-pendiente"; // Clase para "Pendiente"
+          return "icon-pendiente";
         case "desaprobada":
-          return "icon-desaprobada"; // Clase para "Desaprobada"
+          return "icon-desaprobada";
         default:
-          return "icon-default"; // Clase por defecto
+          return "icon-default";
       }
     },
     updateNodeColor() {
@@ -198,7 +261,7 @@ export default defineComponent({
 .materia-detail-sidebar {
   position: fixed;
   top: 0;
-  right: -400px; /* Inicialmente oculto */
+  right: -400px;
   width: 400px;
   height: 100vh;
   background: linear-gradient(90deg, #2c2c3e, #1e1e2f);
@@ -208,7 +271,7 @@ export default defineComponent({
 }
 
 .materia-detail-sidebar.is-visible {
-  right: 0; /* Mostrar el sidebar */
+  right: 0;
 }
 
 .sidebar-content {
@@ -250,31 +313,37 @@ export default defineComponent({
 }
 
 .icon-promocionada {
-  color: #ffeb3b; /* Amarillo para "Promocionada" */
+  color: #ffeb3b;
 }
 
 .icon-aprobada {
-  color: #4caf50; /* Verde para "Aprobada" */
+  color: #4caf50;
 }
 
 .icon-cursando {
-  color: #2196f3; /* Azul para "Cursando" */
+  color: #2196f3;
 }
 
 .icon-pendiente {
-  color: #ff9800; /* Naranja para "Pendiente" */
+  color: #ff9800;
 }
 
 .icon-desaprobada {
-  color: #f44336; /* Rojo para "Desaprobada" */
+  color: #f44336;
 }
 
 .icon-default {
-  color: #9e9e9e; /* Gris por defecto */
+  color: #9e9e9e;
 }
 
 input[type="color"] {
   margin-left: 10px;
   cursor: pointer;
+}
+
+.edit-icon, .cancel-icon {
+  cursor: pointer;
+  color: white;
+  margin-left: 10px;
 }
 </style>

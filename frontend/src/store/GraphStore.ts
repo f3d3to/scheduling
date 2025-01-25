@@ -214,5 +214,20 @@ export const useGraphStore = defineStore("graph", {
       this.nodes = nodes;
       this.links = links;
     },
+    async updateMateriaEstudiante(materiaEstudiante: any) {
+      try {
+        // Usar PATCH en lugar de PUT
+        const response = await api.patch(`materias/estudiantes/${materiaEstudiante.id}/`, materiaEstudiante);
+
+        // Actualizar el estado local si es necesario
+        const index = this.nodes.findIndex(node => node.materiaEstudiante?.id === materiaEstudiante.id);
+        if (index !== -1) {
+          this.nodes[index].materiaEstudiante = response.data;
+        }
+      } catch (error) {
+        console.error("Error updating MateriaEstudiante:", error);
+        throw error;
+      }
+    },
   },
 });
