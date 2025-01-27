@@ -308,7 +308,6 @@ export const useGraphStore = defineStore("graph", {
     async fetchEstadoCarrera(carreraId: any) {
       try {
         const response = await api.get(`carrera/${carreraId}/estado/`);
-        console.log("Respuesta de carrera status:", response.data);
         return response.data;
       } catch (error) {
         console.error("Error fetching carrera status:", error);

@@ -5,7 +5,7 @@
     :style="{ transform: `translate(${x}px, ${y}px)` }"
   >
     <v-row dense class="filter-row">
-      <v-select
+    <v-select
       :model-value="selectedPlan"
       :items="plans"
       item-title="nombre"
@@ -286,8 +286,7 @@ export default {
 }
 
 .v-text-field,
-.v-select,
-.v-switch {
+.v-select {
   background-color: #3a3a4e;
   border-radius: 8px;
   color: #fff;

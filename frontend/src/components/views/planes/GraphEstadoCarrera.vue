@@ -1,57 +1,71 @@
 <template>
-  <v-container class="graph-estado-carrera" fluid>
-    <v-row align="center" justify="space-between" class="h-100">
-      <!-- Primera columna: Créditos -->
-      <v-col cols="2" class="py-0">
-        <div class="creditos">
-          <span class="icon">🎓</span>
-          <div class="info">
-            <span class="creditos-obtenidos">{{ creditos.obtenidos }} de {{ creditos.total }}</span>
-            <span class="porcentaje" :style="{ color: colorPorcentaje }">{{ creditos.porcentaje }}%</span>
-          </div>
-        </div>
-      </v-col>
+  <div>
+    <!-- Botón para alternar visibilidad -->
+    <v-icon v-if="!isVisible" @click="toggleVisibility" color="primary" class="mb-4" title="Mostrar más detalle del plan de estudios">
+      mdi-plus
+    </v-icon>
 
-      <!-- Segunda columna: Barras de progreso por ciclos -->
-      <v-col cols="8" class="py-0">
-        <div class="barras-ciclos">
-          <div
-            v-for="(ciclo, index) in ciclos"
-            :key="index"
-            class="barra-ciclo"
-            @mouseover="mostrarDetalleCiclo(ciclo)"
-            @mouseleave="ocultarDetalleCiclo"
-          >
-            <div class="nombre-ciclo">{{ ciclo.nombre }}</div>
-            <div class="barra-progreso-ciclo">
-              <div
-                class="progreso"
-                :style="{
-                  width: `${ciclo.porcentaje}%`,
-                  backgroundColor: coloresCiclos[index]
-                }"
-              ></div>
-              <span class="porcentaje-ciclo">{{ ciclo.porcentaje }}%</span>
+    <!-- Componente condicional -->
+    <v-container v-if="isVisible" class="graph-estado-carrera" fluid>
+      <v-row align="center" justify="space-between" class="h-100">
+        <v-col cols="1" class="py-0">
+          <v-icon @click="toggleVisibility" color="primary" class="mb-4">
+            {{ isVisible ? 'mdi-minus' : 'mdi-plus' }}
+          </v-icon>
+        </v-col>
+
+        <!-- Primera columna: Créditos -->
+        <v-col cols="1" class="py-0">
+          <div class="creditos">
+            <span class="icon">🎓</span>
+            <div class="info">
+              <span class="creditos-obtenidos">{{ creditos.obtenidos }} de {{ creditos.total }}</span>
+              <span class="porcentaje" :style="{ color: colorPorcentaje }">{{ creditos.porcentaje }}%</span>
             </div>
           </div>
-        </div>
-        <div v-if="detalleCiclo" class="detalle-ciclo">
-          <p><strong>{{ detalleCiclo.nombre}}</strong>: {{ detalleCiclo.creditos_obtenidos }} de {{ detalleCiclo.total_creditos }} créditos/materias</p>
-        </div>
-        <div v-else class="detalle-ciclo">
-          <p><strong>Ciclos y/o materias promocionadas.</strong></p>
-        </div>
-      </v-col>
+        </v-col>
 
-      <!-- Tercera columna: Promedio -->
-      <v-col cols="2" class="py-0">
-        <div class="promedio">
-          <span class="icon">🏆</span>
-          <span class="valor-promedio">{{ promedio.valor }}</span>
-        </div>
-      </v-col>
-    </v-row>
-  </v-container>
+        <!-- Segunda columna: Barras de progreso por ciclos -->
+        <v-col cols="8" class="py-0">
+          <div class="barras-ciclos">
+            <div
+              v-for="(ciclo, index) in ciclos"
+              :key="index"
+              class="barra-ciclo"
+              @mouseover="mostrarDetalleCiclo(ciclo)"
+              @mouseleave="ocultarDetalleCiclo"
+            >
+              <div class="nombre-ciclo">{{ ciclo.nombre }}</div>
+              <div class="barra-progreso-ciclo">
+                <div
+                  class="progreso"
+                  :style="{
+                    width: `${ciclo.porcentaje}%`,
+                    backgroundColor: coloresCiclos[index]
+                  }"
+                ></div>
+                <span class="porcentaje-ciclo">{{ ciclo.porcentaje }}%</span>
+              </div>
+            </div>
+          </div>
+          <div v-if="detalleCiclo" class="detalle-ciclo">
+            <p><strong>{{ detalleCiclo.nombre}}</strong>: {{ detalleCiclo.creditos_obtenidos }} de {{ detalleCiclo.total_creditos }} créditos/materias</p>
+          </div>
+          <div v-else class="detalle-ciclo">
+            <p><strong>Ciclos y/o materias promocionadas.</strong></p>
+          </div>
+        </v-col>
+
+        <!-- Tercera columna: Promedio -->
+        <v-col cols="2" class="py-0">
+          <div class="promedio">
+            <span class="icon">🏆</span>
+            <span class="valor-promedio">{{ promedio.valor }}</span>
+          </div>
+        </v-col>
+      </v-row>
+    </v-container>
+  </div>
 </template>
 
 <script>
@@ -67,19 +81,17 @@ export default {
     const promedio = ref({ valor: 0, materias_cursadas: 0 });
     const detalleCiclo = ref(null);
     const selectedPlan = computed(() => store.selectedPlan);
-
-    // Colores para los ciclos
+    const isVisible = ref(true); // Variable para controlar la visibilidad
     const coloresCiclos = ["#FF6B6B", "#4ECDC4", "#FFD166", "#06D6A0", "#118AB2"];
 
-    // Obtener datos del estado de la carrera
     const obtenerEstadoCarrera = async () => {
       try {
         if (!selectedPlan.value) return;
         const response = await store.fetchEstadoCarrera(selectedPlan.value);
-        console.log("Respuesta de estado de la carrera: ", response);
         creditos.value = response.creditos;
         ciclos.value = response.ciclos;
         promedio.value = response.promedio;
+        console.log(response.plan_actual.nombre)
       } catch (error) {
         console.error("Error obteniendo el estado de la carrera:", error);
       }
@@ -108,6 +120,11 @@ export default {
       return "#06D6A0";
     });
 
+    // Alternar visibilidad del componente
+    const toggleVisibility = () => {
+      isVisible.value = !isVisible.value;
+    };
+
     // Cargar datos al montar el componente
     onMounted(() => {
       obtenerEstadoCarrera();
@@ -122,6 +139,8 @@ export default {
       colorPorcentaje,
       mostrarDetalleCiclo,
       ocultarDetalleCiclo,
+      isVisible,
+      toggleVisibility,
     };
   },
 };
