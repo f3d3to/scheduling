@@ -1,3 +1,4 @@
+#backend/plan_de_estudio/models.py
 # Django
 
 from django.db import models
@@ -193,3 +194,12 @@ class Evaluacion(models.Model):
 
     def __str__(self):
         return f"{self.materia_estudiante} - {self.tipo} ({self.nota})"
+
+
+class MetaMateria(models.Model):
+    materia_estudiante = models.ForeignKey(MateriaEstudiante, on_delete=models.CASCADE)
+    meta = models.ForeignKey("evento_academico.metaacademica", on_delete=models.CASCADE)
+    peso = models.FloatField(default=1.0)
+
+    class Meta:
+        unique_together = ('materia_estudiante', 'meta')
