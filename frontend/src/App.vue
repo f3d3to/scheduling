@@ -64,7 +64,6 @@ export default {
   display: block; /* Cambiar a block para evitar interferencias */
   justify-content: flex-start; /* Alinear al inicio */
   align-items: flex-start;
-  padding: 20px; /* Opcional: agrega espacio alrededor del contenido */
 }
 
 .content > router-view {

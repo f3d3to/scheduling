@@ -6,10 +6,6 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from users.models import Usuario
 from plan_de_estudio.models import Materia
 
-# ------------------------------------------
-# Modelos base abstractos
-# ------------------------------------------
-
 class HorarioBase(models.Model):
     DIA_CHOICES = [
         ('Lunes', 'Lunes'),
@@ -29,10 +25,6 @@ class HorarioBase(models.Model):
     class Meta:
         abstract = True
         ordering = ['dia', 'hora_inicio']
-
-# ------------------------------------------
-# Modelos principales
-# ------------------------------------------
 
 class MetaAcademica(models.Model):
     TIPO_META = [
@@ -94,10 +86,6 @@ class RecordatorioPersonalizado(models.Model):
     def __str__(self):
         return f"Recordatorio: {self.mensaje[:20]}"
 
-# ------------------------------------------
-# Modelos de relaciones contextuales
-# ------------------------------------------
-
 class EventoAsociado(models.Model):
     TIPO_RELACION = [
         ('EXAMEN_MATERIA', 'Examen → Materia'),
@@ -117,10 +105,6 @@ class EventoAsociado(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_relacion_display()}: {self.evento_origen} → {self.evento_destino}"
-
-# ------------------------------------------
-# Modelos extendidos del sistema base
-# ------------------------------------------
 
 class EventoAcademico(HorarioBase):
     TIPO_EVENTO = [
