@@ -32,6 +32,8 @@ class MateriaEstudianteSerializer(serializers.ModelSerializer):
     class Meta:
         model = MateriaEstudiante
         fields = "__all__"
+        read_only_fields = ['estudiante']
+
 
 class EvaluacionSerializer(serializers.ModelSerializer):
     class Meta:

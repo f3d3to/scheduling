@@ -27,6 +27,7 @@ export interface MateriaEstudiante {
 }
 
 interface MateriaMetadata {
+  id : number | null;
   plan_de_estudio: {
     id: number;
     nombre: string;
@@ -214,6 +215,29 @@ export const useGraphStore = defineStore("graph", {
         }
       } catch (error) {
         console.error("Error updating MateriaEstudiante:", error);
+        throw error;
+      }
+    },
+    async createMateriaEstudiante(materiaEstudiante: MateriaEstudiante) {
+      try {
+        // Realizar la solicitud POST con los datos de la materia
+        const response = await api.post('materias/estudiantes/', materiaEstudiante);
+
+        // Procesar la respuesta si es necesario
+        const nuevaMateria = response.data;
+
+        // Actualizar el estado del store si es necesario
+        this.nodes.push({
+          id: nuevaMateria.materia.id,
+          name: nuevaMateria.materia.nombre,
+          anio: nuevaMateria.materia.anio || "Sin año",
+          materiaEstudiante: nuevaMateria,
+          metadata: nuevaMateria.materia,
+        });
+
+        return nuevaMateria; // Retornar la materia creada si es necesario
+      } catch (error) {
+        console.error("Error fetching materias:", error);
         throw error;
       }
     },
