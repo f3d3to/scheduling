@@ -588,3 +588,160 @@ classDiagram
     NodoGrafo "1" --* "1" Materia : representa
     EnlaceGrafo "1" --* "1" NodoGrafo : fuente
     EnlaceGrafo "1" --* "1" NodoGrafo : destino
+
+## CALENDARIO ACADEMICO
+classDiagram
+    class Usuario {
+        +id
+        +username
+    }
+
+    class PlanDeEstudio {
+        +id
+        +nombre
+        +año_creacion
+        +descripcion
+    }
+
+    class Materia {
+        +id
+        +codigo
+        +anio
+        +ciclo
+        +cuatrimestre
+        +condicion
+        +nombre
+        +formato_didactico
+        +ch_semanal
+        +ch_cuatrimestral
+        +creditos
+        +ch_presencial
+        +ch_distancia
+        +ch_total
+        +descripcion
+        +plan_de_estudio_id
+    }
+
+    class MateriaEstudiante {
+        +id
+        +estudiante_id
+        +materia_id
+        +nota_final
+        +final_obligatorio
+        +catedra
+        +comentarios
+        +intentos
+        +comentarios_docente
+        +estado
+        +fecha_inscripcion
+        +metodo_aprobacion
+        +creditos_asignados
+        +fecha_actualizacion
+        +dificultad
+        +disponible
+    }
+
+    class TipoEvaluacion {
+        +id
+        +nombre
+        +descripcion
+        +peso_defecto
+    }
+
+    class Evaluacion {
+        +id
+        +materia_estudiante_id
+        +tipo_id
+        +descripcion
+        +nota
+        +fecha
+    }
+
+    class VisualizacionGrafo {
+        +id
+        +plan_de_estudio_id
+        +nombre
+        +config_global
+    }
+
+    class NodoGrafo {
+        +id
+        +grafo_id
+        +materia_id
+        +pos_x
+        +pos_y
+        +config_visual
+    }
+
+    class EnlaceGrafo {
+        +id
+        +grafo_id
+        +fuente_id
+        +destino_id
+        +config_visual
+    }
+
+    class HorarioMateria {
+        +id
+        +materia_id
+        +dia
+        +hora_inicio
+        +hora_fin
+        +aula
+        +profesor
+    }
+
+    class EventoAcademico {
+        +id
+        +nombre
+        +tipo
+        +fecha_inicio
+        +fecha_fin
+        +es_obligatorio
+        +requiere_confirmacion
+        +link
+        +documento_requerido
+        +recordatorio
+        +recordatorio_fecha
+        +materia_id
+    }
+
+    class AsistenciaEvento {
+        +id
+        +usuario_id
+        +evento_id
+        +confirmado
+        +fecha_confirmacion
+    }
+
+    class PlanificacionCuatrimestral {
+        +id
+        +estudiante_id
+        +cuatrimestre
+        +año
+    }
+
+    class MateriaPlanificada {
+        +id
+        +planificacion_id
+        +materia_id
+    }
+
+    Usuario "1" --* "many" MateriaEstudiante : tiene
+    PlanDeEstudio "1" --* "many" Materia : contiene
+    Materia "1" --* "many" MateriaEstudiante : tiene
+    Materia "many" --* "many" Materia : correlativas
+    MateriaEstudiante "1" --* "many" Evaluacion : tiene
+    TipoEvaluacion "1" --* "many" Evaluacion : tiene
+    PlanDeEstudio "1" --* "1" VisualizacionGrafo : tiene
+    VisualizacionGrafo "1" --* "many" NodoGrafo : contiene
+    VisualizacionGrafo "1" --* "many" EnlaceGrafo : contiene
+    NodoGrafo "1" --* "1" Materia : representa
+    EnlaceGrafo "1" --* "1" NodoGrafo : fuente
+    EnlaceGrafo "1" --* "1" NodoGrafo : destino
+    Materia "1" --* "many" HorarioMateria : tiene
+    EventoAcademico "1" --* "many" AsistenciaEvento : tiene
+    Usuario "1" --* "many" AsistenciaEvento : tiene
+    Usuario "1" --* "many" PlanificacionCuatrimestral : tiene
+    PlanificacionCuatrimestral "1" --* "many" MateriaPlanificada : tiene
+    MateriaPlanificada "1" --* "many" HorarioMateria : tiene

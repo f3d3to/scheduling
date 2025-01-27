@@ -72,12 +72,35 @@ interface Plan {
   nombre: string;
 }
 
+interface CarreraStatus {
+  creditos: {
+    obtenidos: number;
+    total: number;
+    porcentaje: number;
+  };
+  ciclos: Array<{
+    nombre: string;
+    creditos_obtenidos: number;
+    total_creditos: number;
+    porcentaje: number;
+  }>;
+  promedio: {
+    valor: number;
+    materias_cursadas: number;
+  };
+  plan_actual: any; // Usa una interfaz específica si tienes el serializer
+  ultima_actualizacion: string;
+  selectedCycle?: string | null;
+}
+
 export const useGraphStore = defineStore("graph", {
   state: () => ({
     plans: [] as Plan[],
     selectedPlan: null as string | null,
     nodes: [] as Node[],
     links: [] as Link[],
+    carreraStatus: null as CarreraStatus | null,
+    selectedCycle: null as string | null
   }),
 
   actions: {
@@ -87,6 +110,7 @@ export const useGraphStore = defineStore("graph", {
         this.plans = plansData.results;
         if (this.plans.length > 0) {
           this.selectedPlan = this.plans[0].id;
+          console.log("PLAN SELECCIONADO:", this.selectedPlan);
         }
       } catch (error) {
         console.error("Error fetching plans:", error);
@@ -110,7 +134,7 @@ export const useGraphStore = defineStore("graph", {
           }
           queryString = params.toString(); // p.ej. "anio=3&estado=aprobada"
         }
-        console.log("QUERY STRING: ", queryString);
+        // console.log("QUERY STRING: ", queryString);
         // 2) Concatenar la query string si no está vacía
         let url = `grafos/filtrado/${this.selectedPlan}/`;
         if (queryString) {
@@ -223,21 +247,70 @@ export const useGraphStore = defineStore("graph", {
         // Realizar la solicitud POST con los datos de la materia
         const response = await api.post('materias/estudiantes/', materiaEstudiante);
 
-        // Procesar la respuesta si es necesario
-        const nuevaMateria = response.data;
+        // Procesar la respuesta del backend
+        const nuevaMateriaBackend = response.data;
 
-        // Actualizar el estado del store si es necesario
-        this.nodes.push({
-          id: nuevaMateria.materia.id,
-          name: nuevaMateria.materia.nombre,
-          anio: nuevaMateria.materia.anio || "Sin año",
-          materiaEstudiante: nuevaMateria,
-          metadata: nuevaMateria.materia,
-        });
+        // Mapear el objeto devuelto por el backend a la estructura esperada
+        const nuevaMateria: MateriaEstudiante = {
+          id: nuevaMateriaBackend.id,
+          nota_final: nuevaMateriaBackend.nota_final,
+          final_obligatorio: nuevaMateriaBackend.final_obligatorio,
+          catedra: nuevaMateriaBackend.catedra,
+          comentarios: nuevaMateriaBackend.comentarios,
+          intentos: nuevaMateriaBackend.intentos,
+          comentarios_docente: nuevaMateriaBackend.comentarios_docente,
+          estado: nuevaMateriaBackend.estado,
+          fecha_inscripcion: nuevaMateriaBackend.fecha_inscripcion,
+          metodo_aprobacion: nuevaMateriaBackend.metodo_aprobacion,
+          creditos_asignados: nuevaMateriaBackend.creditos_asignados,
+          fecha_actualizacion: nuevaMateriaBackend.fecha_actualizacion,
+          dificultad: nuevaMateriaBackend.dificultad,
+          estudiante: {
+            id: nuevaMateriaBackend.estudiante.toString(), // Convertir a string si es necesario
+            username: "", // Aquí deberías obtener el username si lo necesitas
+          },
+          materia: {
+            id: nuevaMateriaBackend.materia.toString(), // Convertir a string si es necesario
+            nombre: "", // Aquí deberías obtener el nombre de la materia si lo necesitas
+            codigo: "", // Aquí deberías obtener el código de la materia si lo necesitas
+          },
+        };
 
-        return nuevaMateria; // Retornar la materia creada si es necesario
+        // Buscar el nodo correspondiente en la store
+        const nodeIndex = this.nodes.findIndex(node => node.id === nuevaMateria.materia.id);
+        if (nodeIndex !== -1) {
+          // Si el nodo existe, actualizar su materiaEstudiante
+          this.nodes[nodeIndex].materiaEstudiante = nuevaMateria;
+        } else {
+          // Si el nodo no existe, agregarlo (esto depende de tu lógica)
+          this.nodes.push({
+            id: nuevaMateria.materia.id,
+            name: nuevaMateria.materia.nombre,
+            anio: nuevaMateria.materia.anio || "Sin año",
+            materiaEstudiante: nuevaMateria,
+            metadata: null, // Aquí deberías agregar el metadata si lo tienes
+          });
+        }
+
+        return response; // Retornar la materia creada si es necesario
       } catch (error) {
-        console.error("Error fetching materias:", error);
+        console.error("Error creando materiaEstudiante:", error);
+        throw error;
+      }
+    },
+    async updateCarreraStatusOnSelection(node: Node) {
+      console.log('Ciclo seleccionado:', node.metadata?.ciclo);
+      if (node.metadata?.ciclo) {
+        this.selectedCycle = node.metadata.ciclo;
+        await this.fetchEstadoCarrera(this.selectedPlan);
+      }
+    },
+    async fetchEstadoCarrera(carreraId: any) {
+      try {
+        const response = await api.get(`carrera/${carreraId}/estado/`);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching carrera status:", error);
         throw error;
       }
     },

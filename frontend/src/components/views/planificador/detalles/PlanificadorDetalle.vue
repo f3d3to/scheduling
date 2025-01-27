@@ -154,7 +154,6 @@ const saveLayout = async () => {
 </script>
 
 <style scoped>
-/* Mantener los estilos originales sin cambios */
 .icono-editar{
   font-size: 26px;
 }
