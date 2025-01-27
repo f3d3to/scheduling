@@ -4,7 +4,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
-
+from django.db.models import Sum, Case, When, IntegerField, DecimalField, Avg
+from django.utils import timezone
 from rest_framework import generics, permissions
 from rest_framework.views import APIView
 from rest_framework.renderers import JSONRenderer
@@ -178,3 +179,60 @@ class GenerarGrafoView(generics.ListAPIView):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data[0])
+
+
+class EstadoCarreraView(APIView):
+    """Endpoint único para todos los datos del estado de la carrera"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        estudiante = request.user
+        plan_activo = self._obtener_plan_activo(estudiante)
+
+        # Optimización: Una sola query con prefetch
+        materias = MateriaEstudiante.objects.filter(
+            estudiante=estudiante
+        ).select_related(
+            'materia', 'materia__plan_de_estudio'
+        ).prefetch_related('evaluaciones')
+
+        # Cálculos en base de datos
+        estadisticas = materias.aggregate(
+            total_creditos=Sum('materia__creditos'),
+            creditos_aprobados=Sum(
+                Case(
+                    When(estado='aprobada', then='materia__creditos'),
+                    default=0,
+                    output_field=IntegerField()
+                )
+            ),
+            promedio=Avg(
+                Case(
+                    When(estado='aprobada', then='nota_final'),
+                    default=None,
+                    output_field=DecimalField()
+                )
+            )
+        )
+
+        # Agrupación por ciclo con Window functions
+        ciclos = materias.values('materia__ciclo').annotate(
+            total_creditos=Sum('materia__creditos'),
+            obtenidos=Sum(
+                Case(
+                    When(estado='aprobada', then='materia__creditos'),
+                    default=0
+                )
+            )
+        )
+
+        return Response({
+            'estadisticas_generales': estadisticas,
+            'desglose_ciclos': list(ciclos),
+            'plan_actual': PlanDeEstudioSerializer(plan_activo).data,
+            'ultima_actualizacion': timezone.now()
+        })
+
+    def _obtener_plan_activo(self, estudiante):
+        # Lógica para determinar el plan activo del estudiante
+        return PlanDeEstudio.objects.latest('año_creacion')

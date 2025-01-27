@@ -159,8 +159,9 @@ export default defineComponent({
 
       try {
         const response = await graphStore.createMateriaEstudiante(form.value);
-        if (!response.ok) throw new Error('Error al crear');
+        if (!response.status === 201) throw new Error('Error al crear');
         emit('created');
+        emit('materia-estudiante-created', response.data);
         resetForm();
         emit('close');
       } catch (error) {

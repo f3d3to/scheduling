@@ -172,6 +172,7 @@
         v-if="isCreateFormVisible"
         :materia="selectedMateria"
         @close="closeCreateForm"
+        @materia-estudiante-created="handleMateriaEstudianteCreated"
       />
     </v-dialog>
   </div>
@@ -306,9 +307,15 @@ export default defineComponent({
     openCreateForm() {
       this.isCreateFormVisible = true;
     },
+
     closeCreateForm() {
       this.isCreateFormVisible = false;
+      this.$emit("close-detail");
     },
+    handleMateriaEstudianteCreated(nuevaMateriaEstudiante) {
+    this.selectedMateria.materiaEstudiante = nuevaMateriaEstudiante;
+    this.closeCreateForm();
+    }
   },
 });
 </script>
