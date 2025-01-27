@@ -29,7 +29,6 @@ urlpatterns = [
     path('evaluaciones/', EvaluacionesListCreateView.as_view(), name='evaluaciones-list-create'),
     path('evaluaciones/<int:pk>/', EvaluacionesRetrieveUpdateDestroyView.as_view(), name='evaluaciones-retrieve-update-destroy'),
 
-
-    path('carrera/estado/', EstadoCarreraView.as_view(), name='estado-carrera'),
+    path('carrera/<int:carrera_id>/estado/', EstadoCarreraView.as_view(), name='estado-carrera'),
 
 ]

@@ -3,8 +3,8 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from django.http import JsonResponse
-from django.db.models import Sum, Case, When, IntegerField, DecimalField, Avg
+from django.db.models import Sum, IntegerField, Value
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from rest_framework import generics, permissions
 from rest_framework.views import APIView
@@ -182,57 +182,106 @@ class GenerarGrafoView(generics.ListAPIView):
 
 
 class EstadoCarreraView(APIView):
-    """Endpoint único para todos los datos del estado de la carrera"""
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request, carrera_id):
         estudiante = request.user
-        plan_activo = self._obtener_plan_activo(estudiante)
 
-        # Optimización: Una sola query con prefetch
+        try:
+            carrera = PlanDeEstudio.objects.get(id=carrera_id)
+        except PlanDeEstudio.DoesNotExist:
+            return Response({"error": "La carrera no existe o no estás asociado a ella."}, status=404)
+
+        # Materias del estudiante en esta carrera
         materias = MateriaEstudiante.objects.filter(
-            estudiante=estudiante
-        ).select_related(
-            'materia', 'materia__plan_de_estudio'
-        ).prefetch_related('evaluaciones')
+            estudiante=estudiante,
+            materia__plan_de_estudio=carrera
+        ).select_related('materia')
 
-        # Cálculos en base de datos
-        estadisticas = materias.aggregate(
-            total_creditos=Sum('materia__creditos'),
-            creditos_aprobados=Sum(
-                Case(
-                    When(estado='aprobada', then='materia__creditos'),
-                    default=0,
-                    output_field=IntegerField()
-                )
-            ),
-            promedio=Avg(
-                Case(
-                    When(estado='aprobada', then='nota_final'),
-                    default=None,
-                    output_field=DecimalField()
-                )
-            )
+        # --- Créditos ---
+        # Solo materias con ciclo definido y que no sean optativas
+        total_creditos = Materia.objects.filter(
+            plan_de_estudio=carrera,
+            ciclo__isnull=False,
+            condicion__iexact='carrera'  # Excluir materias optativas (asumiendo que 'carrera' es lo opuesto a 'optativa')
+        ).aggregate(
+            total=Sum('creditos')
+        )['total'] or 0
+
+        creditos_aprobados = materias.filter(
+            estado='promocionada',
+            materia__ciclo__isnull=False,
+            materia__condicion__iexact='carrera'  # Excluir materias optativas
+        ).aggregate(
+            total=Sum('materia__creditos')
+        )['total'] or 0
+
+        # --- Ciclos ---
+        # Solo ciclos definidos (excluir materias sin ciclo y optativas)
+        ciclos_plan = Materia.objects.filter(
+            plan_de_estudio=carrera,
+            ciclo__isnull=False,          # Excluir ciclos nulos
+            ciclo__gt='',                 # Excluir cadenas vacías
+            condicion__iexact='carrera'   # Excluir materias optativas
+        ).values_list('ciclo', flat=True).distinct()
+        ciclos_data = {}
+
+        for ciclo in ciclos_plan:
+            total_materias = Materia.objects.filter(plan_de_estudio=carrera, ciclo=ciclo, condicion__iexact='carrera').count()
+            materias_promocionadas = materias.filter(materia__ciclo=ciclo, estado='promocionada', materia__condicion__iexact='carrera').count()
+            ciclos_data[ciclo] = {
+                'total_materias': total_materias,
+                'materias_promocionadas': materias_promocionadas
+            }
+
+        ciclos_formateados = []
+        for ciclo, data in ciclos_data.items():
+            porcentaje = (data['materias_promocionadas'] / data['total_materias']) * 100 if data['total_materias'] > 0 else 0
+
+            # Solo incluir ciclos con nombre válido y porcentaje >= 0
+            if ciclo and porcentaje >= 0:  # Filtra ciclos vacíos/None
+                ciclos_formateados.append({
+                    'nombre': ciclo,
+                    'creditos_obtenidos': materias.filter(materia__ciclo=ciclo, estado='promocionada', materia__condicion__iexact='carrera').aggregate(Sum('materia__creditos'))['materia__creditos__sum'] or 0,
+                    'total_creditos': Materia.objects.filter(plan_de_estudio=carrera, ciclo=ciclo, condicion__iexact='carrera').aggregate(Sum('creditos'))['creditos__sum'] or 0,
+                    'porcentaje': round(porcentaje, 2)
+                })
+
+        # Ordenar los ciclos: Básico → General → Avanzado → otros
+        orden_ciclos = ['Básico', 'General', 'Avanzado']
+        ciclos_formateados.sort(key=lambda x: (
+            orden_ciclos.index(x['nombre'])
+            if x['nombre'] in orden_ciclos
+            else len(orden_ciclos)  # Coloca los demás ciclos al final
+        ))
+
+        # --- Promedio ---
+        # Solo materias con ciclo definido y que no sean optativas
+        materias_promedio = materias.filter(
+            estado__in=['promocionada', 'pendiente'],
+            materia__ciclo__isnull=False,
+            materia__condicion__iexact='carrera'  # Excluir materias optativas
         )
+        suma_notas = materias_promedio.aggregate(
+            suma=Coalesce(Sum('nota_final'), Value(0), output_field=IntegerField())
+        )['suma']
+        count_materias = materias_promedio.count()
+        promedio_valor = round(suma_notas / count_materias, 2) if count_materias > 0 else 0
 
-        # Agrupación por ciclo con Window functions
-        ciclos = materias.values('materia__ciclo').annotate(
-            total_creditos=Sum('materia__creditos'),
-            obtenidos=Sum(
-                Case(
-                    When(estado='aprobada', then='materia__creditos'),
-                    default=0
-                )
-            )
-        )
-
-        return Response({
-            'estadisticas_generales': estadisticas,
-            'desglose_ciclos': list(ciclos),
-            'plan_actual': PlanDeEstudioSerializer(plan_activo).data,
+        # Respuesta (mismo formato)
+        data = {
+            'creditos': {
+                'obtenidos': creditos_aprobados,
+                'total': total_creditos,
+                'porcentaje': round((creditos_aprobados / total_creditos * 100), 2) if total_creditos > 0 else 0
+            },
+            'ciclos': ciclos_formateados,
+            'promedio': {
+                'valor': promedio_valor,
+                'materias_cursadas': count_materias
+            },
+            'plan_actual': PlanDeEstudioSerializer(carrera).data,
             'ultima_actualizacion': timezone.now()
-        })
+        }
 
-    def _obtener_plan_activo(self, estudiante):
-        # Lógica para determinar el plan activo del estudiante
-        return PlanDeEstudio.objects.latest('año_creacion')
+        return Response(data)

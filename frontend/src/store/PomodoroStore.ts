@@ -31,20 +31,21 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
+  // TO-DO :
   // Restaurar timer si estaba corriendo
-  onMounted(() => {
-    if (timerRunning.value && startTime.value) {
-      const elapsed = Math.floor((Date.now() - startTime.value) / 1000);
-      const remaining = timer.value - elapsed;
-      timer.value = remaining > 0 ? remaining : 0;
+  // onMounted(() => {
+  //   if (timerRunning.value && startTime.value) {
+  //     const elapsed = Math.floor((Date.now() - startTime.value) / 1000);
+  //     const remaining = timer.value - elapsed;
+  //     timer.value = remaining > 0 ? remaining : 0;
 
-      if (remaining > 0) {
-        startTimer();
-      } else {
-        handleTimerEnd();
-      }
-    }
-  });
+  //     if (remaining > 0) {
+  //       startTimer();
+  //     } else {
+  //       handleTimerEnd();
+  //     }
+  //   }
+  // });
 
   // Guardar estado en localStorage cuando cambia
   const saveState = () => {

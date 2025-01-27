@@ -72,12 +72,35 @@ interface Plan {
   nombre: string;
 }
 
+interface CarreraStatus {
+  creditos: {
+    obtenidos: number;
+    total: number;
+    porcentaje: number;
+  };
+  ciclos: Array<{
+    nombre: string;
+    creditos_obtenidos: number;
+    total_creditos: number;
+    porcentaje: number;
+  }>;
+  promedio: {
+    valor: number;
+    materias_cursadas: number;
+  };
+  plan_actual: any; // Usa una interfaz específica si tienes el serializer
+  ultima_actualizacion: string;
+  selectedCycle?: string | null;
+}
+
 export const useGraphStore = defineStore("graph", {
   state: () => ({
     plans: [] as Plan[],
     selectedPlan: null as string | null,
     nodes: [] as Node[],
     links: [] as Link[],
+    carreraStatus: null as CarreraStatus | null,
+    selectedCycle: null as string | null
   }),
 
   actions: {
@@ -87,6 +110,7 @@ export const useGraphStore = defineStore("graph", {
         this.plans = plansData.results;
         if (this.plans.length > 0) {
           this.selectedPlan = this.plans[0].id;
+          console.log("PLAN SELECCIONADO:", this.selectedPlan);
         }
       } catch (error) {
         console.error("Error fetching plans:", error);
@@ -273,6 +297,23 @@ export const useGraphStore = defineStore("graph", {
         console.error("Error creando materiaEstudiante:", error);
         throw error;
       }
-    }
+    },
+    async updateCarreraStatusOnSelection(node: Node) {
+      console.log('Ciclo seleccionado:', node.metadata?.ciclo);
+      if (node.metadata?.ciclo) {
+        this.selectedCycle = node.metadata.ciclo;
+        await this.fetchEstadoCarrera(this.selectedPlan);
+      }
+    },
+    async fetchEstadoCarrera(carreraId: any) {
+      try {
+        const response = await api.get(`carrera/${carreraId}/estado/`);
+        console.log("Respuesta de carrera status:", response.data);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching carrera status:", error);
+        throw error;
+      }
+    },
   },
 });
