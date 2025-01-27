@@ -138,15 +138,13 @@
       ></v-switch>
     </v-col>
     <!-- Botón de acción -->
-    <v-col cols="12" class="text-right">
-        <v-btn
+    <v-btn
         color="primary"
         @click="applyFilter"
         class="mt-2"
         >
         Aplicar Filtros
         </v-btn>
-    </v-col>
     </v-row>
 </v-card>
 </template>

@@ -5,11 +5,11 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 
-from rest_framework import generics
+from rest_framework import generics, permissions
 from rest_framework.views import APIView
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-
+from rest_framework import serializers
 from .models import PlanDeEstudio, Materia, MateriaEstudiante, Evaluacion
 from .serializers import (
     PlanDeEstudioSerializer,
@@ -63,6 +63,7 @@ class PlanDeEstudioCiclosView(generics.RetrieveAPIView):
 
 class MateriasEstudiantesListCreateView(generics.ListCreateAPIView):
     serializer_class = MateriaEstudianteSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         """
@@ -72,10 +73,14 @@ class MateriasEstudiantesListCreateView(generics.ListCreateAPIView):
         return MateriaEstudiante.objects.filter(estudiante=estudiante)
 
     def perform_create(self, serializer):
-        """
-        Asocia automáticamente la nueva relación con el estudiante autenticado.
-        """
         estudiante = self.request.user
+        materia_id = self.request.data.get('materia_id')
+
+        # Verificar si ya existe una relación entre el estudiante y la materia
+        if MateriaEstudiante.objects.filter(estudiante=estudiante, materia_id=materia_id).exists():
+            raise serializers.ValidationError("El estudiante ya está asociado a esta materia.")
+
+        # Si no existe, crear la relación
         serializer.save(estudiante=estudiante)
 
 
