@@ -31,14 +31,16 @@
     </v-col>
 
     <v-col cols="12" sm="6" md="4" lg="2">
-        <v-text-field
+      <v-select
         v-model="ciclo"
+        :items="cicloOptions"
         label="Ciclo"
-        type="number"
         outlined
         dense
         clearable
-        ></v-text-field>
+        item-title="title"
+        item-value="value"
+      ></v-select>
     </v-col>
 
     <v-col cols="12" sm="6" md="4" lg="2">
@@ -52,15 +54,14 @@
         ></v-text-field>
     </v-col>
 
-    <!-- Filtros de texto -->
     <v-col cols="12" sm="6" md="4" lg="3">
-        <v-text-field
+      <v-text-field
         v-model="nombreIcontains"
         label="Nombre contiene"
         outlined
         dense
         clearable
-        ></v-text-field>
+      ></v-text-field>
     </v-col>
 
     <v-col cols="12" sm="6" md="4" lg="3">
@@ -104,7 +105,7 @@
     <v-col cols="12" sm="6" md="4" lg="3">
         <v-text-field
         v-model="materia"
-        label="ID Materia"
+        label="Código"
         outlined
         dense
         clearable
@@ -112,26 +113,26 @@
     </v-col>
 
     <v-col cols="12" sm="6" md="4" lg="3">
-        <v-text-field
+      <v-text-field
         v-model="correlativasIn"
-        label="Correlativas (IDs separados por coma)"
+        label="Correlativas (Códigos separados por coma)"
         outlined
         dense
         clearable
-        ></v-text-field>
+      ></v-text-field>
     </v-col>
 
     <v-col cols="12" sm="6" md="4" lg="3">
       <v-switch
-        v-model="mostrarAprobadas"
-        label="Mostrar aprobadas en gris"
+        v-model="mostrarPromocionadas"
+        label="Resaltar promocionadas"
         @change="applyFilter"
       ></v-switch>
     </v-col>
     <v-col cols="12" sm="6" md="4" lg="3">
       <v-switch
         v-model="mostrarDisponibles"
-        label="Mostrar disponibles en violeta"
+        label="Resaltar disponibles"
         @change="applyFilter"
         color="purple"
       ></v-switch>
@@ -218,7 +219,7 @@ export default {
       condicion: "",
       materia: "",
       correlativasIn: "",
-      mostrarAprobadas: false,
+      mostrarPromocionadas: false,
       mostrarDisponibles: false,
       estadoOptions: [
         { title: 'Pendiente', value: 'pendiente' },
@@ -231,7 +232,11 @@ export default {
         { title: 'Ninguno', value: '' },
         { title: 'Obligatoria', value: 'carrera' },
         { title: 'Electiva', value: 'electiva' },
-        { title: 'Completo', value: ['carrera', 'electiva'] },
+      ],
+      cicloOptions: [
+        { title: 'Básico', value: 'Básico' },
+        { title: 'General', value: 'General' },
+        { title: 'Avanzado', value: 'Avanzado' },
       ],
     };
   },
@@ -246,9 +251,9 @@ export default {
         'formato_didactico': this.formatoDidactico,
         condicion: this.condicion,
         materia: this.materia,
-        mostrarDisponibles: this.mostrarDisponibles,
         'correlativas__in': this.correlativasIn,
-        mostrarAprobadas: this.mostrarAprobadas,
+        promocionadas: this.mostrarPromocionadas ? "promocionadas" : "",
+        disponibles: this.mostrarDisponibles ? "disponibles" : "",
       };
 
       Object.keys(filters).forEach((key) => {

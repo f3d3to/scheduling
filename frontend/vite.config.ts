@@ -34,6 +34,7 @@ export default defineConfig({
       '@plugins': fileURLToPath(new URL('./src/plugins', import.meta.url)),
       '@composables': fileURLToPath(new URL('./src/composables', import.meta.url)),
       '@store': fileURLToPath(new URL('./src/store', import.meta.url)),
+      '@utils': fileURLToPath(new URL('./src/utils', import.meta.url)),
     },
   },
   optimizeDeps: {

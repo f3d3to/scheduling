@@ -10,7 +10,6 @@
       />
     </div>
 
-    <!-- Mostrar GraphMateriaDetalle si hay una materia seleccionada -->
     <GraphMateriaDetalle
       v-show="selectedMateria"
       :selectedMateria="selectedMateria"
@@ -52,7 +51,7 @@ export default defineComponent({
         { text: "Cursando", value: "cursando" },
         { text: "No Cursada", value: "no_cursada" },
       ],
-      selectedMateria: null, // Estado para almacenar la materia seleccionada
+      selectedMateria: null,
     };
   },
   async mounted() {
@@ -78,14 +77,10 @@ export default defineComponent({
     },
     async handleFilterChanged(filters) {
       try {
-        // Separar filtros de backend y flags visuales
-        const { mostrarAprobadas, mostrarDisponibles, ...backendFilters } = filters;
+        const { promocionadas, disponibles, ...backendFilters } = filters;
+        await this.store.fetchCycles(filters);
 
-        // Enviar solo los filtros de backend al store
-        await this.store.fetchCycles(backendFilters);
-
-        // Pasar los flags visuales a createChart
-        this.createChart(mostrarAprobadas, mostrarDisponibles);
+        this.createChart(promocionadas);
       } catch (error) {
         console.error("Error applying filters:", error);
       }
@@ -94,7 +89,7 @@ export default defineComponent({
       this.selectedPlan = newPlan;
       this.fetchSelectedPlan();
     },
-    createChart(mostrarAprobadas = false, mostrarDisponibles = false) {
+    createChart(promocionadas) {
       d3.select(this.$refs.chart).select("svg").remove();
 
       const width = window.innerWidth;
@@ -115,22 +110,7 @@ export default defineComponent({
 
       const g = svg.append("g");
 
-      // Crear un marcador para el caso de materias aprobadas/promocionadas (gris)
-      svg
-        .append("defs")
-        .append("marker")
-        .attr("id", "arrowhead-aprobada")
-        .attr("viewBox", "0 -5 10 10")
-        .attr("refX", 15)
-        .attr("refY", 0)
-        .attr("markerWidth", 8)
-        .attr("markerHeight", 8)
-        .attr("orient", "auto")
-        .append("path")
-        .attr("d", "M0,-5L10,0L0,5")
-        .attr("fill", "#BDBDBD"); // Color gris para materias aprobadas/promocionadas
-
-      // Crear un marcador para los casos normales (color del enlace o color por defecto)
+      // Crear marcadores dinámicos basados en colores únicos
       const uniqueColors = [...new Set(this.store.links.map(link => link.color || '#FFD700'))];
       uniqueColors.forEach(color => {
         svg
@@ -206,7 +186,7 @@ export default defineComponent({
 
         rectGroup
           .append("text")
-          .attr("x", xOffset + columnSpacing / 2)
+          .attr("x", xOffset + columnSpacing  / 2 - 50)
           .attr("y", yExtent[0] - 50)
           .attr("text-anchor", "middle")
           .attr("font-size", "16px")
@@ -229,6 +209,7 @@ export default defineComponent({
         .force("charge", d3.forceManyBody().strength(-50))
         .force("center", d3.forceCenter(width / 2, height / 2));
 
+      // Enlaces (usar color del backend)
       const link = g
         .append("g")
         .attr("class", "links")
@@ -236,35 +217,11 @@ export default defineComponent({
         .data(this.store.links)
         .enter()
         .append("line")
-        .attr("stroke", (d) => {
-          if (mostrarAprobadas) {
-            const sourceNode = this.store.nodes.find(n => n.id === d.source.id);
-            const targetNode = this.store.nodes.find(n => n.id === d.target.id);
-            if (
-              (sourceNode?.materiaEstudiante?.estado === 'aprobada' || sourceNode?.materiaEstudiante?.estado === 'promocionada') ||
-              (targetNode?.materiaEstudiante?.estado === 'aprobada' || targetNode?.materiaEstudiante?.estado === 'promocionada')
-            ) {
-              return '#BDBDBD'; // Gris si alguna de las materias conectadas está aprobada o promocionada
-            }
-          }
-          return d.color || '#FFD700'; // Color por defecto
-        })
+        .attr("stroke", (d) => d.color || '#FFD700') // Color del backend
         .attr("stroke-opacity", 0.8)
         .attr("stroke-width", 2)
-        .attr("marker-end", (d) => {
-          if (mostrarAprobadas) {
-            const sourceNode = this.store.nodes.find(n => n.id === d.source.id);
-            const targetNode = this.store.nodes.find(n => n.id === d.target.id);
-            if (
-              (sourceNode?.materiaEstudiante?.estado === 'aprobada' || sourceNode?.materiaEstudiante?.estado === 'promocionada') ||
-              (targetNode?.materiaEstudiante?.estado === 'aprobada' || targetNode?.materiaEstudiante?.estado === 'promocionada')
-            ) {
-              return "url(#arrowhead-aprobada)"; // Usar el marcador gris
-            }
-          }
-          return `url(#arrowhead-${(d.color || '#FFD700').replace('#', '')})`; // Usar el marcador normal
-        });
-
+        .attr("marker-end", (d) => `url(#arrowhead-${(d.color || '#FFD700').replace('#', '')})`); // Marcador dinámico
+      // Nodos (usar color del backend)
       const node = g
         .append("g")
         .attr("class", "nodes")
@@ -273,15 +230,7 @@ export default defineComponent({
         .enter()
         .append("circle")
         .attr("r", 20)
-        .attr("fill", (d) => {
-          if (mostrarAprobadas && (d.materiaEstudiante?.estado === 'aprobada' || d.materiaEstudiante?.estado === 'promocionada')) {
-            return '#BDBDBD'; // Gris para aprobadas
-          }
-          if (mostrarDisponibles && d.disponible) { // Solo colorear si el switch está activo
-            return '#800080'; // Violeta para disponibles
-          }
-          return d.customColor || d.color || d3.schemeTableau10[sortedYears.indexOf(d.year) % 10]; // Color por defecto
-        })
+        .attr("fill", (d) => d.color || '#4CAF50') // Color del backend
         .call(
           d3
             .drag()
@@ -303,7 +252,7 @@ export default defineComponent({
           this.highlightConnections(d);
           this.selectedMateria = d;
         });
-
+      // Etiquetas de los nodos
       const labels = g
         .append("g")
         .attr("class", "labels")
@@ -316,7 +265,7 @@ export default defineComponent({
         .text((d) => d.name)
         .style("font-size", "10px")
         .style("fill", "#5c5a5a")
-        .style("text-decoration", (d) => (mostrarAprobadas && (d.materiaEstudiante?.estado === 'aprobada' || d.materiaEstudiante?.estado === 'promocionada') ? 'line-through' : 'none')) // Tachar nombres de aprobadas
+        .style("text-decoration", (d) => (promocionadas && (d.materiaEstudiante?.estado === 'aprobada' || d.materiaEstudiante?.estado === 'promocionada') ? 'line-through' : 'none')) // Tachar nombres de aprobadas
         .style("pointer-events", "none");
 
       simulation.on("tick", () => {
@@ -348,15 +297,15 @@ export default defineComponent({
 
       // Quitar el borde de todos los nodos
       d3.selectAll(".nodes circle")
-        .attr("stroke", null) // Eliminar el borde
+        .attr("stroke", null)
         .attr("stroke-width", null)
         .attr("opacity", (d) => (connectedNodes.has(d.id) ? 1 : 0.1));
 
       // Agregar un borde gris al nodo seleccionado
       d3.selectAll(".nodes circle")
         .filter((d) => d.id === selectedNode.id)
-        .attr("stroke", "#bfb9b8") // Color gris
-        .attr("stroke-width", 4); // Grosor del borde
+        .attr("stroke", "#bfb9b8")
+        .attr("stroke-width", 4);
 
       d3.selectAll(".links line")
         .attr("opacity", (d) => (connectedLinks.has(d) ? 1 : 0.1));
@@ -364,7 +313,7 @@ export default defineComponent({
 
     resetHighlight() {
       d3.selectAll(".nodes circle")
-        .attr("stroke", null) // Eliminar el borde
+        .attr("stroke", null)
         .attr("stroke-width", null)
         .attr("opacity", 1);
 
@@ -373,14 +322,14 @@ export default defineComponent({
     },
 
     closeDetail() {
-      this.selectedMateria = null; // Limpiar la materia seleccionada
+      this.selectedMateria = null;
     },
 
     updateNodeColor(nodeId, color) {
       const node = this.store.nodes.find((n) => n.id === nodeId);
       if (node) {
-        node.customColor = color;  // Actualizar el color personalizado
-        this.createChart();  // Volver a renderizar el gráfico
+        node.customColor = color;
+        this.createChart();
       }
     },
   },

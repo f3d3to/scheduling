@@ -58,7 +58,6 @@ interface Node {
   metadata?: MateriaMetadata | null;
   color?: string;
   customColor?: string; // Color personalizado
-  disponible: boolean; // <-- Añadir campo disponible
 }
 
 interface Link {
@@ -110,7 +109,7 @@ export const useGraphStore = defineStore("graph", {
           }
           queryString = params.toString(); // p.ej. "anio=3&estado=aprobada"
         }
-
+        console.log("QUERY STRING: ", queryString);
         // 2) Concatenar la query string si no está vacía
         let url = `grafos/filtrado/${this.selectedPlan}/`;
         if (queryString) {
@@ -143,7 +142,7 @@ export const useGraphStore = defineStore("graph", {
             correlativas: correlativasMap.get(nodo.metadata.codigo.trim()) || [],
             materiaEstudiante: nodo.materia_estudiante,
             metadata: nodo.metadata,
-            disponible: nodo.disponible,
+            color: nodo.color,
           });
         });
 
@@ -172,12 +171,6 @@ export const useGraphStore = defineStore("graph", {
               color: materia.color,
               disponible: materia.disponible,
             };
-
-            // Aplicar estilo de aprobadas si el filtro está activo
-            if (mostrarAprobadas && materia.materiaEstudiante?.estado === 'aprobada') {
-              node.color = '#BDBDBD';
-            }
-
             nodes.push(node);
             nodeMap.set(node.id, node);
           });
@@ -197,11 +190,6 @@ export const useGraphStore = defineStore("graph", {
                     target: materia.codigo.trim(),
                     color: materia.color,
                   };
-
-                  // Aplicar estilo de aprobadas si el filtro está activo
-                  if (mostrarAprobadas && materia.materiaEstudiante?.estado === 'aprobada') {
-                    link.color = '#BDBDBD'; // Gris para enlaces de aprobadas
-                  }
 
                   links.push(link);
                 }
