@@ -2,7 +2,7 @@
 from rest_framework import generics
 from .models import (
     MetaAcademica, ProgresoMateria, RecordatorioPersonalizado,
-    EventoAsociado, EventoAcademico, PlanificacionAcademica, ActividadPlanificada
+    EventoAsociadoAcademico, EventoAcademico, PlanificacionAcademica, ActividadPlanificada
 )
 from .serializers import (
     MetaAcademicaSerializer, ProgresoMateriaSerializer,
@@ -42,11 +42,11 @@ class RecordatorioPersonalizadoDetailView(generics.RetrieveUpdateDestroyAPIView)
     serializer_class = RecordatorioPersonalizadoSerializer
 
 class EventoAsociadoListCreateView(generics.ListCreateAPIView):
-    queryset = EventoAsociado.objects.all()
+    queryset = EventoAsociadoAcademico.objects.all()
     serializer_class = EventoAsociadoSerializer
 
 class EventoAsociadoDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = EventoAsociado.objects.all()
+    queryset = EventoAsociadoAcademico.objects.all()
     serializer_class = EventoAsociadoSerializer
 
 class EventoAcademicoListCreateView(generics.ListCreateAPIView):

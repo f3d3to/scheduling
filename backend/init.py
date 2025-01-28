@@ -45,6 +45,7 @@ subprocess.call(["python", "manage.py", "crear_planes"])
 subprocess.call(["python", "manage.py", "crear_planificadores_factories"])
 subprocess.call(["python", "manage.py", "crear_factories"])
 subprocess.call(["python", "manage.py", "crear_materias_estudiante"])
+# subprocess.call(["python", "manage.py", "crear_eventos_academicos"])
 
 # Verificar si DEBUG está en True para iniciar con Gunicorn
 subprocess.call(["gunicorn", "core.wsgi", "--bind", "0.0.0.0:8000", "--reload"])

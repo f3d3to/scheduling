@@ -154,6 +154,7 @@ class Actividad(BaseConEstado):
     fecha_inicio = models.DateField(blank=True, null=True, help_text="Fecha de inicio de la actividad.")
     fecha_fin = models.DateField(blank=True, null=True, help_text="Fecha de finalización de la actividad.")
     color = models.CharField(max_length=7, default="#0000FF", help_text="Color asociado a la actividad.")  # Color específico de la actividad
+    evento_academico = models.ForeignKey("evento_academico.EventoAcademico", on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return f"Actividad: {self.nombre} ({self.estado.nombre if self.estado else 'Sin Estado'}, Planificador: {self.planificador.nombre})"
@@ -245,7 +246,7 @@ class Evento(models.Model):
     """
     nombre = models.CharField(max_length=255)
     descripcion = models.TextField(blank=True, null=True)
-    fecha_hora = models.DateTimeField()
+    fecha_hora = models.DateTimeField(null=True)
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     def __str__(self):

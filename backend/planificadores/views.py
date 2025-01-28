@@ -352,61 +352,6 @@ class EstructuraPlanificadorUpdateAPIView(APIView):
         return Response({'message': 'Estructura del planificador y celdas actualizadas correctamente'}, status=status.HTTP_200_OK)
 
 
-class DynamicModelInfoAPIView(APIView):
-    """
-    Endpoint dinámico que devuelve información sobre modelos registrados y sus instancias.
-    """
-
-    def get(self, request, *args, **kwargs):
-        """
-        Devuelve los modelos disponibles, sus campos y las instancias existentes.
-        """
-        # Obtener todos los modelos registrados en ContentType
-        modelos_permitidos = ContentType.objects.all()
-        modelos = []
-        for content_type in modelos_permitidos:
-            model = content_type.model_class()
-
-            if not model:  # En caso de que el modelo haya sido eliminado
-                continue
-
-            # Obtener los campos y las instancias existentes
-            campos = [field.name for field in model._meta.fields]
-            instancias = [{'id': obj.id, 'representacion': str(obj)} for obj in model.objects.all()]
-
-            modelos.append({
-                'nombre': content_type.name.title(),
-                'model': content_type.model,
-                'campos': campos,
-                'instancias': instancias,
-            })
-
-        return Response(modelos, status=status.HTTP_200_OK)
-
-    def post(self, request, *args, **kwargs):
-        """
-        Crea una nueva instancia del modelo especificado y la devuelve.
-        """
-        modelo = request.data.get('modelo')
-        data = request.data.get('datos')
-
-        if not modelo or not data:
-            return Response({'error': 'Modelo y datos son obligatorios'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            # Buscar el modelo dinámicamente usando ContentType
-            content_type = ContentType.objects.get(model=modelo, app_label='tu_app')  # Ajusta 'tu_app'
-            model = content_type.model_class()
-
-            if not model:
-                return Response({'error': 'Modelo no encontrado'}, status=status.HTTP_404_NOT_FOUND)
-
-            instancia = model.objects.create(**data)
-            return Response({'id': instancia.id, 'nombre': str(instancia)}, status=status.HTTP_201_CREATED)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
 class ModeloAPIView(APIView):
     """
     Gestión de modelos dinámicos: listar modelos y sus instancias (GET) y crear una instancia nueva (POST).

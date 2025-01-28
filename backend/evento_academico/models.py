@@ -4,7 +4,7 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 # Proyecto
 from users.models import Usuario
-from plan_de_estudio.models import Materia
+from planificadores.models import Evento
 
 class HorarioBase(models.Model):
     DIA_CHOICES = [
@@ -20,7 +20,7 @@ class HorarioBase(models.Model):
     dia = models.CharField(max_length=10, choices=DIA_CHOICES)
     hora_inicio = models.TimeField()
     hora_fin = models.TimeField()
-    descripcion = models.TextField(blank=True)
+    descripcion_horario = models.TextField(blank=True)
 
     class Meta:
         abstract = True
@@ -81,12 +81,12 @@ class RecordatorioPersonalizado(models.Model):
     fecha_hora = models.DateTimeField()
     repetir = models.CharField(max_length=10, choices=FRECUENCIA_CHOICES, default='UNA_VEZ')
     canal = models.CharField(max_length=5, choices=CANAL_CHOICES, default='PUSH')
-    relacion_evento = models.ForeignKey('EventoAcademico', on_delete=models.SET_NULL, null=True, blank=True)
+    relacion_evento = models.ForeignKey('planificadores.Evento', on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return f"Recordatorio: {self.mensaje[:20]}"
 
-class EventoAsociado(models.Model):
+class EventoAsociadoAcademico(models.Model):
     TIPO_RELACION = [
         ('EXAMEN_MATERIA', 'Examen → Materia'),
         ('ENTREGA_TP', 'Entrega → Trabajo Práctico'),
@@ -106,7 +106,7 @@ class EventoAsociado(models.Model):
     def __str__(self):
         return f"{self.get_tipo_relacion_display()}: {self.evento_origen} → {self.evento_destino}"
 
-class EventoAcademico(HorarioBase):
+class EventoAcademico(HorarioBase, Evento):
     TIPO_EVENTO = [
         ('CLASE', 'Clase'),
         ('EXAMEN', 'Examen'),
@@ -120,7 +120,7 @@ class EventoAcademico(HorarioBase):
     aula = models.CharField(max_length=50)
     profesor = models.CharField(max_length=100)
     es_obligatorio = models.BooleanField(default=True)
-    recursos = models.FileField(upload_to='recursos_eventos/', blank=True, null=True)
+    recursos = models.TextField(blank=True, null=True)
 
     class Meta:
         verbose_name_plural = 'Eventos académicos'
@@ -150,7 +150,7 @@ class PlanificacionAcademica(models.Model):
         blank=True, null=True
     )
     nombre = models.CharField(max_length=100)
-    actividades = models.ManyToManyField(EventoAcademico, through='ActividadPlanificada')
+    actividades = models.ManyToManyField('planificadores.Evento', through='ActividadPlanificada')
 
     # Métodos clave
     def calcular_carga_horaria(self):
@@ -171,7 +171,7 @@ class PlanificacionAcademica(models.Model):
 
 class ActividadPlanificada(models.Model):
     planificacion = models.ForeignKey(PlanificacionAcademica, on_delete=models.CASCADE)
-    evento = models.ForeignKey(EventoAcademico, on_delete=models.CASCADE)
+    evento = models.ForeignKey(Evento, on_delete=models.CASCADE)
     completada = models.BooleanField(default=False)
 
     class Meta:

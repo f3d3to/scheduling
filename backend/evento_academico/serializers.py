@@ -2,7 +2,7 @@
 from rest_framework import serializers
 from .models import (
     MetaAcademica, ProgresoMateria, RecordatorioPersonalizado,
-    EventoAsociado, EventoAcademico, PlanificacionAcademica, ActividadPlanificada
+    EventoAsociadoAcademico, EventoAcademico, PlanificacionAcademica, ActividadPlanificada
 )
 
 class MetaAcademicaSerializer(serializers.ModelSerializer):
@@ -30,7 +30,7 @@ class RecordatorioPersonalizadoSerializer(serializers.ModelSerializer):
 
 class EventoAsociadoSerializer(serializers.ModelSerializer):
     class Meta:
-        model = EventoAsociado
+        model = EventoAsociadoAcademico
         fields = '__all__'
 
 class EventoAcademicoSerializer(serializers.ModelSerializer):

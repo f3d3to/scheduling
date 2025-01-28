@@ -15,11 +15,21 @@
   const calendarOptions = computed(() => ({
     plugins: [multiMonthPlugin, interactionPlugin],
     initialView: "multiMonthYear",
-    initialDate: store.formattedDate,
+    initialDate: '2025-01-28',
     headerToolbar: { left: "", center: "title", right: "" },
+    editable: true,
     multiMonthMaxColumns: 1,
     locale: esLocale,
-    events: store.events,
-    datesSet: (arg) => store.setCurrentDate(arg.view.currentStart),
+    events: [      {
+        title: 'simple event',
+        start: '2025-01-28'
+      },
+      {
+        title: 'event with URL',
+        url: 'https://www.google.com/',
+        start: '2025-01-28'
+      }
+    ],
+
   }));
   </script>
