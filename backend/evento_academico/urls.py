@@ -2,6 +2,8 @@
 from django.urls import path
 from . import views
 
+app = "evento_academico"
+
 urlpatterns = [
     # MetaAcademica
     path('metas/', views.MetaAcademicaListCreateView.as_view(), name='meta-list-create'),

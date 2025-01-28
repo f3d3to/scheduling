@@ -11,6 +11,7 @@ import IniciarSesion from '../components/views/users/Login.vue'
 import RegistroUsuario from '../components/views/users/RegistroUsuario.vue'
 import PerfilUsuario from '../components/views/users/PerfilUsuario.vue'
 import EditarPerfil from '../components/views/users/EditarPerfil.vue'
+import CalendarioAcademicoDashboard from '../components/views/calendario-academico/CalendarioAcademico.vue'
 
 
 const routes = [
@@ -26,6 +27,8 @@ const routes = [
   { path: '/mi-perfil', name: 'PerfilUsuario', component: PerfilUsuario },
   { path: '/editar-mi-perfil', name: 'EditarPerfil', component: EditarPerfil },
 
+
+  { path: '/calendario/academico', name: 'CalendarioAcademico', component: CalendarioAcademicoDashboard },
   { path: '/planes', name: 'Planes', component: GraphContainer },
   { path: '/timer', name: 'Timer', component: Timer },
   { path: '/planificadores', name: 'Planificadores', component: Planificadores },
