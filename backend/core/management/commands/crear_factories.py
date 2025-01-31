@@ -20,19 +20,19 @@ class Command(BaseCommand):
                 usuario = UsuarioFactory(username=username, password=username)
                 usuario.set_password(username)
                 usuario.save()
-                self.stdout.write(self.style.SUCCESS(f'Usuario creado: {usuario.username} con contraseña {username}'))
+                # self.stdout.write(self.style.SUCCESS(f'Usuario creado: {usuario.username} con contraseña {username}'))
 
             # Crear Sesiones usando factories
             for _ in range(5):
                 sesion = SesionFactory()
-                self.stdout.write(self.style.SUCCESS(f'Sesión creada: {sesion}'))
+                # self.stdout.write(self.style.SUCCESS(f'Sesión creada: {sesion}'))
 
             # Crear TareaTimers usando factories con una Tarea seleccionada al azar
             tareas = list(Tarea.objects.all())
             for _ in range(3):
                 tarea_seleccionada = random.choice(tareas)
                 tarea_timer = TareaTimerFactory(tarea=tarea_seleccionada)
-                self.stdout.write(self.style.SUCCESS(f'TareaTimer creada: {tarea_timer}'))
+                # self.stdout.write(self.style.SUCCESS(f'TareaTimer creada: {tarea_timer}'))
 
         except Exception as e:
             raise CommandError(f'Error al crear instancias: {e}')

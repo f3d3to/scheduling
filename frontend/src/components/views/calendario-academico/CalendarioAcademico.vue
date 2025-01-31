@@ -1,179 +1,160 @@
-<script>
-import { defineComponent } from 'vue'
-import FullCalendar from '@fullcalendar/vue3'
-import dayGridPlugin from '@fullcalendar/daygrid'
-import timeGridPlugin from '@fullcalendar/timegrid'
+<template>
+  <v-btn @click="modoEdicion = !modoEdicion">
+    {{ modoEdicion ? "Desactivar Edición" : "Activar Edición" }}
+  </v-btn>
+  <v-btn v-if="modoEdicion" @click="guardarCambios">Guardar Cambios</v-btn>
+  <FullCalendar :options="calendarOptions" />
+  <EventosAcademicosDetalles
+    v-if="eventoSeleccionado"
+    :evento="eventoSeleccionado"
+    @cerrar="cerrarDetalles"
+  />
+</template>
+
+<script lang="ts">
+import { defineComponent, onMounted, ref } from "vue";
+import FullCalendar from "@fullcalendar/vue3";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from "@fullcalendar/interaction";
 import multiMonthPlugin from "@fullcalendar/multimonth";
 import listPlugin from "@fullcalendar/list";
-import interactionPlugin from '@fullcalendar/interaction'
 import esLocale from '@fullcalendar/core/locales/es';
-
-import { INITIAL_EVENTS, createEventId } from './event-utils'
+import { useEventoAcademicoStore } from "@store/eventoAcademicoStore";
+import EventosAcademicosDetalles from "./EventosAcademicosDetalle.vue";
 
 export default defineComponent({
   components: {
     FullCalendar,
+    EventosAcademicosDetalles,
   },
-  data() {
-    return {
-      calendarOptions: {
-        plugins: [
-          dayGridPlugin,
-          timeGridPlugin,
-          multiMonthPlugin,
-          listPlugin,
-          interactionPlugin // needed for dateClick
-        ],
-        headerToolbar: {
-          left: 'prev,next today',
-          center: 'title',
-          right: 'multiMonthYear,dayGridMonth,timeGridWeek,timeGridDay,listWeek,'
-        },
-        initialView: 'multiMonthYear',
-        locale: esLocale,
-        initialEvents: INITIAL_EVENTS, // alternatively, use the `events` setting to fetch from a feed
-        editable: true,
-        selectable: true,
-        selectMirror: true,
-        dayMaxEvents: true,
-        weekends: true,
-        select: this.handleDateSelect,
-        eventClick: this.handleEventClick,
-        eventsSet: this.handleEvents
-        /* you can update a remote database when these fire:
-        eventAdd:
-        eventChange:
-        eventRemove:
-        */
+  setup() {
+    const eventoAcademicoStore = useEventoAcademicoStore();
+    const eventoSeleccionado = ref<any>(null);
+    const modoEdicion = ref(false); // Estado para activar/desactivar el modo edición
+    const eventosTemporales = ref<any[]>([]); // Eventos creados/modificados temporalmente
+
+    const calendarOptions = ref({
+      plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, multiMonthPlugin, listPlugin],
+      initialView: "multiMonthYear", // Vista inicial de varios meses
+      multiMonthMaxColumns: 1,
+      timeZone: 'UTC',
+      headerToolbar: {
+        left: "prev,next today",
+        center: "title",
+        right: "multiMonthYear,dayGridMonth,timeGridWeek,timeGridDay,listWeek", // Botones de vista
       },
-      currentEvents: [],
-    }
+      locale: esLocale,
+      editable: true,
+      selectable: true,
+      selectMirror: true,
+      events: [], // Los eventos se cargarán desde el store
+      dateClick: (arg: any) => {
+        if (modoEdicion.value) {
+          // Crear un nuevo evento temporal al hacer clic en una fecha
+          const nuevoEvento = {
+            id: `temp-${Date.now()}`, // ID temporal único
+            title: "Nuevo Evento",
+            start: arg.dateStr,
+            end: arg.dateStr,
+            allDay: true,
+          };
+          eventosTemporales.value.push(nuevoEvento);
+          calendarOptions.value.events = [
+            ...eventoAcademicoStore.getFullCalendarEvents(),
+            ...eventosTemporales.value,
+          ];
+        }
+      },
+      eventClick: (info: any) => {
+        const eventoId = info.event.id; // Obtener el ID del evento clickeado
+        const detalles = eventoAcademicoStore.getDetallesPorId(eventoId); // Obtener detalles completos
+        eventoSeleccionado.value = { ...detalles, type: info.event.id }; // Guardar los detalles con el tipo
+      },
+    });
+
+    // Cargar datos del store y asignarlos como eventos del calendario
+    onMounted(async () => {
+      // Cargar datos desde el backend
+      await eventoAcademicoStore.fetchMetas();
+      await eventoAcademicoStore.fetchEventosAcademicos();
+      await eventoAcademicoStore.fetchRecordatorios();
+      await eventoAcademicoStore.fetchActividadesAcademicas();
+      await eventoAcademicoStore.fetchPlanificaciones();
+      await eventoAcademicoStore.fetchProgresos();
+
+      // Obtener eventos transformados desde el store
+      calendarOptions.value.events = eventoAcademicoStore.getFullCalendarEvents();
+    });
+
+    const cerrarDetalles = () => {
+      eventoSeleccionado.value = null; // Cerrar el panel de detalles
+    };
+    // Actualizar eventos temporales en el calendario
+    const actualizarEventosTemporales = () => {
+      calendarOptions.value.events = [
+        ...eventoAcademicoStore.getFullCalendarEvents(),
+        ...eventosTemporales.value,
+      ];
+    };
+
+    // Guardar todos los eventos al backend
+    const guardarCambios = async () => {
+      try {
+        // Filtrar eventos temporales para enviar solo los nuevos/modificados
+        const eventosParaGuardar = eventosTemporales.value.map((evento) => ({
+          title: evento.title,
+          start: evento.start,
+          end: evento.end,
+          allDay: evento.allDay,
+        }));
+
+        // Enviar solicitud al backend
+        await eventoAcademicoStore.guardarEventosBatch(eventosParaGuardar);
+
+        // Limpiar eventos temporales y desactivar modo edición
+        eventosTemporales.value = [];
+        modoEdicion.value = false;
+
+        // Recargar eventos desde el backend
+        await eventoAcademicoStore.fetchEventosAcademicos();
+        calendarOptions.value.events = eventoAcademicoStore.getFullCalendarEvents();
+      } catch (error) {
+        console.error("Error al guardar eventos:", error);
+      }
+    };
+
+    return {
+      calendarOptions,
+      cerrarDetalles,
+      eventoSeleccionado,
+      modoEdicion,
+      eventosTemporales,
+      guardarCambios,
+    };
   },
-  methods: {
-    handleWeekendsToggle() {
-      this.calendarOptions.weekends = !this.calendarOptions.weekends // update a property
-    },
-    handleDateSelect(selectInfo) {
-      let title = prompt('Please enter a new title for your event')
-      let calendarApi = selectInfo.view.calendar
-
-      calendarApi.unselect() // clear date selection
-
-      if (title) {
-        calendarApi.addEvent({
-          id: createEventId(),
-          title,
-          start: selectInfo.startStr,
-          end: selectInfo.endStr,
-          allDay: selectInfo.allDay
-        })
-      }
-    },
-    handleEventClick(clickInfo) {
-      if (confirm(`Are you sure you want to delete the event '${clickInfo.event.title}'`)) {
-        clickInfo.event.remove()
-      }
-    },
-    handleEvents(events) {
-      this.currentEvents = events
-    },
-  }
-})
-
+});
 </script>
 
-<template>
-  <div class='demo-app'>
-    <div class='demo-app-sidebar'>
-      <div class='demo-app-sidebar-section'>
-        <h2>Instructions</h2>
-        <ul>
-          <li>Select dates and you will be prompted to create a new event</li>
-          <li>Drag, drop, and resize events</li>
-          <li>Click an event to delete it</li>
-        </ul>
-      </div>
-      <div class='demo-app-sidebar-section'>
-        <label>
-          <input
-            type='checkbox'
-            :checked='calendarOptions.weekends'
-            @change='handleWeekendsToggle'
-          />
-          toggle weekends
-        </label>
-      </div>
-      <div class='demo-app-sidebar-section'>
-        <h2>All Events ({{ currentEvents.length }})</h2>
-        <ul>
-          <li v-for='event in currentEvents' :key='event.id'>
-            <b>{{ event.startStr }}</b>
-            <i>{{ event.title }}</i>
-          </li>
-        </ul>
-      </div>
-    </div>
-    <div class='demo-app-main'>
-      <FullCalendar
-        class='demo-app-calendar'
-        :options='calendarOptions'
-      >
-        <template v-slot:eventContent='arg'>
-          <b>{{ arg.timeText }}</b>
-          <i>{{ arg.event.title }}</i>
-        </template>
-      </FullCalendar>
-    </div>
-  </div>
-</template>
-
-<style lang='css'>
-
-h2 {
-  margin: 0;
-  font-size: 16px;
+<style>
+/* Estilos para metas */
+.meta-event {
+  border-radius: 5px;
+  font-weight: bold;
 }
-
-ul {
-  margin: 0;
-  padding: 0 0 0 1.5em;
+/* Estilos para eventos académicos */
+.academic-event {
+  border-radius: 5px;
+  font-style: italic;
 }
-
-li {
-  margin: 1.5em 0;
-  padding: 0;
-}
-
-b { /* used for event dates/times */
-  margin-right: 3px;
-}
-
-.demo-app {
-  display: flex;
-  min-height: 100%;
-  font-family: Arial, Helvetica Neue, Helvetica, sans-serif;
+/* Estilos para recordatorios */
+.reminder-event {
+  border: 2px solid #FF4500;
   font-size: 14px;
 }
-
-.demo-app-sidebar {
-  width: 300px;
-  line-height: 1.5;
-  background: #eaf9ff;
-  border-right: 1px solid #d3e2e8;
+/* Estilos para actividades planificadas */
+.planned-activity {
+  opacity: 0.8;
+  font-size: 12px;
 }
-
-.demo-app-sidebar-section {
-  padding: 2em;
-}
-
-.demo-app-main {
-  flex-grow: 1;
-  padding: 3em;
-}
-
-.fc { /* the calendar root */
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
 </style>

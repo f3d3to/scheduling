@@ -6,13 +6,11 @@ from faker import Faker
 from datetime import timedelta
 
 from users.models import Usuario  # Importamos el modelo Usuario
-from planificadores.models import Evento  # Importamos el modelo Evento
 from plan_de_estudio.models import Materia, MateriaEstudiante  # Importamos los modelos relacionados
 from .models import (
     MetaAcademica,
     ProgresoMateria,
     RecordatorioPersonalizado,
-    EventoAsociadoAcademico,
     EventoAcademico,
     PlanificacionAcademica,
     ActividadPlanificada,
@@ -63,7 +61,6 @@ class RecordatorioPersonalizadoFactory(factory.django.DjangoModelFactory):
     fecha_hora = factory.LazyFunction(lambda: timezone.now() + timedelta(days=7))
     repetir = FuzzyChoice([choice[0] for choice in RecordatorioPersonalizado.FRECUENCIA_CHOICES])
     canal = FuzzyChoice([choice[0] for choice in RecordatorioPersonalizado.CANAL_CHOICES])
-    relacion_evento = factory.SubFactory("planificadores.factories.EventoFactory")  # Referencia externa
 
 
 class EventoAcademicoFactory(factory.django.DjangoModelFactory):
@@ -87,16 +84,6 @@ class EventoAcademicoFactory(factory.django.DjangoModelFactory):
     recursos = factory.Faker("paragraph")
 
 
-class EventoAsociadoAcademicoFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = EventoAsociadoAcademico
-
-    evento_origen = factory.SubFactory(EventoAcademicoFactory)
-    evento_destino = factory.SubFactory(EventoAcademicoFactory)
-    tipo_relacion = FuzzyChoice([choice[0] for choice in EventoAsociadoAcademico.TIPO_RELACION])
-    peso = FuzzyInteger(1, 5)
-
-
 class PlanificacionAcademicaFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = PlanificacionAcademica
@@ -114,5 +101,4 @@ class ActividadPlanificadaFactory(factory.django.DjangoModelFactory):
         model = ActividadPlanificada
 
     planificacion = factory.SubFactory(PlanificacionAcademicaFactory)
-    evento = factory.SubFactory("planificadores.factories.EventoFactory")  # Referencia externa
     completada = FuzzyChoice([True, False])

@@ -21,6 +21,8 @@ interface ProgresoMateria {
   temas_completados: number;
   ejercicios_resueltos: number;
   autoevaluaciones: number;
+  ultima_actualizacion: string;
+  porcentaje_completado: number | null;
 }
 
 interface RecordatorioPersonalizado {
@@ -31,14 +33,6 @@ interface RecordatorioPersonalizado {
   repetir: string;
   canal: string;
   relacion_evento?: number | null;
-}
-
-interface EventoAsociado {
-  id?: number;
-  evento_origen: number;
-  evento_destino: number;
-  tipo_relacion: string;
-  peso: number;
 }
 
 interface EventoAcademico {
@@ -77,7 +71,6 @@ export const useEventoAcademicoStore = defineStore('eventoAcademico', {
     metas: [] as Meta[],
     progresos: [] as ProgresoMateria[],
     recordatorios: [] as RecordatorioPersonalizado[],
-    eventosAsociados: [] as EventoAsociado[],
     eventosAcademicos: [] as EventoAcademico[],
     planificaciones: [] as PlanificacionAcademica[],
     actividadesAcademicas: [] as ActividadPlanificada[],
@@ -152,29 +145,6 @@ export const useEventoAcademicoStore = defineStore('eventoAcademico', {
       this.recordatorios = this.recordatorios.filter((recordatorio) => recordatorio.id !== id);
     },
 
-    // Eventos Asociados
-    async fetchEventosAsociados() {
-      const { data } = await api.get('eventos-asociados/');
-      this.eventosAsociados = data.results;
-    },
-    async fetchEventoAsociado(id: number) {
-      const { data } = await api.get(`eventos-asociados/${id}/`);
-      return data.results;
-    },
-    async createEventoAsociado(evento: Omit<EventoAsociado, 'id'>) {
-      const { data } = await api.post('eventos-asociados/', evento);
-      this.eventosAsociados.push(data.results);
-    },
-    async updateEventoAsociado(id: number, evento: Partial<EventoAsociado>) {
-      const { data } = await api.put(`eventos-asociados/${id}/`, evento);
-      const index = this.eventosAsociados.findIndex((e) => e.id === id);
-      if (index !== -1) this.eventosAsociados[index] = { ...this.eventosAsociados[index], ...data.results };
-    },
-    async deleteEventoAsociado(id: number) {
-      await api.delete(`eventos-asociados/${id}/`);
-      this.eventosAsociados = this.eventosAsociados.filter((evento) => evento.id !== id);
-    },
-
     // Eventos Académicos
     async fetchEventosAcademicos() {
       const { data } = await api.get('eventos-academicos/');
@@ -201,7 +171,6 @@ export const useEventoAcademicoStore = defineStore('eventoAcademico', {
     // Planificaciones
     async fetchPlanificaciones() {
       const { data } = await api.get('planificaciones/');
-      // console.log('Datos de planificaciones:', data.results); // Depuración
       this.planificaciones = data.results;
     },
     async fetchPlanificacion(id: number) {
@@ -259,7 +228,7 @@ export const useEventoAcademicoStore = defineStore('eventoAcademico', {
             title: `🎯 Meta: ${meta.descripcion}`,
             start: meta.fecha_creacion || new Date(), // Fecha de creación o actual
             end: meta.fecha_limite,
-            color: '#FFA500',
+            color: '#FFA500', // Naranja para metas
             textColor: '#000000',
             classNames: ['meta-event'],
             extendedProps: {
@@ -272,21 +241,19 @@ export const useEventoAcademicoStore = defineStore('eventoAcademico', {
         });
       }
 
-      // Transformar Eventos Académicos en eventos
-      if (Array.isArray(this.eventosAcademicos)) {
-        this.eventosAcademicos.forEach((evento) => {
+      // Transformar Progreso de Materias en eventos
+      if (Array.isArray(this.progresos)) {
+        this.progresos.forEach((progreso) => {
           events.push({
-            id: `evento-academico-${evento.id}`,
-            title: `📚 ${evento.tipo}: ${evento.materia.nombre} - ${evento.profesor}`,
-            start: getFormattedDate(evento.dia, evento.hora_inicio),
-            end: getFormattedDate(evento.dia, evento.hora_fin),
-            color: '#378006', // Verde para eventos académicos
+            id: `progreso-${progreso.id}`,
+            title: `📊 Progreso: ${progreso.materia_estudiante} - ${progreso.porcentaje_completado}%`,
+            start: progreso.ultima_actualizacion, // Fecha de la última actualización
+            color: '#007BFF', // Azul para progreso
             textColor: '#FFFFFF',
-            classNames: ['academic-event'],
+            classNames: ['progress-event'],
             extendedProps: {
-              type: 'evento-academico',
-              classroom: evento.aula,
-              mandatory: evento.es_obligatorio,
+              type: 'progreso',
+              completedPercentage: progreso.porcentaje_completado,
             },
             display: 'block',
           });
@@ -299,7 +266,7 @@ export const useEventoAcademicoStore = defineStore('eventoAcademico', {
           events.push({
             id: `recordatorio-${recordatorio.id}`,
             title: `🔔 Recordatorio: ${recordatorio.mensaje}`,
-            start: recordatorio.fecha_hora,
+            start: recordatorio.fecha_hora, // Fecha y hora del recordatorio
             color: '#FF4500', // Rojo para recordatorios
             textColor: '#FFFFFF',
             classNames: ['reminder-event'],
@@ -313,6 +280,58 @@ export const useEventoAcademicoStore = defineStore('eventoAcademico', {
         });
       }
 
+      // Transformar Eventos Académicos en eventos
+      if (Array.isArray(this.eventosAcademicos)) {
+        this.eventosAcademicos.forEach((evento) => {
+          events.push({
+            id: `evento-${evento.id}`,
+            title: `📚 ${evento.tipo}: ${evento.materia} - ${evento.profesor}`,
+            start: getFormattedDate(evento.dia, evento.hora_inicio),
+            end: getFormattedDate(evento.dia, evento.hora_fin),
+            color: '#378006', // Verde para eventos académicos
+            textColor: '#FFFFFF',
+            classNames: ['academic-event'],
+            extendedProps: {
+              type: 'evento',
+              classroom: evento.aula,
+              mandatory: evento.es_obligatorio,
+            },
+            display: 'block',
+          });
+        });
+      }
+
+      // Transformar Planificaciones Académicas en eventos
+      if (Array.isArray(this.planificaciones)) {
+        this.planificaciones.forEach((planificacion) => {
+          let endDate;
+          if (planificacion.tipo === 'SEMANAL') {
+            endDate = new Date(planificacion.año, 0, (planificacion.semana || 1) * 7); // Fin de la semana
+          } else if (planificacion.tipo === 'CUATRIMESTRAL') {
+            endDate = new Date(planificacion.año, (planificacion.cuatrimestre === '1' ? 5 : 11), 0); // Fin del cuatrimestre
+          } else if (planificacion.tipo === 'ANUAL') {
+            endDate = new Date(planificacion.año + 1, 0, 0); // Fin del año
+          }
+
+          events.push({
+            id: `planificacion-${planificacion.id}`,
+            title: `📅 ${planificacion.tipo}`,
+            start: new Date(planificacion.año, 0, 1), // Inicio del año
+            end: endDate,
+            color: '#999ef59f', // Amarillo para planificaciones
+            textColor: '#000000',
+            allDay: true,
+            classNames: ['planning-event'],
+            extendedProps: {
+              type: 'planificacion',
+              planningType: planificacion.tipo,
+              workload: planificacion,
+            },
+            display: 'background',
+          });
+        });
+      }
+
       // Transformar Actividades Planificadas en eventos
       if (Array.isArray(this.actividadesAcademicas)) {
         this.actividadesAcademicas.forEach((actividad) => {
@@ -320,14 +339,17 @@ export const useEventoAcademicoStore = defineStore('eventoAcademico', {
           if (evento) {
             events.push({
               id: `actividad-${actividad.id}`,
-              title: `Actividad: ${evento.tipo}`,
-              start: getFormattedDate(evento.dia, evento.hora_inicio), // Fecha y hora de inicio
-              end: getFormattedDate(evento.dia, evento.hora_fin), // Fecha y hora de fin
-              color: actividad.completada ? '#4CAF50' : '#FF9800', // Verde si está completada, naranja si no
-              textColor: '#000000', // Texto negro
-              classNames: ['planned-activity'], // Clase CSS personalizada
-              extendedProps: { type: 'actividad', completada: actividad.completada },
-              display: 'block', // Muestra como bloque
+              title: `${actividad.completada ? '✅' : '❌'} Actividad: ${evento.tipo}`,
+              start: getFormattedDate(evento.dia, evento.hora_inicio),
+              end: getFormattedDate(evento.dia, evento.hora_fin),
+              color: actividad.completada ? '#4CAF50' : '#e65f50',
+              textColor: '#000000',
+              classNames: ['planned-activity'],
+              extendedProps: {
+                type: 'actividad',
+                completed: actividad.completada,
+              },
+              display: 'block',
             });
           }
         });
@@ -335,32 +357,26 @@ export const useEventoAcademicoStore = defineStore('eventoAcademico', {
 
       return events;
     },
-    async fetchEventoDetailsById(id: number, type: string) {
-      try {
-        let endpoint = '';
-        switch (type) {
-          case 'meta-':
-            endpoint = `metas/${id}/`;
-            break;
-          case 'evento-academico-':
-            endpoint = `eventos-academicos/${id}/`;
-            break;
-          case 'recordatorio-':
-            endpoint = `recordatorios/${id}/`;
-            break;
-          case 'actividad':
-            console.log(id, type)
-            endpoint = `actividades-academicas/${id}/`;
-            console.log(endpoint)
-            break;
-          default:
-            throw new Error(`Tipo de evento desconocido: ${type}`);
-        }
-        const { data } = await api.get(endpoint);
-        return data; // Devuelve los datos del evento
-      } catch (error) {
-        console.error('Error al obtener los detalles del evento:', error);
-        throw error;
+    getDetallesPorId(id: string): any | null {
+      const [tipo, idNumerico] = id.split('-'); // Extraer el tipo y el ID numérico
+      const idNum = parseInt(idNumerico, 10);
+
+      switch (tipo) {
+        case 'meta':
+          return this.metas.find((meta) => meta.id === idNum);
+        case 'progreso':
+          return this.progresos.find((progreso) => progreso.id === idNum);
+        case 'recordatorio':
+          return this.recordatorios.find((recordatorio) => recordatorio.id === idNum);
+        case 'evento':
+          return this.eventosAcademicos.find((evento) => evento.id === idNum);
+        case 'planificacion':
+          return this.planificaciones.find((planificacion) => planificacion.id === idNum);
+        case 'actividad':
+          return this.actividadesAcademicas.find((actividad) => actividad.id === idNum);
+        default:
+          console.warn(`Tipo de evento desconocido: ${tipo}`);
+          return null;
       }
     },
   },

@@ -18,7 +18,7 @@ class Command(BaseCommand):
         materias = list(Materia.objects.all())
 
         if not materias:
-            self.stdout.write(self.style.WARNING('No hay materias creadas. Crea algunas materias primero.'))
+            #self.stdout.write(self.style.WARNING('No hay materias creadas. Crea algunas materias primero.'))
             return
 
         # Códigos de materias a marcar como promocionadas para user1 (plan_id=2)
@@ -61,9 +61,9 @@ class Command(BaseCommand):
                         for _ in range(num_evaluaciones):
                             EvaluacionFactory(materia_estudiante=materia_estudiante, tipo=tipo_evaluacion)
 
-                        self.stdout.write(self.style.SUCCESS(
-                            f'Creada MateriaEstudiante para {usuario.username} con materia {materia.nombre} (Estado: {estado})'
-                        ))
+                        # self.stdout.write(self.style.SUCCESS(
+                        #     f'Creada MateriaEstudiante para {usuario.username} con materia {materia.nombre} (Estado: {estado})'
+                        # ))
 
             # Lógica normal para otros usuarios (user2, user3, etc.)
             elif re.match(r"^user\d+$", usuario.username):
@@ -77,8 +77,8 @@ class Command(BaseCommand):
                         for _ in range(num_evaluaciones):
                             EvaluacionFactory(materia_estudiante=materia_estudiante, tipo=tipo_evaluacion)
 
-                        self.stdout.write(self.style.SUCCESS(
-                            f'Creada MateriaEstudiante para {usuario.username} con materia {materia.nombre}'
-                        ))
+                        # self.stdout.write(self.style.SUCCESS(
+                        #     f'Creada MateriaEstudiante para {usuario.username} con materia {materia.nombre}'
+                        # ))
 
         self.stdout.write(self.style.SUCCESS('Datos de prueba creados exitosamente.'))

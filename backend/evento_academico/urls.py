@@ -17,10 +17,6 @@ urlpatterns = [
     path('recordatorios/', views.RecordatorioPersonalizadoListCreateView.as_view(), name='recordatorio-list-create'),
     path('recordatorios/<int:pk>/', views.RecordatorioPersonalizadoDetailView.as_view(), name='recordatorio-detail'),
 
-    # EventoAsociadoAcademico
-    path('eventos-asociados/', views.EventoAsociadoListCreateView.as_view(), name='evento-asociado-list-create'),
-    path('eventos-asociados/<int:pk>/', views.EventoAsociadoDetailView.as_view(), name='evento-asociado-detail'),
-
     # EventoAcademico
     path('eventos-academicos/', views.EventoAcademicoListCreateView.as_view(), name='evento-list-create'),
     path('eventos-academicos/<int:pk>/', views.EventoAcademicoDetailView.as_view(), name='evento-detail'),

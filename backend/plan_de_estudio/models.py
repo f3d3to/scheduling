@@ -199,7 +199,6 @@ class Evaluacion(models.Model):
 class MetaMateria(models.Model):
     materia_estudiante = models.ForeignKey(MateriaEstudiante, on_delete=models.CASCADE)
     meta = models.ForeignKey("evento_academico.metaacademica", on_delete=models.CASCADE)
-    peso = models.FloatField(default=1.0)
 
     class Meta:
         unique_together = ('materia_estudiante', 'meta')

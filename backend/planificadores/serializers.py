@@ -4,9 +4,9 @@ from django.contrib.contenttypes.models import ContentType
 
 from rest_framework import serializers
 from .models import (
-    Estado, Planificador, Celda, Elemento, Mensaje, Actividad, Tarea,
-    RegistroProgreso, Objetivo, Etiqueta, Comentario, Recurrente,
-    Evento, EventoAsociado, EstructuraPlanificador, EstructuraElemento
+    Estado, Planificador, Celda, Elemento, Actividad, Tarea,
+    Objetivo,
+    EstructuraPlanificador
 )
 
 class EstadoSerializer(serializers.ModelSerializer):
@@ -31,7 +31,7 @@ class ElementoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Elemento
-        fields = ['id', 'nombre', 'celda', 'estructura', 'descripcion', 'content_type', 'object_id', 'content_object', 'color']
+        fields = ['id', 'nombre', 'celda', 'descripcion', 'content_type', 'object_id', 'content_object', 'color']
 
     def get_content_object(self, obj):
         return str(obj.content_object)
@@ -40,11 +40,6 @@ class ElementoSerializer(serializers.ModelSerializer):
         if hasattr(obj.content_object, 'color'):
             return getattr(obj.content_object, 'color', None)
         return "#c7c7c7"
-
-class MensajeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Mensaje
-        fields = ['id', 'tipo', 'icono', 'color']
 
 class ActividadSerializer(serializers.ModelSerializer):
     class Meta:
@@ -71,41 +66,10 @@ class TareaForTimeSerializer(serializers.ModelSerializer):
         fields = ['id', 'actividad_id', 'nombre', 'descripcion', 'fecha_limite', 'color', 'estado', 'esta_realizada', 'fecha_actualizacion']
         read_only_fields = ('estado','esta_realizada','fecha_actualizacion')
 
-
-class RegistroProgresoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = RegistroProgreso
-        fields = ['id', 'actividad', 'porcentaje', 'fecha_registro']
-
 class ObjetivoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Objetivo
         fields = ['id', 'descripcion', 'fecha_objetivo', 'completado']
-
-class EtiquetaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Etiqueta
-        fields = ['id', 'nombre', 'usuario', 'color']
-
-class ComentarioSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Comentario
-        fields = ['id', 'usuario', 'contenido', 'fecha_creacion']
-
-class RecurrenteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Recurrente
-        fields = ['id', 'frecuencia', 'proxima_fecha']
-
-class EventoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Evento
-        fields = ['id', 'nombre', 'descripcion', 'fecha_hora', 'usuario']
-
-class EventoAsociadoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = EventoAsociado
-        fields = ['id', 'evento', 'content_type', 'object_id', 'content_object']
 
 class JSONSerializerField(serializers.Field):
     """ Serializer for JSONField -- required to make field writable"""
@@ -165,19 +129,6 @@ class EstructuraPlanificadorSerializer(serializers.ModelSerializer):
                             print(f"No se movió la celda de ({celda.fila}, {celda.columna}) ya que no cambió de posición.")
                 instance.save()
         return super().update(instance, validated_data)
-
-class EstructuraElementoDetalleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = EstructuraElemento
-        fields = ['id', 'nombre', 'fecha_edicion', 'html_visualizacion']
-
-class ElementoDetalleSerializer(serializers.ModelSerializer):
-    estructura = EstructuraElementoDetalleSerializer(read_only=True)
-    content_object = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Elemento
-        fields = ['id', 'nombre', 'celda', 'estructura', 'descripcion', 'content_type', 'object_id', 'content_object']
 
 class CeldaDetalleSerializer(serializers.ModelSerializer):
     elementos = ElementoSerializer(many=True, read_only=True)

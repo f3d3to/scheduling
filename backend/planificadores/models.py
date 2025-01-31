@@ -62,13 +62,6 @@ class EstructuraPlanificador(BaseEstructura):
         return f"EstructuraPlanificador: {self.nombre} ({self.filas}x{self.columnas})"
 
 
-class EstructuraElemento(BaseEstructura):
-    fecha_edicion = models.DateTimeField(auto_now=True)
-    html_visualizacion = models.TextField()
-
-    def __str__(self):
-        return f"Estructura de Elemento: {self.nombre} (Editado: {self.fecha_edicion.strftime('%Y-%m-%d %H:%M:%S')})"
-
 class Planificador(models.Model):
     """
     Modelo que representa un planificador, utilizado para gestionar actividades, celdas y objetivos.
@@ -119,7 +112,6 @@ class Elemento(models.Model):
     """
     nombre = models.CharField(max_length=255)
     celda = models.ForeignKey(Celda, related_name="elementos", on_delete=models.CASCADE)
-    estructura = models.ForeignKey(EstructuraElemento, on_delete=models.SET_NULL, null=True)
     descripcion = models.TextField(blank=True, null=True)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
@@ -128,18 +120,6 @@ class Elemento(models.Model):
     def __str__(self):
         estructura_str = f"Estructura: {self.estructura.nombre}" if self.estructura else "Sin estructura"
         return f"Elemento: {self.nombre} ({estructura_str}, Celda: {self.celda.id})"
-
-
-class Mensaje(models.Model):
-    """
-    Representa un mensaje genérico con información opcional como icono y color.
-    """
-    tipo = models.CharField(max_length=50)
-    icono = models.CharField(max_length=50, blank=True, null=True)
-    color = models.CharField(max_length=7, default="#FFFFFF")
-
-    def __str__(self):
-        return f"Mensaje: {self.tipo} (Icono: {self.icono or 'Sin icono'}, Color: {self.color})"
 
 
 class Actividad(BaseConEstado):
@@ -192,75 +172,3 @@ class Objetivo(models.Model):
 
     def __str__(self):
         return f"Objetivo: {self.descripcion[:20]}... ({'Completado' if self.completado else 'Pendiente'})"
-
-class RegistroProgreso(models.Model):
-    """
-    Modelo para registrar el progreso de actividades y tareas a lo largo del tiempo.
-    """
-    actividad = models.ForeignKey(Actividad, related_name="registros_progreso", on_delete=models.CASCADE, help_text="Actividad asociada al registro.")
-    porcentaje = models.DecimalField(max_digits=5, decimal_places=2, help_text="Porcentaje de progreso.")
-    fecha_registro = models.DateTimeField(auto_now_add=True, help_text="Fecha en que se registró el progreso.")
-
-    def __str__(self):
-        return f"Progreso: {self.actividad.nombre} - {self.porcentaje}% ({self.fecha_registro.strftime('%Y-%m-%d %H:%M:%S')})"
-
-class Etiqueta(models.Model):
-    """
-    Representa una etiqueta que los usuarios pueden asignar a diferentes entidades.
-    """
-    nombre = models.CharField(max_length=100, unique=True)
-    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
-    color = models.CharField(max_length=7, default="#FFFFFF", help_text="Color en formato hexadecimal")
-    descripcion = models.TextField(blank=True, null=True, help_text="Descripción opcional de la etiqueta")
-
-    def __str__(self):
-        return f"Etiqueta: {self.nombre} (Usuario: {self.usuario.username}, Color: {self.color})"
-
-
-class Comentario(models.Model):
-    """
-    Representa un comentario realizado por un usuario sobre una entidad específica.
-    """
-    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    contenido = models.TextField()
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Comentario de {self.usuario.username} en {self.fecha_creacion.strftime('%Y-%m-%d %H:%M:%S')}"
-
-
-class Recurrente(models.Model):
-    """
-    Representa una configuración recurrente para eventos o tareas, como frecuencia diaria, semanal, o mensual.
-    """
-    frecuencia = models.CharField(max_length=50)  # Diaria, Semanal, Mensual, etc.
-    proxima_fecha = models.DateField()
-
-    def __str__(self):
-        return f"Recurrente: {self.frecuencia} (Próxima: {self.proxima_fecha.strftime('%Y-%m-%d')})"
-
-
-class Evento(models.Model):
-    """
-    Representa un evento asociado a un usuario, con detalles como su nombre, descripción y fecha/hora.
-    """
-    nombre = models.CharField(max_length=255)
-    descripcion = models.TextField(blank=True, null=True)
-    fecha_hora = models.DateTimeField(null=True)
-    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f"Evento: {self.nombre} ({self.fecha_hora.strftime('%Y-%m-%d %H:%M')})"
-
-class EventoAsociado(models.Model):
-    """
-    Representa la asociación entre un evento y cualquier otra entidad utilizando relaciones genéricas.
-    Esto permite vincular eventos a diversas entidades como tareas, actividades, etc.
-    """
-    evento = models.ForeignKey(Evento, related_name="asociaciones", on_delete=models.CASCADE)
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
-
-    def __str__(self):
-        return f"Evento: {self.evento.nombre} asociado con {self.content_object}"

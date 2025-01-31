@@ -12,25 +12,24 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 # Proyecto
 from .models import (
-    Estado, Planificador, Celda, Elemento, Mensaje, Actividad, Tarea,
-    RegistroProgreso, Objetivo, Etiqueta, Comentario, Recurrente, Evento,
-    EventoAsociado, EstructuraPlanificador,
-    EstructuraElemento,
+    Estado, Planificador, Celda, Elemento, Actividad, Tarea,
+    Objetivo,
+    EstructuraPlanificador,
 )
 from .serializers import (
     EstadoSerializer, PlanificadorSerializer, CeldaSerializer, ElementoSerializer,
-    MensajeSerializer, ActividadSerializer, TareaSerializer, RegistroProgresoSerializer,
-    ObjetivoSerializer, EtiquetaSerializer, ComentarioSerializer, RecurrenteSerializer,
-    EventoSerializer, EventoAsociadoSerializer,
-    EstructuraPlanificadorSerializer, EstructuraElementoDetalleSerializer,
+    ActividadSerializer, TareaSerializer,
+    ObjetivoSerializer,
+
+    EstructuraPlanificadorSerializer,
     PlanificadorDetalleSerializer,
     DynamicSerializer
 
 )
 from .filters import (
-    EstadoFilter, PlanificadorFilter, CeldaFilter, ElementoFilter, MensajeFilter,
-    ActividadFilter, TareaFilter, RegistroProgresoFilter, ObjetivoFilter, EtiquetaFilter,
-    ComentarioFilter, RecurrenteFilter, EventoFilter, EventoAsociadoFilter,
+    EstadoFilter, PlanificadorFilter, CeldaFilter, ElementoFilter,
+    ActividadFilter, TareaFilter, ObjetivoFilter,
+
 
 )
 
@@ -86,15 +85,6 @@ class ElementoRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     queryset = Elemento.objects.all()
     serializer_class = ElementoSerializer
 
-# Mensaje
-class MensajeListCreateView(ListCreateAPIView):
-    queryset = Mensaje.objects.all()
-    serializer_class = MensajeSerializer
-
-class MensajeRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
-    queryset = Mensaje.objects.all()
-    serializer_class = MensajeSerializer
-
 # Actividad
 class ActividadListCreateView(ListCreateAPIView):
     queryset = Actividad.objects.all()
@@ -117,17 +107,6 @@ class TareaRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     queryset = Tarea.objects.all()
     serializer_class = TareaSerializer
 
-# RegistroProgreso
-class RegistroProgresoListCreateView(ListCreateAPIView):
-    queryset = RegistroProgreso.objects.all()
-    serializer_class = RegistroProgresoSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = RegistroProgresoFilter
-
-class RegistroProgresoRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
-    queryset = RegistroProgreso.objects.all()
-    serializer_class = RegistroProgresoSerializer
-
 # Objetivo
 class ObjetivoListCreateView(ListCreateAPIView):
     queryset = Objetivo.objects.all()
@@ -138,61 +117,6 @@ class ObjetivoListCreateView(ListCreateAPIView):
 class ObjetivoRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     queryset = Objetivo.objects.all()
     serializer_class = ObjetivoSerializer
-
-# Etiqueta
-class EtiquetaListCreateView(ListCreateAPIView):
-    queryset = Etiqueta.objects.all()
-    serializer_class = EtiquetaSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = EtiquetaFilter
-
-class EtiquetaRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
-    queryset = Etiqueta.objects.all()
-    serializer_class = EtiquetaSerializer
-
-# Comentario
-class ComentarioListCreateView(ListCreateAPIView):
-    queryset = Comentario.objects.all()
-    serializer_class = ComentarioSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = ComentarioFilter
-
-class ComentarioRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
-    queryset = Comentario.objects.all()
-    serializer_class = ComentarioSerializer
-
-# Recurrente
-class RecurrenteListCreateView(ListCreateAPIView):
-    queryset = Recurrente.objects.all()
-    serializer_class = RecurrenteSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = RecurrenteFilter
-
-class RecurrenteRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
-    queryset = Recurrente.objects.all()
-    serializer_class = RecurrenteSerializer
-
-# Evento
-class EventoListCreateView(ListCreateAPIView):
-    queryset = Evento.objects.all()
-    serializer_class = EventoSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = EventoFilter
-
-class EventoRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
-    queryset = Evento.objects.all()
-    serializer_class = EventoSerializer
-
-# EventoAsociado
-class EventoAsociadoListCreateView(ListCreateAPIView):
-    queryset = EventoAsociado.objects.all()
-    serializer_class = EventoAsociadoSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = EventoAsociadoFilter
-
-class EventoAsociadoRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
-    queryset = EventoAsociado.objects.all()
-    serializer_class = EventoAsociadoSerializer
 
 # EstructuraPlanificador
 class EstructuraPlanificadorListCreateView(ListCreateAPIView):
@@ -366,15 +290,8 @@ class ModeloAPIView(APIView):
             'tipoevaluacion',
             'evaluacion',
             'actividad',
-            'comentario',
             'estado',
-            'etiqueta',
-            'evento',
-            'eventoasociado',
-            'mensaje',
             'objetivo',
-            'recurrente',
-            'registroprogreso',
             'tarea',
             'sesion',
             'tareatimer'

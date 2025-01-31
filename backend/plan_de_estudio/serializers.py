@@ -54,7 +54,6 @@ class PlanDeEstudioSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 from django.db.models import Prefetch
-from django.db.models import Q
 
 class GrafoSerializer(serializers.Serializer):
     nodos = serializers.SerializerMethodField()
