@@ -1,14 +1,21 @@
 <template>
-  <v-btn @click="modoEdicion = !modoEdicion">
-    {{ modoEdicion ? "Desactivar Edición" : "Activar Edición" }}
-  </v-btn>
-  <v-btn v-if="modoEdicion" @click="guardarCambios">Guardar Cambios</v-btn>
-  <FullCalendar :options="calendarOptions" />
-  <EventosAcademicosDetalles
-    v-if="eventoSeleccionado"
-    :evento="eventoSeleccionado"
-    @cerrar="cerrarDetalles"
-  />
+  <div>
+    <!-- Calendario FullCalendar -->
+    <FullCalendar :options="calendarOptions" />
+    <!-- Detalles del evento seleccionado -->
+    <EventosAcademicosDetalles
+      v-if="eventoSeleccionado"
+      :evento="eventoSeleccionado"
+      @cerrar="cerrarDetalles"
+    />
+    <!-- Formulario de creación de eventos -->
+    <CrearEventosAcademicos
+      v-if="mostrarFormulario"
+      :fechaSeleccionada="fechaSeleccionada"
+      @cerrar="cerrarFormulario"
+      @eventoCreado="recargarEventos"
+    />
+  </div>
 </template>
 
 <script lang="ts">
@@ -19,52 +26,50 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import multiMonthPlugin from "@fullcalendar/multimonth";
 import listPlugin from "@fullcalendar/list";
-import esLocale from '@fullcalendar/core/locales/es';
+import esLocale from "@fullcalendar/core/locales/es";
+import rrulePlugin from '@fullcalendar/rrule';
 import { useEventoAcademicoStore } from "@store/eventoAcademicoStore";
 import EventosAcademicosDetalles from "./EventosAcademicosDetalle.vue";
+import CrearEventosAcademicos from "./CrearEventosAcademicos.vue";
 
 export default defineComponent({
   components: {
     FullCalendar,
     EventosAcademicosDetalles,
+    CrearEventosAcademicos,
   },
   setup() {
     const eventoAcademicoStore = useEventoAcademicoStore();
     const eventoSeleccionado = ref<any>(null);
-    const modoEdicion = ref(false); // Estado para activar/desactivar el modo edición
-    const eventosTemporales = ref<any[]>([]); // Eventos creados/modificados temporalmente
+    const mostrarFormulario = ref(false); // Controla la visibilidad del formulario
+    const fechaSeleccionada = ref<string | null>(null); // Fecha seleccionada en el calendario
 
+    // Opciones del calendario
     const calendarOptions = ref({
-      plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, multiMonthPlugin, listPlugin],
+      plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, multiMonthPlugin, listPlugin, rrulePlugin],
       initialView: "multiMonthYear", // Vista inicial de varios meses
       multiMonthMaxColumns: 1,
-      timeZone: 'UTC',
+      timeZone: "UTC",
       headerToolbar: {
-        left: "prev,next today",
+        left: "prev,next today crearEvento", // Agregamos el botón "crearEvento"
         center: "title",
         right: "multiMonthYear,dayGridMonth,timeGridWeek,timeGridDay,listWeek", // Botones de vista
       },
+      customButtons: {
+        crearEvento: {
+          text: "Crear Evento", // Texto del botón
+          click: () => {
+            abrirFormulario(); // Abrir el formulario de creación de eventos
+          },
+        },
+      },
       locale: esLocale,
-      editable: true,
-      selectable: true,
-      selectMirror: true,
+      editable: false, // Desactivar edición
+      selectable: true, // Permitir selección de fechas
       events: [], // Los eventos se cargarán desde el store
       dateClick: (arg: any) => {
-        if (modoEdicion.value) {
-          // Crear un nuevo evento temporal al hacer clic en una fecha
-          const nuevoEvento = {
-            id: `temp-${Date.now()}`, // ID temporal único
-            title: "Nuevo Evento",
-            start: arg.dateStr,
-            end: arg.dateStr,
-            allDay: true,
-          };
-          eventosTemporales.value.push(nuevoEvento);
-          calendarOptions.value.events = [
-            ...eventoAcademicoStore.getFullCalendarEvents(),
-            ...eventosTemporales.value,
-          ];
-        }
+        // Abrir el formulario de creación de eventos con la fecha seleccionada
+        abrirFormularioConFecha(arg.dateStr);
       },
       eventClick: (info: any) => {
         const eventoId = info.event.id; // Obtener el ID del evento clickeado
@@ -75,52 +80,45 @@ export default defineComponent({
 
     // Cargar datos del store y asignarlos como eventos del calendario
     onMounted(async () => {
-      // Cargar datos desde el backend
-      await eventoAcademicoStore.fetchMetas();
-      await eventoAcademicoStore.fetchEventosAcademicos();
-      await eventoAcademicoStore.fetchRecordatorios();
-      await eventoAcademicoStore.fetchActividadesAcademicas();
-      await eventoAcademicoStore.fetchPlanificaciones();
-      await eventoAcademicoStore.fetchProgresos();
-
-      // Obtener eventos transformados desde el store
-      calendarOptions.value.events = eventoAcademicoStore.getFullCalendarEvents();
-    });
-
-    const cerrarDetalles = () => {
-      eventoSeleccionado.value = null; // Cerrar el panel de detalles
-    };
-    // Actualizar eventos temporales en el calendario
-    const actualizarEventosTemporales = () => {
-      calendarOptions.value.events = [
-        ...eventoAcademicoStore.getFullCalendarEvents(),
-        ...eventosTemporales.value,
-      ];
-    };
-
-    // Guardar todos los eventos al backend
-    const guardarCambios = async () => {
       try {
-        // Filtrar eventos temporales para enviar solo los nuevos/modificados
-        const eventosParaGuardar = eventosTemporales.value.map((evento) => ({
-          title: evento.title,
-          start: evento.start,
-          end: evento.end,
-          allDay: evento.allDay,
-        }));
-
-        // Enviar solicitud al backend
-        await eventoAcademicoStore.guardarEventosBatch(eventosParaGuardar);
-
-        // Limpiar eventos temporales y desactivar modo edición
-        eventosTemporales.value = [];
-        modoEdicion.value = false;
-
-        // Recargar eventos desde el backend
-        await eventoAcademicoStore.fetchEventosAcademicos();
+        // Cargar eventos del calendario académico desde el store
+        await eventoAcademicoStore.fetchEventosCalendario();
         calendarOptions.value.events = eventoAcademicoStore.getFullCalendarEvents();
       } catch (error) {
-        console.error("Error al guardar eventos:", error);
+        console.error("Error al cargar datos:", error);
+      }
+    });
+
+    // Cerrar el panel de detalles
+    const cerrarDetalles = () => {
+      eventoSeleccionado.value = null;
+    };
+
+    // Abrir el formulario de creación de eventos
+    const abrirFormulario = () => {
+      mostrarFormulario.value = true;
+      fechaSeleccionada.value = null; // Limpiar la fecha seleccionada
+    };
+
+    // Abrir el formulario con una fecha preseleccionada
+    const abrirFormularioConFecha = (fecha: string) => {
+      mostrarFormulario.value = true;
+      fechaSeleccionada.value = fecha; // Pasar la fecha seleccionada al formulario
+    };
+
+    // Cerrar el formulario de creación de eventos
+    const cerrarFormulario = () => {
+      mostrarFormulario.value = false;
+      fechaSeleccionada.value = null; // Limpiar la fecha seleccionada
+    };
+
+    // Recargar eventos después de crear uno nuevo
+    const recargarEventos = async () => {
+      try {
+        await eventoAcademicoStore.fetchEventosCalendario();
+        calendarOptions.value.events = eventoAcademicoStore.getFullCalendarEvents();
+      } catch (error) {
+        console.error("Error al recargar eventos:", error);
       }
     };
 
@@ -128,33 +126,29 @@ export default defineComponent({
       calendarOptions,
       cerrarDetalles,
       eventoSeleccionado,
-      modoEdicion,
-      eventosTemporales,
-      guardarCambios,
+      abrirFormulario,
+      cerrarFormulario,
+      recargarEventos,
+      mostrarFormulario,
+      fechaSeleccionada,
     };
   },
 });
 </script>
 
 <style>
-/* Estilos para metas */
-.meta-event {
-  border-radius: 5px;
-  font-weight: bold;
-}
 /* Estilos para eventos académicos */
-.academic-event {
+.calendar-event {
   border-radius: 5px;
   font-style: italic;
 }
+/* Estilos para eventos de todo el día */
+.calendar-event[allDay] {
+  opacity: 0.8;
+}
 /* Estilos para recordatorios */
 .reminder-event {
-  border: 2px solid #FF4500;
+  border: 2px solid #ff4500;
   font-size: 14px;
-}
-/* Estilos para actividades planificadas */
-.planned-activity {
-  opacity: 0.8;
-  font-size: 12px;
 }
 </style>

@@ -3,11 +3,18 @@
 from datetime import datetime, date, timedelta
 # Django
 from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 # Proyecto
 from users.models import Usuario
+
+class TipoEvento(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+    descripcion = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.nombre
 
 class HorarioBase(models.Model):
     DIA_CHOICES = [
@@ -30,42 +37,29 @@ class HorarioBase(models.Model):
         ordering = ['dia', 'hora_inicio']
 
 class MetaAcademica(models.Model):
-    TIPO_META = [
-        ('RENDIMIENTO', 'Objetivo de rendimiento'),
-        ('TIEMPO', 'Gestión de tiempo'),
-        ('ENTREGA', 'Entrega de trabajos'),
-        ('AUTOEVALUACION', 'Autoevaluación')
-    ]
-
     estudiante = models.ForeignKey("users.Usuario", on_delete=models.CASCADE, related_name='metas')
     descripcion = models.CharField(max_length=255)
-    tipo = models.CharField(max_length=20, choices=TIPO_META)
-    fecha_limite = models.DateTimeField()
-    prioridad = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(5)],
-        default=3
-    )
+    tipo = models.CharField(max_length=20)
     completada = models.BooleanField(default=False)
     relacion_materia = models.ForeignKey('plan_de_estudio.MateriaEstudiante', on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.get_tipo_display()}: {self.descripcion[:30]}"
+        return f"{self.descripcion}: {self.descripcion[:30]}"
 
 class ProgresoMateria(models.Model):
     materia_estudiante = models.OneToOneField('plan_de_estudio.MateriaEstudiante', on_delete=models.CASCADE, related_name='progreso')
-    horas_estudiadas = models.PositiveIntegerField(default=0)
-    temas_completados = models.PositiveIntegerField(default=0)
-    ejercicios_resueltos = models.PositiveIntegerField(default=0)
-    autoevaluaciones = models.PositiveIntegerField(default=0)
-    ultima_actualizacion = models.DateTimeField(auto_now=True)
+    completados = models.PositiveIntegerField(default=0)
+    totales = models.PositiveIntegerField(default=0)
 
     def porcentaje_completado(self):
-        return (self.temas_completados / 10) * 100
+        if self.totales == 0:
+            return 0
+        return (self.completados / self.totales) * 100
 
     def __str__(self):
         return f"Progreso {self.materia_estudiante.materia.nombre}"
 
-class RecordatorioPersonalizado(models.Model):
+class Recordatorio(models.Model):
     FRECUENCIA_CHOICES = [
         ('UNA_VEZ', 'Una vez'),
         ('DIARIO', 'Diario'),
@@ -73,7 +67,7 @@ class RecordatorioPersonalizado(models.Model):
         ('MENSUAL', 'Mensual')
     ]
 
-    CANAL_CHOICES = [
+    METODO_CHOICES = [
         ('EMAIL', 'Email'),
         ('PUSH', 'Notificación push'),
         ('SMS', 'Mensaje SMS')
@@ -83,25 +77,18 @@ class RecordatorioPersonalizado(models.Model):
     mensaje = models.CharField(max_length=200)
     fecha_hora = models.DateTimeField()
     repetir = models.CharField(max_length=10, choices=FRECUENCIA_CHOICES, default='UNA_VEZ')
-    canal = models.CharField(max_length=5, choices=CANAL_CHOICES, default='PUSH')
+    medio_de_notificacion = models.CharField(max_length=5, choices=METODO_CHOICES, default='PUSH')
 
     def __str__(self):
         return f"Recordatorio: {self.mensaje[:20]}"
 
+class TipoEventoAcademico(models.Model):
+    nombre = models.CharField(max_length=100)
+    descripcion = models.CharField(max_length=255)
 
 class EventoAcademico(HorarioBase):
-    TIPO_EVENTO = [
-        ('CLASE', 'Clase'),
-        ('EXAMEN', 'Examen'),
-        ('CONSULTA', 'Consulta'),
-        ('ENTREGA', 'Entrega de TP'),
-        ('RECUPERATORIO', 'Recuperatorio')
-    ]
-
     materia = models.ForeignKey('plan_de_estudio.Materia', on_delete=models.CASCADE, related_name='eventos')
-    tipo = models.CharField(max_length=20, choices=TIPO_EVENTO)
-    aula = models.CharField(max_length=50)
-    profesor = models.CharField(max_length=100)
+    tipo = models.ForeignKey('TipoEventoAcademico', on_delete=models.CASCADE, related_name='eventos')
     es_obligatorio = models.BooleanField(default=True)
     recursos = models.TextField(blank=True, null=True)
 
@@ -122,6 +109,9 @@ class EventoAcademico(HorarioBase):
         # Calcular la diferencia
         return fin - inicio
 
+    def __str__(self):
+        return f"{self.materia.nombre} - {self.tipo.nombre}"
+
 class PlanificacionAcademica(models.Model):
     TIPO_PLANIFICACION = [
         ('SEMANAL', 'Semanal'),
@@ -129,35 +119,71 @@ class PlanificacionAcademica(models.Model):
         ('ANUAL', 'Anual')
     ]
 
-    estudiante = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='planificaciones')
-    tipo = models.CharField(max_length=20, choices=TIPO_PLANIFICACION)
-    cuatrimestre = models.CharField(max_length=1,
-                                  choices=[('1', 'Cuatrimestre 1'), ('2', 'Cuatrimestre 2')],
-                                  blank=True, null=True)
-    año = models.IntegerField()
-    semana = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(52)],
-        blank=True, null=True
+    estudiante = models.ForeignKey(
+        "users.Usuario",
+        on_delete=models.CASCADE,
+        related_name='planificaciones'
+    )
+    tipo = models.CharField(
+        max_length=20,
+        choices=TIPO_PLANIFICACION
+    )
+    cuatrimestre = models.CharField(
+        max_length=1,
+        choices=[('1', 'Cuatrimestre 1'), ('2', 'Cuatrimestre 2')],
+        blank=True,
+        null=True
     )
     nombre = models.CharField(max_length=100)
-    actividades = models.ManyToManyField(EventoAcademico, through='ActividadPlanificada')
+    semana = models.PositiveIntegerField(blank=True, null=True)  # Nueva campo
+    año = models.PositiveIntegerField(default=datetime.now().year)  # Nuevo campo
+    actividades = models.ManyToManyField(
+        "evento_academico.EventoAcademico",
+        through='ActividadPlanificada'
+    )
 
-    # # Métodos clave
-    # def calcular_carga_horaria(self):
-    #     return sum(evento.duracion().total_seconds() / 3600
-    #              for evento in self.actividades.all())
+    def calcular_carga_horaria(self):
+        """
+        Calcula la carga horaria total de las actividades asociadas.
+        """
+        return sum(
+            evento.duracion().total_seconds() / 3600
+            for evento in self.actividades.all()
+        )
 
-    # def detectar_conflictos(self):
-    #     eventos = self.actividades.all().order_by('dia', 'hora_inicio')
-    #     return [(eventos[i], eventos[i+1])
-    #           for i in range(len(eventos)-1)
-    #           if eventos[i].dia == eventos[i+1].dia
-    #           and eventos[i].hora_fin > eventos[i+1].hora_inicio]
+    def detectar_conflictos(self):
+        """
+        Detecta conflictos de horario entre las actividades asociadas.
+        """
+        eventos = self.actividades.all().order_by('dia', 'hora_inicio')
+        conflictos = []
+        for i in range(len(eventos) - 1):
+            if (
+                eventos[i].dia == eventos[i + 1].dia
+                and eventos[i].hora_fin > eventos[i + 1].hora_inicio
+            ):
+                conflictos.append((eventos[i], eventos[i + 1]))
+        return conflictos
+
+    def clean(self):
+        """
+        Validaciones personalizadas para el modelo.
+        """
+        if self.tipo != 'CUATRIMESTRAL' and self.cuatrimestre is not None:
+            raise ValidationError("El campo 'cuatrimestre' solo es válido para planificaciones cuatrimestrales.")
 
     def __str__(self):
+        """
+        Representación legible del objeto.
+        """
         if self.tipo == 'SEMANAL':
             return f"Planificación Semana {self.semana} - {self.año}"
+        elif self.tipo == 'CUATRIMESTRAL':
+            return f"Planificación Cuatrimestre {self.cuatrimestre} - {self.año}"
         return f"Planificación {self.get_tipo_display()} {self.año}"
+
+    class Meta:
+        verbose_name_plural = "Planificaciones Académicas"
 
 class ActividadPlanificada(models.Model):
     planificacion = models.ForeignKey(
@@ -178,23 +204,53 @@ class ActividadPlanificada(models.Model):
     def __str__(self):
         return f"{self.evento} en {self.planificacion}"
 
+class Recurrencia(models.Model):
+    FRECUENCIAS = [
+        ('diaria', 'Diaria'),
+        ('semanal', 'Semanal'),
+        ('mensual', 'Mensual'),
+        ('anual', 'Anual'),
+    ]
+    frecuencia = models.CharField(max_length=20, choices=FRECUENCIAS)
+    intervalo = models.PositiveIntegerField(default=1)
+    fin_recurrencia = models.DateField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.frecuencia} cada {self.intervalo} unidad(es)"
 
 class EventoCalendarioAcademico(models.Model):
-    TIPOS_EVENTO = [
-        ('actividad', 'Actividad'),
-        ('tarea', 'Tarea'),
-        ('materia', 'Materia'),
-        ('meta', 'Meta Académica'),
-        ('recordatorio', 'Recordatorio'),
-        # Agregar más tipos según sea necesario
-    ]
-
+    # Campos existentes...
     titulo = models.CharField(max_length=255)
     descripcion = models.TextField(blank=True, null=True)
     inicio = models.DateTimeField()
     fin = models.DateTimeField(blank=True, null=True)
     todo_el_dia = models.BooleanField(default=False)
-    tipo = models.CharField(max_length=50, choices=TIPOS_EVENTO)
+    color = models.CharField(max_length=20, blank=True, null=True)
+    background_color = models.CharField(max_length=20, blank=True, null=True)
+    border_color = models.CharField(max_length=20, blank=True, null=True)
+    text_color = models.CharField(max_length=20, blank=True, null=True)
+    url = models.URLField(blank=True, null=True)
+    tipo = models.ForeignKey(TipoEvento, on_delete=models.CASCADE, related_name='eventos')
+    recurrencia = models.ForeignKey(Recurrencia, on_delete=models.SET_NULL, blank=True, null=True)
+
+    # Nuevos campos para FullCalendar
+    display = models.CharField(
+        max_length=20,
+        choices=[
+            ('block', 'Bloque'),
+            ('list-item', 'Elemento de lista'),
+            ('background', 'Fondo'),
+            ('none', 'Oculto'),
+        ],
+        default='block',
+        help_text="Controla cómo se muestra el evento."
+    )
+    editable = models.BooleanField(default=True, help_text="Indica si el evento es editable.")
+    start_editable = models.BooleanField(default=True, help_text="Indica si la fecha/hora de inicio es editable.")
+    duration_editable = models.BooleanField(default=True, help_text="Indica si la duración es editable.")
+    resource_editable = models.BooleanField(default=False, help_text="Indica si el evento puede moverse entre recursos.")
+    exdate = models.CharField(max_length=255, blank=True, null=True, help_text="Fechas excluidas de la recurrencia.")
+    class_names = models.CharField(max_length=255, blank=True, null=True, help_text="Clases CSS adicionales.")
 
     # Campos para la relación genérica
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
@@ -203,3 +259,9 @@ class EventoCalendarioAcademico(models.Model):
 
     def __str__(self):
         return f"{self.titulo} ({self.tipo})"
+
+    def clean(self):
+        if self.tipo.nombre == 'examen' and not self.fin:
+            raise ValidationError("Los eventos de tipo 'examen' deben tener una fecha de fin.")
+        if self.tipo.nombre == 'recordatorio' and self.todo_el_dia:
+            raise ValidationError("Los eventos de tipo 'recordatorio' no pueden durar todo el día.")

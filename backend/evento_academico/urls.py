@@ -1,31 +1,21 @@
-# backend/evento_academico/urls.py
 from django.urls import path
-from . import views
+from .views import *
 
-app = "evento_academico"
+app_name = "evento_academico"
 
 urlpatterns = [
-    # MetaAcademica
-    path('metas/', views.MetaAcademicaListCreateView.as_view(), name='meta-list-create'),
-    path('metas/<int:pk>/', views.MetaAcademicaDetailView.as_view(), name='meta-detail'),
+    # Recurrencias
+    path('recurrencias/', RecurrenciaListCreateView.as_view(), name='recurrencia-list-create'),
+    path('recurrencias/<int:pk>/', RecurrenciaDetailView.as_view(), name='recurrencia-detail'),
 
-    # ProgresoMateria
-    path('progreso/', views.ProgresoMateriaListCreateView.as_view(), name='progreso-list-create'),
-    path('progreso/<int:pk>/', views.ProgresoMateriaDetailView.as_view(), name='progreso-detail'),
+    # Tipos de Evento
+    path('tipos-evento/', TipoEventoListCreateView.as_view(), name='tipo-evento-list-create'),
+    path('tipos-evento/<int:pk>/', TipoEventoDetailView.as_view(), name='tipo-evento-detail'),
+    # EventoCalendarioAcademico
+    path('eventos-calendario/', EventoCalendarioAcademicoListCreateView.as_view(), name='evento-calendario-list-create'),
+    path('eventos-calendario/<int:pk>/', EventoCalendarioAcademicoDetailView.as_view(), name='evento-calendario-detail'),
 
-    # RecordatorioPersonalizado
-    path('recordatorios/', views.RecordatorioPersonalizadoListCreateView.as_view(), name='recordatorio-list-create'),
-    path('recordatorios/<int:pk>/', views.RecordatorioPersonalizadoDetailView.as_view(), name='recordatorio-detail'),
+    path('categorias-disponibles/', CategoriasDisponiblesView.as_view(), name='categorias-disponibles'),
+    path('elementos/<str:categoria>/', ElementosDeCategoriaView.as_view(), name='elementos-de-categoria'),
 
-    # EventoAcademico
-    path('eventos-academicos/', views.EventoAcademicoListCreateView.as_view(), name='evento-list-create'),
-    path('eventos-academicos/<int:pk>/', views.EventoAcademicoDetailView.as_view(), name='evento-detail'),
-
-    # PlanificacionAcademica
-    path('planificaciones/', views.PlanificacionAcademicaListCreateView.as_view(), name='planificacion-list-create'),
-    path('planificaciones/<int:pk>/', views.PlanificacionAcademicaDetailView.as_view(), name='planificacion-detail'),
-
-    # ActividadPlanificada
-    path('actividades-academicas/', views.ActividadPlanificadaListCreateView.as_view(), name='actividad-list-create'),
-    path('actividades-academicas/<int:pk>/', views.ActividadPlanificadaDetailView.as_view(), name='actividad-detail'),
 ]
