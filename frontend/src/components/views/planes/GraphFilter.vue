@@ -4,148 +4,168 @@
     class="graph-filter pa-2"
     :style="{ transform: `translate(${x}px, ${y}px)` }"
   >
-    <v-row dense class="filter-row">
-    <v-select
-      :model-value="selectedPlan"
-      :items="plans"
-      item-title="nombre"
-      item-value="id"
-      label="Seleccionar Plan"
-      @update:modelValue="handlePlanChange"
-      outlined
-      dense
-      class="mb-2"
-    ></v-select>
-      <!-- Filtros básicos -->
-      <v-col cols="6" sm="4" md="3" lg="2">
-        <v-text-field
-          v-model="anio"
-          label="Año"
-          type="number"
-          outlined
-          dense
-          clearable
-          placeholder="Ej: 3"
-        ></v-text-field>
-      </v-col>
-
-      <v-col cols="6" sm="4" md="3" lg="2">
+  <div>
+    <v-card-title class="text-center">
+      <v-row align="center" justify="center">
+        <v-col cols="auto">
+          <span>Filtros</span>
+        </v-col>
+        <v-col cols="auto">
+          <v-icon
+            class="toggle-icon"
+            :icon="isContentVisible ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+            @click="toggleContent"
+          ></v-icon>
+        </v-col>
+      </v-row>
+    </v-card-title>
+</div>
+      <!-- Contenido de la tarjeta -->
+    <v-expand-transition>
+      <v-row v-if="isContentVisible" dense class="filter-row">
         <v-select
-          v-model="ciclo"
-          :items="cicloOptions"
-          label="Ciclo"
+          :model-value="selectedPlan"
+          :items="plans"
+          item-title="nombre"
+          item-value="id"
+          label="Seleccionar Plan"
+          @update:modelValue="handlePlanChange"
           outlined
           dense
-          clearable
-          item-title="title"
-          item-value="value"
+          class="mb-2"
         ></v-select>
-      </v-col>
 
-      <v-col cols="6" sm="4" md="3" lg="2">
-        <v-text-field
-          v-model="creditos"
-          label="Créditos"
-          type="number"
-          outlined
-          dense
-          clearable
-        ></v-text-field>
-      </v-col>
+        <!-- Filtros básicos -->
+        <v-col cols="6" sm="4" md="3" lg="2">
+          <v-text-field
+            v-model="anio"
+            label="Año"
+            type="number"
+            outlined
+            dense
+            clearable
+            placeholder="Ej: 3"
+          ></v-text-field>
+        </v-col>
 
-      <v-col cols="6" sm="4" md="3" lg="2">
-        <v-text-field
-          v-model="nombreIcontains"
-          label="Nombre contiene"
-          outlined
-          dense
-          clearable
-        ></v-text-field>
-      </v-col>
+        <v-col cols="6" sm="4" md="3" lg="2">
+          <v-select
+            v-model="ciclo"
+            :items="cicloOptions"
+            label="Ciclo"
+            outlined
+            dense
+            clearable
+            item-title="title"
+            item-value="value"
+          ></v-select>
+        </v-col>
 
-      <v-col cols="6" sm="4" md="3" lg="2">
-        <v-text-field
-          v-model="formatoDidactico"
-          label="Formato didáctico"
-          outlined
-          dense
-          clearable
-        ></v-text-field>
-      </v-col>
+        <v-col cols="6" sm="4" md="3" lg="2">
+          <v-text-field
+            v-model="creditos"
+            label="Créditos"
+            type="number"
+            outlined
+            dense
+            clearable
+          ></v-text-field>
+        </v-col>
 
-      <!-- Selectores -->
-      <v-col cols="6" sm="4" md="3" lg="2">
-        <v-select
-          v-model="estado"
-          :items="estadoOptions"
-          label="Estado"
-          outlined
-          dense
-          clearable
-          item-title="title"
-          item-value="value"
-        ></v-select>
-      </v-col>
+        <v-col cols="6" sm="4" md="3" lg="2">
+          <v-text-field
+            v-model="nombreIcontains"
+            label="Nombre contiene"
+            outlined
+            dense
+            clearable
+          ></v-text-field>
+        </v-col>
 
-      <v-col cols="6" sm="4" md="3" lg="2">
-        <v-select
-          v-model="condicion"
-          :items="condicionOptions"
-          label="Condición"
-          outlined
-          dense
-          clearable
-          item-title="title"
-          item-value="value"
-        ></v-select>
-      </v-col>
+        <v-col cols="6" sm="4" md="3" lg="2">
+          <v-text-field
+            v-model="formatoDidactico"
+            label="Formato didáctico"
+            outlined
+            dense
+            clearable
+          ></v-text-field>
+        </v-col>
 
-      <!-- Filtros especiales -->
-      <v-col cols="6" sm="4" md="3" lg="2">
-        <v-text-field
-          v-model="materia"
-          label="Código"
-          outlined
-          dense
-          clearable
-        ></v-text-field>
-      </v-col>
+        <!-- Selectores -->
+        <v-col cols="6" sm="4" md="3" lg="2">
+          <v-select
+            v-model="estado"
+            :items="estadoOptions"
+            label="Estado"
+            outlined
+            dense
+            clearable
+            item-title="title"
+            item-value="value"
+          ></v-select>
+        </v-col>
 
-      <v-col cols="6" sm="4" md="3" lg="2">
-        <v-text-field
-          v-model="correlativasIn"
-          label="Correlativas (Códigos separados por coma)"
-          outlined
-          dense
-          clearable
-        ></v-text-field>
-      </v-col>
+        <v-col cols="6" sm="4" md="3" lg="2">
+          <v-select
+            v-model="condicion"
+            :items="condicionOptions"
+            label="Condición"
+            outlined
+            dense
+            clearable
+            item-title="title"
+            item-value="value"
+          ></v-select>
+        </v-col>
 
-      <!-- Switches -->
-      <v-col cols="6" sm="4" md="3" lg="2">
-        <v-switch
-          v-model="mostrarPromocionadas"
-          label="Resaltar promocionadas"
-          dense
-          @change="applyFilter"
-        ></v-switch>
-      </v-col>
+        <!-- Filtros especiales -->
+        <v-col cols="6" sm="4" md="3" lg="2">
+          <v-text-field
+            v-model="materia"
+            label="Código"
+            outlined
+            dense
+            clearable
+          ></v-text-field>
+        </v-col>
 
-      <v-col cols="6" sm="4" md="3" lg="2">
-        <v-switch
-          v-model="mostrarDisponibles"
-          label="Resaltar disponibles"
-          dense
-          color="purple"
-          @change="applyFilter"
-        ></v-switch>
-      </v-col>
-      <v-btn color="primary" @click="applyFilter" class="mt-2">
+        <v-col cols="6" sm="4" md="3" lg="2">
+          <v-text-field
+            v-model="correlativasIn"
+            label="Correlativas (Códigos separados por coma)"
+            outlined
+            dense
+            clearable
+          ></v-text-field>
+        </v-col>
+
+        <!-- Switches -->
+        <v-col cols="6" sm="4" md="3" lg="2">
+          <v-switch
+            v-model="mostrarPromocionadas"
+            label="Resaltar promocionadas"
+            dense
+            @change="applyFilter"
+          ></v-switch>
+        </v-col>
+
+        <v-col cols="6" sm="4" md="3" lg="2">
+          <v-switch
+            v-model="mostrarDisponibles"
+            label="Resaltar disponibles"
+            dense
+            color="purple"
+            @change="applyFilter"
+          ></v-switch>
+        </v-col>
+
+        <!-- Botón de acción -->
+        <v-btn color="primary" @click="applyFilter" class="mt-2">
           Aplicar Filtros
         </v-btn>
-      <!-- Botón de acción -->
-
-    </v-row>
+      </v-row>
+    </v-expand-transition>
   </v-card>
 </template>
 
@@ -169,7 +189,8 @@ export default {
   setup(props, { emit }) {
     const draggableElement = ref(null);
     const x = ref(0);
-    const y = ref(window.innerHeight - 450);
+    const y = ref(window.innerHeight - 500);
+    const isContentVisible = ref(true); // Estado para mostrar/ocultar contenido
 
     onMounted(() => {
       interact(draggableElement.value.$el)
@@ -199,11 +220,17 @@ export default {
       emit("update:selectedPlan", newPlan);
     };
 
+    const toggleContent = () => {
+      isContentVisible.value = !isContentVisible.value;
+    };
+
     return {
       draggableElement,
       x,
       y,
+      isContentVisible,
       handlePlanChange,
+      toggleContent,
     };
   },
   data() {
@@ -302,5 +329,12 @@ export default {
   background-color: #06D6A0;
   color: #1e1e2f;
   font-weight: bold;
+}
+
+.toggle-icon {
+  cursor: pointer;
+  margin-bottom: 10px;
+  display: block;
+  text-align: center;
 }
 </style>

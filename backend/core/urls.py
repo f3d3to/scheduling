@@ -21,6 +21,8 @@ urlpatterns = [
     path('', include('pomodoro.urls')),
     path('', include('users.urls')),
     path('', include('visualizacion_grafo.urls')),
+    path('', include('evento_academico.urls')),
+
 
     path('token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
     path('token/verify/', CustomTokenVerifyView.as_view(), name='token_verify'),

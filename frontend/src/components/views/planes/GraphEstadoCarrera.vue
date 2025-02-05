@@ -1,16 +1,22 @@
 <template>
   <div>
-    <!-- Botón para alternar visibilidad -->
-    <v-icon v-if="!isVisible" @click="toggleVisibility" color="primary" class="mb-4" title="Mostrar más detalle del plan de estudios">
-      mdi-plus
-    </v-icon>
-
+    <v-btn
+        variant="plain
+        "v-if="!isVisible"
+        v-ripple="false"
+        @click="toggleVisibility" color="primary" size="x-large"
+        title="Mostrar más detalle del plan de estudios" >
+      Mostrar más
+      <v-icon >
+        mdi mdi-chevron-up
+      </v-icon>
+    </v-btn>
     <!-- Componente condicional -->
     <v-container v-if="isVisible" class="graph-estado-carrera" fluid>
       <v-row align="center" justify="space-between" class="h-100">
         <v-col cols="1" class="py-0">
-          <v-icon @click="toggleVisibility" color="primary" class="mb-4">
-            {{ isVisible ? 'mdi-minus' : 'mdi-plus' }}
+          <v-icon @click="toggleVisibility" size="50px" color="primary" class="mb-4">
+            {{ isVisible ? 'mdi-chevron-down' : 'mdi-chevron-down' }}
           </v-icon>
         </v-col>
 
@@ -82,8 +88,10 @@ export default {
     const detalleCiclo = ref(null);
     const selectedPlan = computed(() => store.selectedPlan);
     const isVisible = ref(true); // Variable para controlar la visibilidad
+    // Colores para los ciclos
     const coloresCiclos = ["#FF6B6B", "#4ECDC4", "#FFD166", "#06D6A0", "#118AB2"];
 
+    // Obtener datos del estado de la carrera
     const obtenerEstadoCarrera = async () => {
       try {
         if (!selectedPlan.value) return;
@@ -150,7 +158,7 @@ export default {
 .graph-estado-carrera {
   background: linear-gradient(180deg, #2c2c3e, #1e1e2f);
   color: #fff;
-  border-radius: 12px;
+  border-radius: 0 0 12px 12px;
   padding: 10px 20px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   height: 120px; /* Altura reducida */
@@ -241,7 +249,6 @@ export default {
   font-size: 22px;
   font-weight: bold;
 }
-
 .h-100 {
   height: 100%;
 }

@@ -47,6 +47,7 @@ APPS = [
     'pomodoro',
     'users',
     'visualizacion_grafo',
+    'evento_academico',
 ]
 
 INSTALLED_APPS = DJANGO + THIRD_PARTY + APPS

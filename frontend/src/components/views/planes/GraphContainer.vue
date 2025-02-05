@@ -138,29 +138,6 @@ svg {
 .year-group {
   fill: rgba(136, 136, 136, 0.1);
 }
-.bottom-panel {
-  position: fixed;
-  bottom: -100%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90%;
-  max-width: 800px;
-  background: white;
-  border-radius: 12px 12px 0 0;
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-  transition: bottom 0.3s ease;
-  z-index: 1000;
-}
-
-.panel-visible {
-  bottom: 0;
-}
-
-.toggle-wrapper {
-  display: flex;
-  justify-content: center;
-  margin-top: -28px; /* Mitad del botón fuera del panel */
-}
 
 .toggle-btn {
   transition: transform 0.3s ease;

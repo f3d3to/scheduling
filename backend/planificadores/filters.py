@@ -1,9 +1,8 @@
 import django_filters
 
 from .models import (
-    Estado, Planificador, Celda, Elemento, Mensaje, Actividad, Tarea,
-    RegistroProgreso, Objetivo, Etiqueta, Comentario, Recurrente, Evento,
-    EventoAsociado
+    Estado, Planificador, Celda, Elemento, Actividad, Tarea,
+    Objetivo,
 )
 
 class EstadoFilter(django_filters.FilterSet):
@@ -53,29 +52,6 @@ class TareaFilter(django_filters.FilterSet):
         model = Tarea
         fields = ['actividad', 'nombre', 'fecha_limite', 'estado', 'esta_realizada']
 
-class EventoFilter(django_filters.FilterSet):
-    nombre = django_filters.CharFilter(lookup_expr='icontains')
-    fecha_hora = django_filters.DateFromToRangeFilter()
-
-    class Meta:
-        model = Evento
-        fields = ['nombre', 'fecha_hora', 'usuario']
-
-class EventoAsociadoFilter(django_filters.FilterSet):
-    content_type = django_filters.CharFilter(field_name='content_type__model', lookup_expr='iexact')
-
-    class Meta:
-        model = EventoAsociado
-        fields = ['evento', 'content_type', 'object_id']
-
-class RegistroProgresoFilter(django_filters.FilterSet):
-    porcentaje = django_filters.RangeFilter()
-    fecha_registro = django_filters.DateFromToRangeFilter()
-
-    class Meta:
-        model = RegistroProgreso
-        fields = ['actividad', 'porcentaje', 'fecha_registro']
-
 class ObjetivoFilter(django_filters.FilterSet):
     descripcion = django_filters.CharFilter(lookup_expr='icontains')
     fecha_objetivo = django_filters.DateFromToRangeFilter()
@@ -84,36 +60,3 @@ class ObjetivoFilter(django_filters.FilterSet):
     class Meta:
         model = Objetivo
         fields = ['descripcion', 'fecha_objetivo', 'completado']
-
-class EtiquetaFilter(django_filters.FilterSet):
-    nombre = django_filters.CharFilter(lookup_expr='icontains')
-
-    class Meta:
-        model = Etiqueta
-        fields = ['nombre', 'usuario']
-
-class ComentarioFilter(django_filters.FilterSet):
-    contenido = django_filters.CharFilter(lookup_expr='icontains')
-    fecha_creacion = django_filters.DateFromToRangeFilter()
-
-    class Meta:
-        model = Comentario
-        fields = [ 'usuario', 'contenido', 'fecha_creacion']
-
-class RecurrenteFilter(django_filters.FilterSet):
-    frecuencia = django_filters.CharFilter(lookup_expr='iexact')
-    proxima_fecha = django_filters.DateFromToRangeFilter()
-
-    class Meta:
-        model = Recurrente
-        fields = ['frecuencia', 'proxima_fecha']
-
-
-class MensajeFilter(django_filters.FilterSet):
-    tipo = django_filters.CharFilter(lookup_expr='icontains')
-    icono = django_filters.CharFilter(lookup_expr='icontains')
-    color = django_filters.CharFilter(lookup_expr='iexact')
-
-    class Meta:
-        model = Mensaje
-        fields = ['tipo', 'icono', 'color']
