@@ -99,7 +99,6 @@ export default {
         creditos.value = response.creditos;
         ciclos.value = response.ciclos;
         promedio.value = response.promedio;
-        console.log(response.plan_actual.nombre)
       } catch (error) {
         console.error("Error obteniendo el estado de la carrera:", error);
       }

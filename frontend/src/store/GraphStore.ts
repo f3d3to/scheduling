@@ -110,7 +110,7 @@ export const useGraphStore = defineStore("graph", {
         this.plans = plansData.results;
         if (this.plans.length > 0) {
           this.selectedPlan = this.plans[0].id;
-          console.log("PLAN SELECCIONADO:", this.selectedPlan);
+          // console.log("PLAN SELECCIONADO:", this.selectedPlan);
         }
       } catch (error) {
         console.error("Error fetching plans:", error);
@@ -314,5 +314,14 @@ export const useGraphStore = defineStore("graph", {
         throw error;
       }
     },
+    async createPlanConMaterias(planData:any) {
+      try {
+        const response = await api.post("planes/crear-con-materias/", planData);
+        return response.data;
+      } catch (error) {
+        console.error("Error creating plan with materias:", error);
+        throw error;
+      }
+    }
   },
 });

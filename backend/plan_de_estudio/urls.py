@@ -7,7 +7,8 @@ from .views import (
     PlanDeEstudioCiclosView,
     MateriasEstudiantesListCreateView, MateriasEstudiantesRetrieveUpdateDestroyView,
     EvaluacionesListCreateView, EvaluacionesRetrieveUpdateDestroyView,
-    EstadoCarreraView
+    EstadoCarreraView,
+    CrearPlanConMaterias,
 )
 app_name = 'plan_de_estudio'
 
@@ -30,5 +31,8 @@ urlpatterns = [
     path('evaluaciones/<int:pk>/', EvaluacionesRetrieveUpdateDestroyView.as_view(), name='evaluaciones-retrieve-update-destroy'),
 
     path('carrera/<int:carrera_id>/estado/', EstadoCarreraView.as_view(), name='estado-carrera'),
+
+    path("planes/crear-con-materias/", CrearPlanConMaterias.as_view(), name="crear-plan-con-materias"),
+
 
 ]

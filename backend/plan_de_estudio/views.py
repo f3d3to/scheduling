@@ -23,7 +23,7 @@ from .serializers import (
 from .filters import PlanDeEstudioFilter, MateriaFilter, GrafoFilter
 
 
-class PlanDeEstudioList(generics.ListAPIView):
+class PlanDeEstudioList(generics.ListCreateAPIView):
     queryset = PlanDeEstudio.objects.all()
     serializer_class = PlanDeEstudioSerializer
     filter_backends = [DjangoFilterBackend]
@@ -285,3 +285,34 @@ class EstadoCarreraView(APIView):
         }
 
         return Response(data)
+
+class CrearPlanConMaterias(APIView):
+    def post(self, request):
+        # Validar y crear el plan de estudio
+        plan_serializer = PlanDeEstudioSerializer(data=request.data)
+        if not plan_serializer.is_valid():
+            return Response(plan_serializer.errors, status=400)
+
+        plan = plan_serializer.save()
+
+        # Crear las materias asociadas al plan
+        materias_data = request.data.get("materias", [])
+        materias_serialized = []
+        for materia in materias_data:
+            materia["plan_de_estudio"] = plan.id
+            materia_serializer = MateriaSerializer(data=materia)
+            if not materia_serializer.is_valid():
+                # Revertir la creación del plan si alguna materia falla
+                plan.delete()
+                return Response(materia_serializer.errors, status=400)
+            materias_serialized.append(materia_serializer.save())
+
+        # Respuesta final
+        response_data = {
+            "id": plan.id,
+            "nombre": plan.nombre,
+            "año_creacion": plan.año_creacion,
+            "descripcion": plan.descripcion,
+            "materias": MateriaSerializer(materias_serialized, many=True).data,
+        }
+        return Response(response_data, status=200)

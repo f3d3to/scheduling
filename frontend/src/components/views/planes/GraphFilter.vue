@@ -4,25 +4,28 @@
     class="graph-filter pa-2"
     :style="{ transform: `translate(${x}px, ${y}px)` }"
   >
-  <div>
-    <v-card-title class="text-center">
-      <v-row align="center" justify="center">
-        <v-col cols="auto">
-          <span>Filtros</span>
-        </v-col>
-        <v-col cols="auto">
-          <v-icon
-            class="toggle-icon"
-            :icon="isContentVisible ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-            @click="toggleContent"
-          ></v-icon>
-        </v-col>
-      </v-row>
-    </v-card-title>
-</div>
-      <!-- Contenido de la tarjeta -->
+    <!-- Título del Filtro -->
+    <div>
+      <v-card-title class="text-center">
+        <v-row align="center" justify="center">
+          <v-col cols="auto">
+            <span>Filtros</span>
+          </v-col>
+          <v-col cols="auto">
+            <v-icon
+              class="toggle-icon"
+              :icon="isContentVisible ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+              @click="toggleContent"
+            ></v-icon>
+          </v-col>
+        </v-row>
+      </v-card-title>
+    </div>
+
+    <!-- Contenido de la Tarjeta -->
     <v-expand-transition>
       <v-row v-if="isContentVisible" dense class="filter-row">
+        <!-- Selector de Plan -->
         <v-select
           :model-value="selectedPlan"
           :items="plans"
@@ -35,7 +38,7 @@
           class="mb-2"
         ></v-select>
 
-        <!-- Filtros básicos -->
+        <!-- Filtros Básicos -->
         <v-col cols="6" sm="4" md="3" lg="2">
           <v-text-field
             v-model="anio"
@@ -47,7 +50,6 @@
             placeholder="Ej: 3"
           ></v-text-field>
         </v-col>
-
         <v-col cols="6" sm="4" md="3" lg="2">
           <v-select
             v-model="ciclo"
@@ -60,7 +62,6 @@
             item-value="value"
           ></v-select>
         </v-col>
-
         <v-col cols="6" sm="4" md="3" lg="2">
           <v-text-field
             v-model="creditos"
@@ -71,7 +72,6 @@
             clearable
           ></v-text-field>
         </v-col>
-
         <v-col cols="6" sm="4" md="3" lg="2">
           <v-text-field
             v-model="nombreIcontains"
@@ -81,7 +81,6 @@
             clearable
           ></v-text-field>
         </v-col>
-
         <v-col cols="6" sm="4" md="3" lg="2">
           <v-text-field
             v-model="formatoDidactico"
@@ -105,7 +104,6 @@
             item-value="value"
           ></v-select>
         </v-col>
-
         <v-col cols="6" sm="4" md="3" lg="2">
           <v-select
             v-model="condicion"
@@ -119,7 +117,7 @@
           ></v-select>
         </v-col>
 
-        <!-- Filtros especiales -->
+        <!-- Filtros Especiales -->
         <v-col cols="6" sm="4" md="3" lg="2">
           <v-text-field
             v-model="materia"
@@ -129,7 +127,6 @@
             clearable
           ></v-text-field>
         </v-col>
-
         <v-col cols="6" sm="4" md="3" lg="2">
           <v-text-field
             v-model="correlativasIn"
@@ -149,7 +146,6 @@
             @change="applyFilter"
           ></v-switch>
         </v-col>
-
         <v-col cols="6" sm="4" md="3" lg="2">
           <v-switch
             v-model="mostrarDisponibles"
@@ -160,10 +156,30 @@
           ></v-switch>
         </v-col>
 
-        <!-- Botón de acción -->
+        <!-- Botón de Acción -->
         <v-btn color="primary" @click="applyFilter" class="mt-2">
           Aplicar Filtros
         </v-btn>
+
+        <!-- Botón/Icono para Abrir el Diálogo -->
+        <v-tooltip location="top">
+          <template v-slot:activator="{ props }">
+            <v-btn
+              color="primary"
+              icon
+              v-bind="props"
+              @click="dialog = true"
+            >
+              <v-icon>mdi-plus</v-icon>
+            </v-btn>
+          </template>
+          <span>Crear Plan de Estudio</span>
+        </v-tooltip>
+
+        <!-- Diálogo (Modal) -->
+        <v-dialog v-model="dialog" max-width="1200px">
+          <CrearPlan @close-dialog="dialog = false" />
+        </v-dialog>
       </v-row>
     </v-expand-transition>
   </v-card>
@@ -172,16 +188,20 @@
 <script>
 import { ref, onMounted } from 'vue';
 import interact from 'interactjs';
+import CrearPlan from './CrearPlan.vue';
 
 export default {
   name: "GraphFilter",
+  components: {
+    CrearPlan, // Registra el componente
+  },
   props: {
     plans: {
       type: Array,
       required: true,
     },
     selectedPlan: {
-      type: [String, Number],
+      type: [String, Number, null],
       required: true,
     },
   },
@@ -191,6 +211,7 @@ export default {
     const x = ref(0);
     const y = ref(window.innerHeight - 500);
     const isContentVisible = ref(true); // Estado para mostrar/ocultar contenido
+    const dialog = ref(false); // Controla la visibilidad del diálogo
 
     onMounted(() => {
       interact(draggableElement.value.$el)
@@ -231,6 +252,7 @@ export default {
       isContentVisible,
       handlePlanChange,
       toggleContent,
+      dialog, // Asegúrate de devolver `dialog`
     };
   },
   data() {
@@ -280,11 +302,9 @@ export default {
         promocionadas: this.mostrarPromocionadas ? "promocionadas" : "",
         disponibles: this.mostrarDisponibles ? "disponibles" : "",
       };
-
       Object.keys(filters).forEach((key) => {
         if (filters[key] === "" || filters[key] === null) delete filters[key];
       });
-
       this.$emit("filter-changed", filters);
     },
   },
@@ -307,30 +327,25 @@ export default {
   user-select: none;
   transition: transform 0.3s ease;
 }
-
 .filter-row {
   gap: 8px;
 }
-
 .v-text-field,
 .v-select {
   background-color: #3a3a4e;
   border-radius: 8px;
   color: #fff;
 }
-
 .v-text-field :deep(.v-input__control),
 .v-select :deep(.v-input__control),
 .v-switch :deep(.v-input__control) {
   color: #fff;
 }
-
 .v-btn {
   background-color: #06D6A0;
   color: #1e1e2f;
   font-weight: bold;
 }
-
 .toggle-icon {
   cursor: pointer;
   margin-bottom: 10px;
