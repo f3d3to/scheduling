@@ -6,11 +6,11 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Sum, IntegerField, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
-from rest_framework import generics, permissions
+from rest_framework import serializers, generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from rest_framework import serializers
+
 from .models import PlanDeEstudio, Materia, MateriaEstudiante, Evaluacion
 from .serializers import (
     PlanDeEstudioSerializer,
@@ -18,10 +18,10 @@ from .serializers import (
     PlanDeEstudioCiclosSerializer,
     MateriaEstudianteSerializer,
     EvaluacionSerializer,
-    GrafoSerializer
+    GrafoSerializer,
+    CrearPlanConMateriasSerializer
 )
 from .filters import PlanDeEstudioFilter, MateriaFilter, GrafoFilter
-
 
 class PlanDeEstudioList(generics.ListCreateAPIView):
     queryset = PlanDeEstudio.objects.all()
@@ -287,32 +287,31 @@ class EstadoCarreraView(APIView):
         return Response(data)
 
 class CrearPlanConMaterias(APIView):
-    def post(self, request):
-        # Validar y crear el plan de estudio
-        plan_serializer = PlanDeEstudioSerializer(data=request.data)
-        if not plan_serializer.is_valid():
-            return Response(plan_serializer.errors, status=400)
+    """
+    Recibe los datos de un plan y una lista de materias para crearlos
+    en una sola petición, delegando toda la lógica al serializador.
+    """
+    def post(self, request, *args, **kwargs):
+        # 1. Instanciamos el serializador con los datos de la petición.
+        #    Toda la complejidad está encapsulada aquí.
+        serializer = CrearPlanConMateriasSerializer(data=request.data)
 
-        plan = plan_serializer.save()
+        # 2. Validamos los datos.
+        #    DRF ejecutará las validaciones de todos los campos, incluyendo
+        #    la búsqueda de las correlativas por su 'codigo' (SlugRelatedField).
+        if serializer.is_valid():
+            # 3. Guardamos.
+            #    Esta llamada a .save() ejecutará nuestro método .create() personalizado
+            #    que contiene la transacción atómica y la lógica de dos pasadas.
+            plan = serializer.save()
 
-        # Crear las materias asociadas al plan
-        materias_data = request.data.get("materias", [])
-        materias_serialized = []
-        for materia in materias_data:
-            materia["plan_de_estudio"] = plan.id
-            materia_serializer = MateriaSerializer(data=materia)
-            if not materia_serializer.is_valid():
-                # Revertir la creación del plan si alguna materia falla
-                plan.delete()
-                return Response(materia_serializer.errors, status=400)
-            materias_serialized.append(materia_serializer.save())
+            # 4. Devolvemos una respuesta de éxito.
+            #    El estándar es usar 201 CREATED para una creación exitosa.
+            return Response(
+                {"detail": f"Plan '{plan.nombre}' creado exitosamente."},
+                status=status.HTTP_201_CREATED
+            )
 
-        # Respuesta final
-        response_data = {
-            "id": plan.id,
-            "nombre": plan.nombre,
-            "año_creacion": plan.año_creacion,
-            "descripcion": plan.descripcion,
-            "materias": MateriaSerializer(materias_serialized, many=True).data,
-        }
-        return Response(response_data, status=200)
+        # 5. Si la validación falla, el serializador contendrá los errores.
+        #    Devolvemos un error 400 con los detalles para que el frontend sepa qué falló.
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

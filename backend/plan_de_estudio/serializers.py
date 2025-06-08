@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .models import PlanDeEstudio, Materia, MateriaEstudiante, Evaluacion, TipoEvaluacion
+from django.db import transaction
+from django.db.models import Prefetch
 
 class MateriaSerializer(serializers.ModelSerializer):
     correlativas = serializers.StringRelatedField(many=True)
@@ -52,8 +54,6 @@ class PlanDeEstudioSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlanDeEstudio
         fields = '__all__'
-
-from django.db.models import Prefetch
 
 class GrafoSerializer(serializers.Serializer):
     nodos = serializers.SerializerMethodField()
@@ -122,3 +122,59 @@ class GrafoSerializer(serializers.Serializer):
                     relaciones.append(relacion)
 
         return relaciones
+
+class CrearMateriaSerializer(serializers.ModelSerializer):
+    correlativas = serializers.ListField(child=serializers.CharField(), required=False)
+
+    class Meta:
+        model = Materia
+        fields = [
+            'nombre',
+            'codigo',
+            'anio',
+            'cuatrimestre',
+            'creditos',
+            'ch_semanal',
+            'ciclo',
+            'condicion',
+            'formato_didactico',
+            'ch_cuatrimestral',
+            'ch_presencial',
+            'ch_distancia',
+            'ch_total',
+            'descripcion',
+            'correlativas'
+        ]
+
+
+class CrearPlanConMateriasSerializer(serializers.ModelSerializer):
+    materias = CrearMateriaSerializer(many=True)
+
+    class Meta:
+        model = PlanDeEstudio
+        fields = [
+            'nombre',
+            'año_creacion',
+            'descripcion',
+            'materias'
+        ]
+
+    def create(self, validated_data):
+        with transaction.atomic():
+            materias_data = validated_data.pop('materias')
+            plan_de_estudio = PlanDeEstudio.objects.create(**validated_data)
+            materias_creadas = {}
+            # 1. Crear materias sin correlativas
+            for materia_data in materias_data:
+                correlativas_codigos = materia_data.pop('correlativas', [])
+                materia = Materia.objects.create(plan_de_estudio=plan_de_estudio, **materia_data)
+                materias_creadas[materia.codigo] = {'instancia': materia, 'correlativas_codigos': correlativas_codigos}
+            # 2. Asignar correlativas solo entre las materias recién creadas
+            for codigo, data in materias_creadas.items():
+                instancia_materia = data['instancia']
+                correlativas_para_asignar = [materias_creadas[c]['instancia'] for c in data['correlativas_codigos'] if c in materias_creadas]
+                if correlativas_para_asignar:
+                    instancia_materia.correlativas.set(correlativas_para_asignar)
+        return plan_de_estudio
+
+# --- FIN: NUEVOS SERIALIZADORES ---
