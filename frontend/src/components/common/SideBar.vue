@@ -16,6 +16,7 @@
           <li><RouterLink to="/timer"><i class="fas fa-clock"></i> Pomodoro</RouterLink></li>
           <li><RouterLink to="/planificadores"><i class="fa-solid fa-hexagon-nodes"></i> Planificadores</RouterLink></li>
           <li><RouterLink to="/calendario/academico"><i class="fas fa-calendar-check"></i> Calendario Académico</RouterLink></li>
+          <li><RouterLink to="/crear-plan"><i class="fas fa-plus-square-o"></i> Crear Plan</RouterLink></li>
 
         </ul>
       </nav>

@@ -69,6 +69,10 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_HEADERS = [
     'Authorization',
     'Content-Type',
+    'Content-Disposition',
+]
+CORS_EXPOSE_HEADERS = [
+    "Content-Disposition",
 ]
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Origen de tu frontend

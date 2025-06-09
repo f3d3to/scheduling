@@ -254,7 +254,7 @@ export default defineComponent({
       estados,
       metodosAprobacion,
       toggleEditMode,
-      cancelEdit
+      cancelEdit,
     };
   },
   data() {

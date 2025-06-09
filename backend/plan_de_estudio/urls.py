@@ -1,4 +1,3 @@
-
 from django.urls import path
 from .views import (
     PlanDeEstudioList,
@@ -7,7 +6,9 @@ from .views import (
     PlanDeEstudioCiclosView,
     MateriasEstudiantesListCreateView, MateriasEstudiantesRetrieveUpdateDestroyView,
     EvaluacionesListCreateView, EvaluacionesRetrieveUpdateDestroyView,
-    EstadoCarreraView
+    EstadoCarreraView,
+    CrearPlanConMaterias,
+    DescargarPlanDeEstudioExcel,
 )
 app_name = 'plan_de_estudio'
 
@@ -18,6 +19,7 @@ urlpatterns = [
     path('planes_de_estudio/', PlanDeEstudioList.as_view(), name='plan_de_estudio-list'),
     path('planes/<int:pk>/ciclos/', PlanDeEstudioCiclosView.as_view(), name='plan-ciclos'),
     path('descargar_plan_de_estudio/<int:pk>/', DescargarPlanDeEstudioJSON.as_view(), name='descargar_plan_de_estudio'),
+    path('descargar_plan_de_estudio_excel/<int:pk>/', DescargarPlanDeEstudioExcel.as_view(), name='descargar_plan_de_estudio_excel'),
 
     # Materias
     path('materias/', MateriaList.as_view(), name='materia-list'),
@@ -30,5 +32,8 @@ urlpatterns = [
     path('evaluaciones/<int:pk>/', EvaluacionesRetrieveUpdateDestroyView.as_view(), name='evaluaciones-retrieve-update-destroy'),
 
     path('carrera/<int:carrera_id>/estado/', EstadoCarreraView.as_view(), name='estado-carrera'),
+
+    path("planes/crear-con-materias/", CrearPlanConMaterias.as_view(), name="crear-plan-con-materias"),
+
 
 ]

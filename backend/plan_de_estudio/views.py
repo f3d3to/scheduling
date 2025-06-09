@@ -6,11 +6,12 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Sum, IntegerField, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
-from rest_framework import generics, permissions
+from rest_framework import serializers, generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from rest_framework import serializers
+from openpyxl import Workbook
+
 from .models import PlanDeEstudio, Materia, MateriaEstudiante, Evaluacion
 from .serializers import (
     PlanDeEstudioSerializer,
@@ -18,12 +19,12 @@ from .serializers import (
     PlanDeEstudioCiclosSerializer,
     MateriaEstudianteSerializer,
     EvaluacionSerializer,
-    GrafoSerializer
+    GrafoSerializer,
+    CrearPlanConMateriasSerializer
 )
 from .filters import PlanDeEstudioFilter, MateriaFilter, GrafoFilter
 
-
-class PlanDeEstudioList(generics.ListAPIView):
+class PlanDeEstudioList(generics.ListCreateAPIView):
     queryset = PlanDeEstudio.objects.all()
     serializer_class = PlanDeEstudioSerializer
     filter_backends = [DjangoFilterBackend]
@@ -159,6 +160,58 @@ class DescargarPlanDeEstudioJSON(APIView):
         response['Content-Disposition'] = f'attachment; filename="plan_de_estudio_{plan.id}.json"'
         return response
 
+class DescargarPlanDeEstudioExcel(APIView):
+    """
+    Exporta un plan de estudio y sus materias a un archivo Excel.
+    """
+    def get(self, request, pk):
+        plan = get_object_or_404(PlanDeEstudio, pk=pk)
+        materias = plan.materias.all().order_by('anio', 'cuatrimestre', 'nombre')
+
+        # Crea el workbook y la hoja
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Materias"
+
+        # Encabezados (ajusta según tu importador)
+        headers = [
+            "codigo", "nombre", "anio", "cuatrimestre", "creditos", "ch_semanal",
+            "ciclo", "condicion", "formato_didactico", "ch_cuatrimestral",
+            "ch_presencial", "ch_distancia", "ch_total", "descripcion", "correlativas"
+        ]
+        ws.append(headers)
+
+        # Escribe cada materia
+        for materia in materias:
+            correlativas = "|".join(
+                materia.correlativas.values_list('codigo', flat=True)
+            )
+            ws.append([
+                materia.codigo,
+                materia.nombre,
+                materia.anio,
+                materia.cuatrimestre,
+                materia.creditos,
+                materia.ch_semanal,
+                materia.ciclo,
+                materia.condicion,
+                materia.formato_didactico,
+                materia.ch_cuatrimestral,
+                materia.ch_presencial,
+                materia.ch_distancia,
+                materia.ch_total,
+                materia.descripcion,
+                correlativas
+            ])
+
+        # Prepara la respuesta
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        filename = f'{plan.nombre}.xlsx'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        wb.save(response)
+        return response
 
 class GenerarGrafoView(generics.ListAPIView):
     serializer_class = GrafoSerializer
@@ -285,3 +338,33 @@ class EstadoCarreraView(APIView):
         }
 
         return Response(data)
+
+class CrearPlanConMaterias(APIView):
+    """
+    Recibe los datos de un plan y una lista de materias para crearlos
+    en una sola petición, delegando toda la lógica al serializador.
+    """
+    def post(self, request, *args, **kwargs):
+        # 1. Instanciamos el serializador con los datos de la petición.
+        #    Toda la complejidad está encapsulada aquí.
+        serializer = CrearPlanConMateriasSerializer(data=request.data)
+
+        # 2. Validamos los datos.
+        #    DRF ejecutará las validaciones de todos los campos, incluyendo
+        #    la búsqueda de las correlativas por su 'codigo' (SlugRelatedField).
+        if serializer.is_valid():
+            # 3. Guardamos.
+            #    Esta llamada a .save() ejecutará nuestro método .create() personalizado
+            #    que contiene la transacción atómica y la lógica de dos pasadas.
+            plan = serializer.save()
+
+            # 4. Devolvemos una respuesta de éxito.
+            #    El estándar es usar 201 CREATED para una creación exitosa.
+            return Response(
+                {"detail": f"Plan '{plan.nombre}' creado exitosamente."},
+                status=status.HTTP_201_CREATED
+            )
+
+        # 5. Si la validación falla, el serializador contendrá los errores.
+        #    Devolvemos un error 400 con los detalles para que el frontend sepa qué falló.
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
