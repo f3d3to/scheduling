@@ -1,4 +1,3 @@
-
 from django.urls import path
 from .views import (
     PlanDeEstudioList,
@@ -9,6 +8,7 @@ from .views import (
     EvaluacionesListCreateView, EvaluacionesRetrieveUpdateDestroyView,
     EstadoCarreraView,
     CrearPlanConMaterias,
+    DescargarPlanDeEstudioExcel,
 )
 app_name = 'plan_de_estudio'
 
@@ -19,6 +19,7 @@ urlpatterns = [
     path('planes_de_estudio/', PlanDeEstudioList.as_view(), name='plan_de_estudio-list'),
     path('planes/<int:pk>/ciclos/', PlanDeEstudioCiclosView.as_view(), name='plan-ciclos'),
     path('descargar_plan_de_estudio/<int:pk>/', DescargarPlanDeEstudioJSON.as_view(), name='descargar_plan_de_estudio'),
+    path('descargar_plan_de_estudio_excel/<int:pk>/', DescargarPlanDeEstudioExcel.as_view(), name='descargar_plan_de_estudio_excel'),
 
     # Materias
     path('materias/', MateriaList.as_view(), name='materia-list'),

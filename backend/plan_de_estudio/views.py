@@ -10,6 +10,7 @@ from rest_framework import serializers, generics, permissions, status
 from rest_framework.views import APIView
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
+from openpyxl import Workbook
 
 from .models import PlanDeEstudio, Materia, MateriaEstudiante, Evaluacion
 from .serializers import (
@@ -159,6 +160,58 @@ class DescargarPlanDeEstudioJSON(APIView):
         response['Content-Disposition'] = f'attachment; filename="plan_de_estudio_{plan.id}.json"'
         return response
 
+class DescargarPlanDeEstudioExcel(APIView):
+    """
+    Exporta un plan de estudio y sus materias a un archivo Excel.
+    """
+    def get(self, request, pk):
+        plan = get_object_or_404(PlanDeEstudio, pk=pk)
+        materias = plan.materias.all().order_by('anio', 'cuatrimestre', 'nombre')
+
+        # Crea el workbook y la hoja
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Materias"
+
+        # Encabezados (ajusta según tu importador)
+        headers = [
+            "codigo", "nombre", "anio", "cuatrimestre", "creditos", "ch_semanal",
+            "ciclo", "condicion", "formato_didactico", "ch_cuatrimestral",
+            "ch_presencial", "ch_distancia", "ch_total", "descripcion", "correlativas"
+        ]
+        ws.append(headers)
+
+        # Escribe cada materia
+        for materia in materias:
+            correlativas = "|".join(
+                materia.correlativas.values_list('codigo', flat=True)
+            )
+            ws.append([
+                materia.codigo,
+                materia.nombre,
+                materia.anio,
+                materia.cuatrimestre,
+                materia.creditos,
+                materia.ch_semanal,
+                materia.ciclo,
+                materia.condicion,
+                materia.formato_didactico,
+                materia.ch_cuatrimestral,
+                materia.ch_presencial,
+                materia.ch_distancia,
+                materia.ch_total,
+                materia.descripcion,
+                correlativas
+            ])
+
+        # Prepara la respuesta
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        filename = f'{plan.nombre}.xlsx'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        wb.save(response)
+        return response
 
 class GenerarGrafoView(generics.ListAPIView):
     serializer_class = GrafoSerializer

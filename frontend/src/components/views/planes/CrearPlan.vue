@@ -153,16 +153,31 @@
           <v-btn v-if="step < 3" color="primary" @click="nextStep">Siguiente</v-btn>
           <v-btn v-if="step === 3" color="success" @click="confirmarGuardado">Guardar Plan de Estudio</v-btn>
         </div>
+        <div class="d-flex flex-column align-center mt-4">
+          <v-btn color="error" variant="outlined" @click="descartarBorrador" class="mb-2">Descartar borrador</v-btn>
+          <v-menu v-if="borradores.length" open-on-hover>
+            <template v-slot:activator="{ props }">
+              <v-btn v-bind="props" color="secondary" variant="outlined">Cargar borrador</v-btn>
+            </template>
+            <v-list>
+              <v-list-item v-for="b in borradores" :key="b.id" @click="cargarBorrador(b.id)">
+                <v-list-item-title>{{ b.data.plan?.nombre || 'Borrador sin nombre' }}</v-list-item-title>
+                <v-list-item-subtitle>Último paso: {{ b.data.step }}</v-list-item-subtitle>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </div>
       </template>
     </v-stepper>
   </v-container>
 </template>
 
 <script setup>
-import { ref, reactive, watch } from 'vue';
+import { ref, reactive, watch, onMounted } from 'vue';
 import * as d3 from 'd3';
 import Swal from 'sweetalert2';
 import { useGraphStore } from '@/store/GraphStore';
+import { saveDraft, loadDraft, listDrafts, removeDraft } from '@/utils/draftUtils';
 
 // --- ESTADO REACTIVO ---
 const step = ref(1);
@@ -178,6 +193,9 @@ const plan = reactive({
 
 const materias = reactive([]);
 let nextMateriaId = 0;
+
+const draftId = ref('crearPlanDraft'); // Puede ser dinámico si se desea múltiples borradores
+const borradores = ref([]);
 
 // Opciones para selects
 const ciclosOptions = ['Básico', 'General', 'Avanzado', 'Optativo'];
@@ -396,6 +414,46 @@ watch(step, (newStep) => {
   }
 });
 
+// Guardar borrador automáticamente al cambiar plan, materias o step
+watch([plan, materias, step], () => {
+  saveDraft(draftId.value, {
+    plan: JSON.parse(JSON.stringify(plan)),
+    materias: JSON.parse(JSON.stringify(materias)),
+    step: step.value
+  });
+}, { deep: true });
+
+// Cargar borrador al montar
+onMounted(() => {
+  const draft = loadDraft(draftId.value);
+  if (draft) {
+    Object.assign(plan, draft.plan);
+    materias.splice(0, materias.length, ...draft.materias);
+    step.value = draft.step || 1;
+  }
+  // Listar borradores existentes
+  borradores.value = listDrafts();
+});
+
+// Función para descartar el borrador actual
+const descartarBorrador = () => {
+  removeDraft(draftId.value);
+  Object.assign(plan, { nombre: '', año_creacion: new Date().getFullYear(), descripcion: '' });
+  materias.splice(0, materias.length);
+  step.value = 1;
+  borradores.value = listDrafts();
+};
+
+// Función para cargar un borrador seleccionado
+const cargarBorrador = (id) => {
+  const draft = loadDraft(id);
+  if (draft) {
+    Object.assign(plan, draft.plan);
+    materias.splice(0, materias.length, ...draft.materias);
+    step.value = draft.step || 1;
+    draftId.value = id;
+  }
+};
 
 // --- LÓGICA DE GUARDADO FINAL (sin cambios) ---
 const graphStore = useGraphStore();

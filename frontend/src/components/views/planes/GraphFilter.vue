@@ -155,7 +155,9 @@
             @change="applyFilter"
           ></v-switch>
         </v-col>
-
+        <v-btn icon color="primary" @click="exportarPlanExcel" :title="'Exportar plan de estudios a Excel'">
+          <v-icon>mdi-file-excel</v-icon>
+        </v-btn>
         <!-- Botón de Acción -->
         <v-btn color="primary" @click="applyFilter" class="mt-2">
           Aplicar Filtros
@@ -189,6 +191,8 @@
 import { ref, onMounted } from 'vue';
 import interact from 'interactjs';
 import CrearPlan from './CrearPlan.vue';
+import Swal from 'sweetalert2';
+import { useGraphStore } from '@store/GraphStore';
 
 export default {
   name: "GraphFilter",
@@ -212,6 +216,7 @@ export default {
     const y = ref(window.innerHeight - 500);
     const isContentVisible = ref(true); // Estado para mostrar/ocultar contenido
     const dialog = ref(false); // Controla la visibilidad del diálogo
+    const graphStore = useGraphStore();
 
     onMounted(() => {
       interact(draggableElement.value.$el)
@@ -245,6 +250,28 @@ export default {
       isContentVisible.value = !isContentVisible.value;
     };
 
+    const exportarPlanExcel = async () => {
+      try {
+        const planId = props.selectedPlan;
+        if (!planId) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Plan no seleccionado',
+            text: 'Por favor, selecciona un plan de estudio antes de exportar.',
+          });
+          return;
+        }
+        await graphStore.exportarPlanExcel(planId.toString());
+      } catch (error) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error inesperado',
+          text: error?.message || 'Error al exportar el plan de estudios a Excel',
+        });
+        console.error(error);
+      }
+    };
+
     return {
       draggableElement,
       x,
@@ -252,6 +279,7 @@ export default {
       isContentVisible,
       handlePlanChange,
       toggleContent,
+      exportarPlanExcel,
       dialog, // Asegúrate de devolver `dialog`
     };
   },

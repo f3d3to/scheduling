@@ -322,6 +322,32 @@ export const useGraphStore = defineStore("graph", {
         console.error("Error creating plan with materias:", error);
         throw error;
       }
-    }
+    },
+    async exportarPlanExcel(planId: string) {
+      try {
+        const response = await api.getExcel(`descargar_plan_de_estudio_excel/${planId}/`);
+        // Extraer el nombre del archivo del header Content-Disposition
+        let filename = "";
+        if (response.headers && typeof response.headers.get === "function") {
+          const disposition = response.headers.get("Content-Disposition");
+          if (disposition) {
+            const match = disposition.match(/filename="?([^"]+)"?/);
+            if (match) filename = match[1];
+          }
+        }
+        const url = window.URL.createObjectURL(response.data);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        return { success: true };
+      } catch (error) {
+        console.error("Error exportando plan a Excel:", error);
+        throw error;
+      }
+    },
   },
 });
